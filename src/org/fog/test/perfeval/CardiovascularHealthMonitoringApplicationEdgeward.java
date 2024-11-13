@@ -52,7 +52,7 @@ public class CardiovascularHealthMonitoringApplicationEdgeward {
         Log.printLine("Starting Cardiovascular Health Monitoring Application...");
 
         try {
-            Log.disable();
+            Log.enable();
             int num_user = 1; // number of cloud users
             Calendar calendar = Calendar.getInstance();
             boolean trace_flag = false; // mean trace events
@@ -65,6 +65,7 @@ public class CardiovascularHealthMonitoringApplicationEdgeward {
 
             Application application = createApplication(appId, broker.getId());
             application.setUserId(broker.getId());
+            
 
             //
             DataParser dataObject = new DataParser();

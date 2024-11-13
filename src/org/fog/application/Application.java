@@ -20,8 +20,8 @@ import org.fog.utils.GeoCoverage;
  */
 public class Application {
 	
-	private String appId;
-	private int userId;
+	protected String appId;
+	protected int userId;
 	private GeoCoverage geoCoverage;
 
 	/**
