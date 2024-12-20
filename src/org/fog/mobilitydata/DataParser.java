@@ -40,7 +40,7 @@ public class DataParser {
     }
 
     private double nextMobilisationEvent(double eventTime, int mobilityPattern) {
-        // TODO Auto-generated method stub
+        // TODO Simon says maybe we can configure different users with this. This will ultimately be called in main function
         Random ran = new Random();
         int seed;
         double newEventTime = -1;

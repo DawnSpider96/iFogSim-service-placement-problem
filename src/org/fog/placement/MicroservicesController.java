@@ -225,6 +225,7 @@ public class MicroservicesController extends SimEntity {
 
     }
 
+    // todo Simon says this might be the part where edge server (gateway device connected to sensor) forwards the PR to cloud!!! (or in the case of this simulation, its FON head)
     private void transmitPr(SimEvent ev) {
         PlacementRequest placementRequest = (PlacementRequest) ev.getData();
         int fonId = ((MicroserviceFogDevice) getFogDeviceById(placementRequest.getGatewayDeviceId())).getFonId();
@@ -256,6 +257,7 @@ public class MicroservicesController extends SimEntity {
     }
 
     protected void manageResources() {
+        // todo Simon says this does nothing, doesnt it???
         send(getId(), Config.RESOURCE_MANAGE_INTERVAL, FogEvents.CONTROLLER_RESOURCE_MANAGE);
     }
 

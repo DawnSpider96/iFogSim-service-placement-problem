@@ -76,6 +76,8 @@ public class Clustering {
             ((FogDevice) CloudSim.getEntity(fogId)).setSelfCluster(false);
             ((FogDevice) CloudSim.getEntity(fogId)).setClusterMembers(clusterMemberList);
             Map<Integer, Double> latencyMapL2 = new HashMap<>();
+            // todo Simon says maybe clusteringLatency shouldn't be a constant!
+            // todo In fact maybe there shouldn't be clustering at all...
             for (int id : clusterMemberList) {
                 latencyMapL2.put(id, Config.clusteringLatency);
             }

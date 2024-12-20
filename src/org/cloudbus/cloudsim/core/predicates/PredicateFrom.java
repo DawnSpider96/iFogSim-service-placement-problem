@@ -12,7 +12,7 @@ import org.cloudbus.cloudsim.core.SimEvent;
 
 /**
  * A predicate which selects events from specific entities.<br>
- * The idea of simulation predicates was copied from SimJava 2.
+ * The idea of simulation predicates was copied from SimJava 2.2
  * 
  * @author Marcos Dias de Assuncao
  * @since CloudSim Toolkit 1.0

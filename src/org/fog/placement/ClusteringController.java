@@ -87,8 +87,8 @@ public class ClusteringController extends SimEntity {
     private void connectWithLatencies() {
 
         for (String dataId : locator.getDataIdsLevelReferences().keySet()) {
-            for (int instenceId : locator.getInstenceDataIdReferences().keySet()) {
-                if (locator.getInstenceDataIdReferences().get(instenceId).equals(dataId)) {
+            for (int instenceId : locator.getInstanceDataIdReferences().keySet()) {
+                if (locator.getInstanceDataIdReferences().get(instenceId).equals(dataId)) {
                     FogDevice fogDevice = getFogDeviceById(instenceId);
                     if (locator.getDataIdsLevelReferences().get(dataId) == locator.getLevelID("User") && fogDevice.getParentId() == References.NOT_SET) {
                         int parentID = locator.determineParent(fogDevice.getId(), References.INIT_TIME);

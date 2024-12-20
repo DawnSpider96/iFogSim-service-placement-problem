@@ -264,6 +264,10 @@ public class ClusteredMicroservicePlacementLogic implements MicroservicePlacemen
             if (toPlace.isEmpty()) {
                 for (PlacementRequest placementRequest : placementRequests) {
                     Application app = applicationInfo.get(placementRequest.getApplicationId());
+                    // modulesToPlace returns all the modules from the APP which 1. Have not been placed 2. All their dependent modules (from UP or DOWN) within their PR have been placed
+                    // NOTE: Every PR (primary key placementRequestId) has its own set of placed modules (stored in mappedMicroservices).
+                    // Meaning each module in all PRs has a separate set of dependent modules, which are from the same PR
+                    // As argument we pass the list of set modules FOR THAT PR that have been placed. But in the function we are iterating through ALL modules in the app
                     List<String> modulesToPlace = getModulesToPlace(mappedMicroservices.get(placementRequest.getPlacementRequestId()).keySet(), app);
                     if (modulesToPlace.isEmpty())
                         placementCompleteCount++;
@@ -273,7 +277,7 @@ public class ClusteredMicroservicePlacementLogic implements MicroservicePlacemen
             }
             for (PlacementRequest placementRequest : placementRequests) {
                 Application app = applicationInfo.get(placementRequest.getApplicationId());
-                int deviceId = deviceToPlace.get(placementRequest);
+                int deviceId = deviceToPlace.get(placementRequest); // NOTE: Initially contains parent ID of gateway device. Changes depending on how we "forward" the PR (if previous target device lacked resources).
                 // if not cluster
                 if (deviceId != -1) {
                     FogDevice device = getDevice(deviceId);

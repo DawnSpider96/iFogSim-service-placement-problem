@@ -121,12 +121,12 @@ public class Controller extends SimEntity{
 	}
 	
 	private void printCostDetails(){
-		System.out.println("Cost of execution in cloud = "+getCloud().getTotalCost());
+		System.out.println("Cost of execution in cloud = " + getCloud().getTotalCost());
 	}
 	
 	private void printPowerDetails() {
 		for(FogDevice fogDevice : getFogDevices()){
-			System.out.println(fogDevice.getName() + " : Energy Consumed = "+fogDevice.getEnergyConsumption());
+			System.out.println(fogDevice.getName() + " : Energy Consumed = " + fogDevice.getEnergyConsumption());
 		}
 	}
 

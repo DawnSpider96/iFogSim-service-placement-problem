@@ -52,7 +52,7 @@ public class LocationHandler {
 	
 
 	public int determineParent(int resourceId, double time) {
-		// TODO Auto-generated method stub
+		// NOTE only called on mobile users
 		String dataId = getDataIdByInstanceID(resourceId);
 		int resourceLevel=getDataObject().resourceAndUserToLevel.get(dataId);
 		int parentLevel = resourceLevel-1;
@@ -177,7 +177,7 @@ public class LocationHandler {
 		return instanceToDataId.get(instanceID);
 	}
 	
-	public Map<Integer, String> getInstenceDataIdReferences() {
+	public Map<Integer, String> getInstanceDataIdReferences() {
 		// TODO Auto-generated method stub
 		return instanceToDataId;
 	}
@@ -185,8 +185,8 @@ public class LocationHandler {
 	public boolean isAMobileDevice(int instanceId) {
 		// TODO Auto-generated method stub
 		String dataId = getDataIdByInstanceID(instanceId);
-		int instenceLevel=getDataObject().resourceAndUserToLevel.get(dataId);
-		if(instenceLevel==getDataObject().levelID.get("User"))
+		int instanceLevel=getDataObject().resourceAndUserToLevel.get(dataId);
+		if(instanceLevel==getDataObject().levelID.get("User"))
 			return true;
 		else
 			return false;

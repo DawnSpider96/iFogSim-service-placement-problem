@@ -156,7 +156,7 @@ public class MicroserviceFogDevice extends FogDevice {
 
         Tuple tuple = (Tuple) ev.getData();
 
-        Logger.debug(getName(), "Received tuple " + tuple.getCloudletId() + "with tupleType = " + tuple.getTupleType() + "\t| Source : " +
+        Logger.debug(getName(), "Received tuple " + tuple.getCloudletId() + " with tupleType = " + tuple.getTupleType() + "\t| Source : " +
                 CloudSim.getEntityName(ev.getSource()) + "|Dest : " + CloudSim.getEntityName(ev.getDestination()));
 
         if (deviceType.equals(MicroserviceFogDevice.CLOUD)) {

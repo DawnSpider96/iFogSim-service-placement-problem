@@ -76,9 +76,9 @@ public class MobilityController extends SimEntity{
 		
 		for (String dataId: locator.getDataIdsLevelReferences().keySet())
 		{
-			for(int instenceId: locator.getInstenceDataIdReferences().keySet())
+			for(int instenceId: locator.getInstanceDataIdReferences().keySet())
 			{
-				if(locator.getInstenceDataIdReferences().get(instenceId).equals(dataId))
+				if(locator.getInstanceDataIdReferences().get(instenceId).equals(dataId))
 				{
 					FogDevice fogDevice = getFogDeviceById(instenceId);
 					if(locator.getDataIdsLevelReferences().get(dataId)==locator.getLevelID("User") && fogDevice.getParentId()==References.NOT_SET){

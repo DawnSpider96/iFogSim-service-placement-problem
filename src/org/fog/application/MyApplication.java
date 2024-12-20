@@ -16,12 +16,12 @@ public class MyApplication extends Application {
 		super(appId, userId);
 		// TODO Auto-generated constructor stub
 	}
-	
+
 	public static MyApplication createMyApplication(String appId, int userId){
 		return new MyApplication(appId, userId);
 	}
 	
-	private Map<Integer, Map<String, Double>> deadlineInfo;
+//	private Map<Integer, Map<String, Double>> deadlineInfo;
 	private Map<Integer, Map<String, Integer>> additionalMipsInfo;
 	
 	public void addAppModule(String moduleName,int ram, int mips, long size, long bw){
@@ -38,12 +38,12 @@ public class MyApplication extends Application {
 		this.additionalMipsInfo = additionalMipsInfo;
 	}
 	
-	public void setDeadlineInfo(Map<Integer, Map<String, Double>> deadlineInfo) {
-		this.deadlineInfo = deadlineInfo;
-	}
+//	public void setDeadlineInfo(Map<Integer, Map<String, Double>> deadlineInfo) {
+//		this.deadlineInfo = deadlineInfo;
+//	}
 	
-	public Map<Integer, Map<String, Double>> getDeadlineInfo() {
-		return deadlineInfo;
-	}
+//	public Map<Integer, Map<String, Double>> getDeadlineInfo() {
+//		return deadlineInfo;
+//	}
 	
 }

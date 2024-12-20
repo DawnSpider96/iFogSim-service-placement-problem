@@ -1,5 +1,7 @@
 package org.fog.test.perfeval;
 
+import org.fog.utils.Logger;
+
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Pe;
@@ -82,6 +84,7 @@ public class CardiovascularHealthMonitoringApplication {
         try {
 
             Log.enable();
+            Logger.ENABLED = true;
             int num_user = 1; // number of cloud users
             Calendar calendar = Calendar.getInstance();
             boolean trace_flag = false; // mean trace events
@@ -133,8 +136,11 @@ public class CardiovascularHealthMonitoringApplication {
             microservicesController.submitPlacementRequests(placementRequests, 1);
 
             TimeKeeper.getInstance().setSimulationStartTime(Calendar.getInstance().getTimeInMillis());
+            Log.printLine("CHM app START!");
 
             CloudSim.startSimulation();
+            
+            Log.printLine("CHM app ONGOING!");
 
             CloudSim.stopSimulation();
 
