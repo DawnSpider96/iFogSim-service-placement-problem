@@ -69,8 +69,6 @@ public class RandomMobilityGenerator {
         } else {
             return false;
         }
-
-
     }
 
     public void createRandomData(int mobilityModel, int user_index, String datasetReference, boolean renewDataset) throws IOException, ParseException {

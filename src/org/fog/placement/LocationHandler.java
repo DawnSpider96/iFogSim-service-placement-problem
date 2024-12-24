@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.fog.mobilitydata.Location;
 import org.fog.mobilitydata.DataParser;
+import org.fog.mobilitydata.OfflineDataParser;
 import org.fog.mobilitydata.References;
 import org.fog.utils.Config;
 
@@ -52,12 +53,11 @@ public class LocationHandler {
 	
 
 	public int determineParent(int resourceId, double time) {
-		// NOTE only called on mobile users
 		String dataId = getDataIdByInstanceID(resourceId);
-		int resourceLevel=getDataObject().resourceAndUserToLevel.get(dataId);
+		int resourceLevel = getDataObject().resourceAndUserToLevel.get(dataId);
 		int parentLevel = resourceLevel-1;
 		Location resourceLoc;
-		if(resourceLevel!=getDataObject().levelID.get("User"))
+		if(resourceLevel != getDataObject().levelID.get("User"))
 			resourceLoc = getResourceLocationInfo(dataId);
 		else
 			resourceLoc = getUserLocationInfo(dataId,time);
@@ -154,8 +154,14 @@ public class LocationHandler {
 		// TODO Auto-generated method stub
 		List<String> userDataIds = new ArrayList<>(getDataObject().usersLocation.keySet());
 		return userDataIds;
-		
 	}
+
+//	public List<String> getImmobileUserDataId() {
+//		// TODO Auto-generated method stub
+//		OfflineDataParser parser = (OfflineDataParser) getDataObject();
+//		List<String> userDataIds = new ArrayList<>(parser.immobileUserLocationData.keySet());
+//		return userDataIds;
+//	}
 
 	public Map<String, Integer> getDataIdsLevelReferences() {
 		// TODO Auto-generated method stub

@@ -90,11 +90,11 @@ public class MyFogDevice extends FogDevice {
 			case FogEvents.UPDATE_RESOURCE_INFO:
 				updateResourceInfo(ev);
 				break;
-			case FogEvents.START_DYNAMIC_CLUSTERING:
-				//This message is received by the devices to start their clustering
-				processClustering(this.getParentId(), this.getId(), ev);
-				updateClusterConsInRoutingTable();
-				break;
+//			case FogEvents.START_DYNAMIC_CLUSTERING:
+//				//This message is received by the devices to start their clustering
+//				processClustering(this.getParentId(), this.getId(), ev);
+//				updateClusterConsInRoutingTable();
+//				break;
 			default:
 				super.processOtherEvent(ev);
 				break;
@@ -160,7 +160,7 @@ public class MyFogDevice extends FogDevice {
 		Tuple tuple = (Tuple) ev.getData();
 
 		Logger.debug(getName(), "Received tuple " + tuple.getCloudletId() + " with tupleType = " + tuple.getTupleType() + "\t| Source : " +
-				CloudSim.getEntityName(ev.getSource()) + "|Dest : " + CloudSim.getEntityName(ev.getDestination()));
+				CloudSim.getEntityName(ev.getSource()) + " | Dest : " + CloudSim.getEntityName(ev.getDestination()));
 
 		if (deviceType.equals(MyFogDevice.CLOUD)) {
 			updateCloudTraffic();
@@ -176,6 +176,8 @@ public class MyFogDevice extends FogDevice {
 			return;
 		}
 
+		// TODO Simon says this might need to change, seriously
+		// Why are we taking the first VM only???
 		if (getHost().getVmList().size() > 0) {
 			final AppModule operator = (AppModule) getHost().getVmList().get(0);
 			if (CloudSim.clock() > 0) {

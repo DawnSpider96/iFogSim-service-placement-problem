@@ -195,7 +195,9 @@ public class MyMicroservicesController extends SimEntity {
         }
         if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC) {
             for (FogDevice f : fogDevices) {
-                if (((MyFogDevice) f).getDeviceType() == MyFogDevice.FON) {
+                // todo Simon says for the Offline POC there are no proxy servers, so the cloud processes all PRs
+                // todo the second OR condition was added for Offline POC, whether it stays tbc
+                if (((MyFogDevice) f).getDeviceType() == MyFogDevice.FON || ((MyFogDevice) f).getDeviceType() == MyFogDevice.CLOUD) {
                     sendNow(f.getId(), FogEvents.PROCESS_PRS);
                 }
             }

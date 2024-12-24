@@ -103,7 +103,7 @@ public class PlacementProblem {
 
 			if (randomMobility_generator) {
 				// todo Simon says this dataset_random is constant throughout, we need to actually generate random datasets dynamically
-				// The framework has already been set (with renewDataset) but I think I need to write it
+				// We just need to set renewDataset to True, then new Location sets for very mobile user will be generated
 				datasetReference = References.dataset_random;
 				createRandomMobilityDatasets(References.random_walk_mobility_model, datasetReference, renewDataset);
 			}

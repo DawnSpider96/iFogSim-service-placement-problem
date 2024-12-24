@@ -11,6 +11,7 @@ public class PlacementLogicFactory {
     public static final int CLUSTERED_MICROSERVICES_PLACEMENT = 2;
     public static final int DISTRIBUTED_MICROSERVICES_PLACEMENT = 3;
     public static final int MY_MICROSERVICES_PLACEMENT = 4;
+    public static final int MY_OFFLINE_POC_PLACEMENT = 5;
 
     public MicroservicePlacementLogic getPlacementLogic(int logic, int fonId) {
         switch (logic) {
@@ -22,6 +23,8 @@ public class PlacementLogicFactory {
                 return new DistributedMicroservicePlacementLogic(fonId);
             case MY_MICROSERVICES_PLACEMENT:
                 return new MyMicroservicePlacementLogic(fonId);
+            case MY_OFFLINE_POC_PLACEMENT:
+                return new MyOfflinePOCPlacementLogic(fonId);
         }
 
         Logger.error("Placement Logic Error", "Error initializing placement logic");
