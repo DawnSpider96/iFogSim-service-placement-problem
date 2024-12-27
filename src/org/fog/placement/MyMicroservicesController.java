@@ -177,7 +177,9 @@ public class MyMicroservicesController extends SimEntity {
         }
         if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC) {
             for (FogDevice f : fogDevices) {
-                if (((MyFogDevice) f).getDeviceType() == MyFogDevice.FON) {
+                // todo Simon says for the Offline POC there are no proxy servers, so the cloud processes all PRs
+                // todo The second OR condition was added for Offline POC, whether it stays tbc
+                if (((MyFogDevice) f).getDeviceType() == MyFogDevice.FON || ((MyFogDevice) f).getDeviceType() == MyFogDevice.CLOUD) {
                     sendNow(f.getId(), FogEvents.PROCESS_PRS);
                 }
             }
@@ -191,12 +193,13 @@ public class MyMicroservicesController extends SimEntity {
             if (placementRequestDelayMap.get(p) == 0) {
                 sendNow(fonId, FogEvents.RECEIVE_PR, p);
             } else
+                // NOTE: Here is TRANSMIT_PR for the CONTROLLER. All other instances are for FogDevice
                 send(getId(), placementRequestDelayMap.get(p), FogEvents.TRANSMIT_PR, p);
         }
         if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC) {
             for (FogDevice f : fogDevices) {
                 // todo Simon says for the Offline POC there are no proxy servers, so the cloud processes all PRs
-                // todo the second OR condition was added for Offline POC, whether it stays tbc
+                // todo The second OR condition was added for Offline POC, whether it stays tbc
                 if (((MyFogDevice) f).getDeviceType() == MyFogDevice.FON || ((MyFogDevice) f).getDeviceType() == MyFogDevice.CLOUD) {
                     sendNow(f.getId(), FogEvents.PROCESS_PRS);
                 }
@@ -239,6 +242,7 @@ public class MyMicroservicesController extends SimEntity {
     private void transmitPr(SimEvent ev) {
         PlacementRequest placementRequest = (PlacementRequest) ev.getData();
         int fonId = ((MyFogDevice) getFogDeviceById(placementRequest.getGatewayDeviceId())).getFonId();
+        // TODO maybe we want to account for latency between gateway device and FON head (or cloud for Simonstrator)
         sendNow(fonId, FogEvents.RECEIVE_PR, placementRequest);
     }
 

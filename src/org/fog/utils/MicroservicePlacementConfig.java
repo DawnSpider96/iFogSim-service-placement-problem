@@ -4,7 +4,7 @@ public class MicroservicePlacementConfig {
 
     // simulation modes - STATIC - 1(initial placement happens before simulation start and placement related delays are not simulated)
     // DYNAMIC - 2(placement happens after simulation starts and placement related delays are simulated)
-    public static String SIMULATION_MODE = "STATIC";
+    public static String SIMULATION_MODE = "DYNAMIC";
 
     //Placement Request Processing Mode
     public static String PERIODIC = "Periodic";
