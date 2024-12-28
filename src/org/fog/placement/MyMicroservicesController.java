@@ -141,7 +141,6 @@ public class MyMicroservicesController extends SimEntity {
 
         // todo Simon says Placement Decisions will be made dynamically, but only by the Cloud!
         // todo Hence no need for an initialisation
-        // But for now we leave it (otherwise there are no PRs made)
         if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC")
             initiatePlacementRequestProcessing();
         if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC")
@@ -220,8 +219,8 @@ public class MyMicroservicesController extends SimEntity {
     @Override
     public void processEvent(SimEvent ev) {
         switch (ev.getTag()) {
-            case FogEvents.TRANSMIT_PR:
-                transmitPr(ev);
+//            case FogEvents.TRANSMIT_PR:
+//                transmitPr(ev);
             case FogEvents.CONTROLLER_RESOURCE_MANAGE:
                 manageResources();
                 break;
@@ -238,13 +237,11 @@ public class MyMicroservicesController extends SimEntity {
 
     }
 
-    // todo Simon says this might be the part where edge server (gateway device connected to sensor) forwards the PR to cloud!!! (or in the case of this simulation, its FON head)
-    private void transmitPr(SimEvent ev) {
-        PlacementRequest placementRequest = (PlacementRequest) ev.getData();
-        int fonId = ((MyFogDevice) getFogDeviceById(placementRequest.getGatewayDeviceId())).getFonId();
-        // TODO maybe we want to account for latency between gateway device and FON head (or cloud for Simonstrator)
-        sendNow(fonId, FogEvents.RECEIVE_PR, placementRequest);
-    }
+//    private void transmitPr(SimEvent ev) {
+//        PlacementRequest placementRequest = (PlacementRequest) ev.getData();
+//        int fonId = ((MyFogDevice) getFogDeviceById(placementRequest.getGatewayDeviceId())).getFonId();
+//        sendNow(fonId, FogEvents.RECEIVE_PR, placementRequest);
+//    }
 
 
     protected void printQoSDetails() {

@@ -49,12 +49,12 @@ import java.util.*;
  * ENABLE_RESOURCE_DATA_SHARING -> false (not needed as FONs placed at the highest level.
  * DYNAMIC_CLUSTERING -> true (for clustered) and false (for not clustered) * (also compatible with static clustering)
  */
-public class OfflinePOC {
+public class OnlinePOC {
     static List<FogDevice> fogDevices = new ArrayList<FogDevice>();
     static List<Sensor> sensors = new ArrayList<Sensor>();
     static List<Actuator> actuators = new ArrayList<Actuator>();
 
-//    static Map<Integer, Integer> userMobilityPattern = new HashMap<Integer, Integer>();
+    //    static Map<Integer, Integer> userMobilityPattern = new HashMap<Integer, Integer>();
     static LocationHandler locator;
 
 //    static boolean CLOUD = false;
@@ -74,7 +74,7 @@ public class OfflinePOC {
 
     public static void main(String[] args) {
 
-        Log.printLine("Starting Simon's Offline Application...");
+        Log.printLine("Starting Simon's Online Application...");
 
         try {
 
@@ -190,7 +190,7 @@ public class OfflinePOC {
         // Just keep this empty, I'm too lazy to override the LocationHandler as well
         Map<Integer, Integer> userMobilityPattern = new HashMap<Integer, Integer>();
 
-        locator.parseUserInfo(userMobilityPattern, "./dataset/usersLocation-melbCBD_OfflinePOC.csv");
+        locator.parseUserInfo(userMobilityPattern, "./dataset/usersLocation-melbCBD_OnlinePOC.csv");
 
         List<String> mobileUserDataIds = locator.getMobileUserDataId();
 

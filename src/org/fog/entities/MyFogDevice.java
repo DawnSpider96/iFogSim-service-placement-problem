@@ -27,10 +27,10 @@ public class MyFogDevice extends FogDevice {
 	 * thus for security resons client devices are not used for that)
 	 */
 	protected String deviceType = null;
-	public static final String CLIENT = "client";
-//	public static final String AMBULANCE_USER = "ambulanceUser";
-//	public static final String OPERA_USER = "operaUser";
-	public static final String GENERIC_USER = "genericUser";
+//	public static final String CLIENT = "client";
+	public static final String AMBULANCE_USER = "ambulanceUser";
+	public static final String OPERA_USER = "operaUser";
+	public static final String GENERIC_USER = "genericUser"; // random movement, no objective
 	public static final String FCN = "fcn"; // fog computation node
 	public static final String FON = "fon"; // fog orchestration node
 	public static final String CLOUD = "cloud"; // cloud datacenter
@@ -58,7 +58,6 @@ public class MyFogDevice extends FogDevice {
 		super(name, characteristics, vmAllocationPolicy, storageList, schedulingInterval, uplinkBandwidth, downlinkBandwidth, uplinkLatency, ratePerMips);
 		setClusterLinkBandwidth(clusterLinkBandwidth);
 		setDeviceType(deviceType);
-
 	}
 
 	@Override
@@ -137,7 +136,8 @@ public class MyFogDevice extends FogDevice {
 
 	protected void setDeviceType(String deviceType) {
 		if (deviceType.equals(MyFogDevice.GENERIC_USER) || deviceType.equals(MyFogDevice.FCN) ||
-				deviceType.equals(MyFogDevice.FON) || deviceType.equals(MyFogDevice.CLOUD))
+				deviceType.equals(MyFogDevice.FON) || deviceType.equals(MyFogDevice.CLOUD) ||
+				deviceType.equals(MyFogDevice.AMBULANCE_USER) || deviceType.equals(MyFogDevice.OPERA_USER))
 			this.deviceType = deviceType;
 		else
 			Logger.error("Incompatible Device Type", "Device type not included in device type enums in MyFogDevice class");
@@ -295,7 +295,7 @@ public class MyFogDevice extends FogDevice {
 	 * FCN and Client devices
 	 */
 	public void initializeController(LoadBalancer loadBalancer) {
-		if (getDeviceType() != MyFogDevice.FON) {
+		if (getDeviceType() != MyFogDevice.CLOUD) {
 			controllerComponent = new ControllerComponent(getId(), loadBalancer);
 			controllerComponent.updateResources(getId(), ControllerComponent.CPU, getHost().getTotalMips());
 			controllerComponent.updateResources(getId(), ControllerComponent.RAM, getHost().getRam());
@@ -316,6 +316,11 @@ public class MyFogDevice extends FogDevice {
 	}
 
 	protected void processPlacementRequests() {
+
+		if (!this.deviceType.equals(MyFogDevice.CLOUD)) {
+			Logger.error("FON exists error", "Placement Request NOT being processed by cloud! Check if device type is FON.");
+		}
+
 		if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC && placementRequests.size() == 0) {
 			send(getId(), MicroservicePlacementConfig.PLACEMENT_INTERVAL, FogEvents.PROCESS_PRS);
 			return;
@@ -516,7 +521,7 @@ public class MyFogDevice extends FogDevice {
 	}
 
 	/**
-	 * Used by Client Devices to generate management tuple with pr and send it to FON
+	 * Used by Client Devices to generate management tuple with pr and send it to cloud
 	 *
 	 * @param placementRequest
 	 */
@@ -525,6 +530,8 @@ public class MyFogDevice extends FogDevice {
 	}
 
 	private void transmitPR(PlacementRequest placementRequest, Integer deviceId) {
+		// todo Simon says this might be the part where edge server (gateway device connected to sensor) forwards the PR to cloud!!!
+		// todo NOTE delay between self and the cloud is taken into account using the ManagementTuple
 		ManagementTuple prTuple = new ManagementTuple(placementRequest.getApplicationId(), FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.PLACEMENT_REQUEST);
 		prTuple.setData(placementRequest);
 		prTuple.setDestinationDeviceId(deviceId);
@@ -549,6 +556,8 @@ public class MyFogDevice extends FogDevice {
 		ManagementTuple tuple = (ManagementTuple) ev.getData();
 		if (tuple.getDestinationDeviceId() == getId()) {
 			if (tuple.managementTupleType == ManagementTuple.PLACEMENT_REQUEST) {
+				// TODO Simon says we might have to change things such that RECEIVE_PR is sent to cloud straight
+				// todo Especially since this (management tuple) simulates the request travelling up physically throught the network
 				sendNow(getId(), FogEvents.RECEIVE_PR, tuple.getPlacementRequest());
 			} else if (tuple.managementTupleType == ManagementTuple.SERVICE_DISCOVERY_INFO) {
 				JSONObject serviceDiscoveryAdd = new JSONObject();
@@ -614,14 +623,23 @@ public class MyFogDevice extends FogDevice {
 		}
 
 		// in FONs resource availability is updated by placement algorithm
-		if (getDeviceType() != FON) {
-			double mips = getControllerComponent().getAvailableResource(getId(), ControllerComponent.CPU) - (config.getModule().getMips() * config.getInstanceCount());
-			getControllerComponent().updateResources(getId(), ControllerComponent.CPU, mips);
-			double ram = getControllerComponent().getAvailableResource(getId(), ControllerComponent.RAM) - (config.getModule().getRam() * config.getInstanceCount());
-			getControllerComponent().updateResources(getId(), ControllerComponent.RAM, ram);
-			double storage = getControllerComponent().getAvailableResource(getId(), ControllerComponent.STORAGE) - (config.getModule().getSize() * config.getInstanceCount());
-			getControllerComponent().updateResources(getId(), ControllerComponent.STORAGE, storage);
-		}
+//		if (getDeviceType() != FON) {
+//			double mips = getControllerComponent().getAvailableResource(getId(), ControllerComponent.CPU) - (config.getModule().getMips() * config.getInstanceCount());
+//			getControllerComponent().updateResources(getId(), ControllerComponent.CPU, mips);
+//			double ram = getControllerComponent().getAvailableResource(getId(), ControllerComponent.RAM) - (config.getModule().getRam() * config.getInstanceCount());
+//			getControllerComponent().updateResources(getId(), ControllerComponent.RAM, ram);
+//			double storage = getControllerComponent().getAvailableResource(getId(), ControllerComponent.STORAGE) - (config.getModule().getSize() * config.getInstanceCount());
+//			getControllerComponent().updateResources(getId(), ControllerComponent.STORAGE, storage);
+//		}
+
+		// todo Simon says this block should apply to all devices since there are no FON heads and cloud resource availability doesn't exist
+		double mips = getControllerComponent().getAvailableResource(getId(), ControllerComponent.CPU) - (config.getModule().getMips() * config.getInstanceCount());
+		getControllerComponent().updateResources(getId(), ControllerComponent.CPU, mips);
+		double ram = getControllerComponent().getAvailableResource(getId(), ControllerComponent.RAM) - (config.getModule().getRam() * config.getInstanceCount());
+		getControllerComponent().updateResources(getId(), ControllerComponent.RAM, ram);
+		double storage = getControllerComponent().getAvailableResource(getId(), ControllerComponent.STORAGE) - (config.getModule().getSize() * config.getInstanceCount());
+		getControllerComponent().updateResources(getId(), ControllerComponent.STORAGE, storage);
+
 		if (isInCluster && MicroservicePlacementConfig.ENABLE_RESOURCE_DATA_SHARING) {
 			for (Integer deviceId : getClusterMembers()) {
 				ManagementTuple managementTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.RESOURCE_UPDATE);
