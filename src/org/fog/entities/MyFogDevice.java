@@ -557,7 +557,7 @@ public class MyFogDevice extends FogDevice {
 		if (tuple.getDestinationDeviceId() == getId()) {
 			if (tuple.managementTupleType == ManagementTuple.PLACEMENT_REQUEST) {
 				// TODO Simon says we might have to change things such that RECEIVE_PR is sent to cloud straight
-				// todo Especially since this (management tuple) simulates the request travelling up physically throught the network
+				// todo Especially since this (management tuple) simulates the request travelling up physically through the network
 				sendNow(getId(), FogEvents.RECEIVE_PR, tuple.getPlacementRequest());
 			} else if (tuple.managementTupleType == ManagementTuple.SERVICE_DISCOVERY_INFO) {
 				JSONObject serviceDiscoveryAdd = new JSONObject();

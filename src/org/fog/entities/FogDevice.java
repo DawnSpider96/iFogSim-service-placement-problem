@@ -598,8 +598,10 @@ public class FogDevice extends PowerDatacenter {
         double totalMipsAllocated = 0;
         for (final Vm vm : getHost().getVmList()) {
             AppModule operator = (AppModule) vm;
-            operator.updateVmProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(operator).getVmScheduler()
-                    .getAllocatedMipsForVm(operator));
+            operator.updateVmProcessing(
+                    CloudSim.clock(),
+                    getVmAllocationPolicy().getHost(operator).getVmScheduler().getAllocatedMipsForVm(operator)
+            );
             totalMipsAllocated += getHost().getTotalAllocatedMipsForVm(vm);
         }
 
@@ -620,6 +622,13 @@ public class FogDevice extends PowerDatacenter {
         setTotalCost(newcost);
 
         lastUtilization = Math.min(1, totalMipsAllocated / getHost().getTotalMips());
+        if (lastUtilization > 0) {
+            System.out.println("------------------------");
+            System.out.println("Device ID: " + getId());
+            System.out.println("Utilization = " + lastUtilization);
+            System.out.println("Power = " + getHost().getPowerModel().getPower(lastUtilization));
+            System.out.println("Time passed: " + (timeNow - lastUtilizationUpdateTime));
+        }
         lastUtilizationUpdateTime = timeNow;
     }
 
@@ -684,7 +693,7 @@ public class FogDevice extends PowerDatacenter {
 			System.out.println(++numClients);
 		}*/
         Logger.debug(getName(), "Received tuple " + tuple.getCloudletId() + "with tupleType = " + tuple.getTupleType() + "\t| Source : " +
-                CloudSim.getEntityName(ev.getSource()) + "|Dest : " + CloudSim.getEntityName(ev.getDestination()));
+                CloudSim.getEntityName(ev.getSource()) + "| Dest : " + CloudSim.getEntityName(ev.getDestination()));
 		
 		/*if(CloudSim.getEntityName(ev.getSource()).equals("drone_0")||CloudSim.getEntityName(ev.getDestination()).equals("drone_0"))
 			System.out.println(CloudSim.clock()+" "+getName()+" Received tuple "+tuple.getCloudletId()+" with tupleType = "+tuple.getTupleType()+"\t| Source : "+
