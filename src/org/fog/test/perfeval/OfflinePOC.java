@@ -130,11 +130,8 @@ public class OfflinePOC {
 
             CloudSim.startSimulation();
 
-            Log.printLine("Simon app ONGOING!");
-
             CloudSim.stopSimulation();
 
-            Log.printLine("Simon app finished!");
         } catch (Exception e) {
             e.printStackTrace();
             Log.printLine("Unwanted errors happen");

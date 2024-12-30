@@ -227,6 +227,9 @@ public class MyMicroservicesController extends SimEntity {
                 break;
             case FogEvents.STOP_SIMULATION:
                 CloudSim.stopSimulation();
+                System.out.println("=========================================");
+                System.out.println("============== METRICS ==================");
+                System.out.println("=========================================");
                 printTimeDetails();
                 printPowerDetails();
                 printCostDetails();
@@ -307,9 +310,10 @@ public class MyMicroservicesController extends SimEntity {
     }
 
     protected void printTimeDetails() {
-        System.out.println("=========================================");
-        System.out.println("============== RESULTS ==================");
-        System.out.println("=========================================");
+        TimeKeeper t = TimeKeeper.getInstance();
+//        Calendar c = Calendar.getInstance();
+        System.out.println("Simon START TIME : " + TimeKeeper.getInstance().getSimulationStartTime());
+        System.out.println("Simon END TIME : " + Calendar.getInstance().getTimeInMillis());
         System.out.println("EXECUTION TIME : " + (Calendar.getInstance().getTimeInMillis() - TimeKeeper.getInstance().getSimulationStartTime()));
         System.out.println("=========================================");
         System.out.println("APPLICATION LOOP DELAYS");
@@ -328,7 +332,7 @@ public class MyMicroservicesController extends SimEntity {
             System.out.println(getStringForLoopId(loopId) + " ---> " + TimeKeeper.getInstance().getLoopIdToCurrentAverage().get(loopId));
         }
         System.out.println("=========================================");
-        System.out.println("TUPLE CPU EXECUTION DELAY");
+        System.out.println("AVERAGE CPU EXECUTION DELAY PER TUPLE TYPE");
         System.out.println("=========================================");
 
         for (String tupleType : TimeKeeper.getInstance().getTupleTypeToAverageCpuTime().keySet()) {

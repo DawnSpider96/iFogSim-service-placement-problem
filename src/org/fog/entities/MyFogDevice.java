@@ -622,15 +622,15 @@ public class MyFogDevice extends FogDevice {
 			double storage = getControllerComponent().getAvailableResource(getId(), ControllerComponent.STORAGE) - (config.getModule().getSize() * config.getInstanceCount());
 			getControllerComponent().updateResources(getId(), ControllerComponent.STORAGE, storage);
 		}
-		if (isInCluster && MicroservicePlacementConfig.ENABLE_RESOURCE_DATA_SHARING) {
-			for (Integer deviceId : getClusterMembers()) {
-				ManagementTuple managementTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.RESOURCE_UPDATE);
-				Pair<Integer, Map<String, Double>> data = new Pair<>(getId(), getControllerComponent().resourceAvailability.get(getId()));
-				managementTuple.setResourceData(data);
-				managementTuple.setDestinationDeviceId(deviceId);
-				sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, managementTuple);
-			}
-		}
+//		if (isInCluster && MicroservicePlacementConfig.ENABLE_RESOURCE_DATA_SHARING) {
+//			for (Integer deviceId : getClusterMembers()) {
+//				ManagementTuple managementTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.RESOURCE_UPDATE);
+//				Pair<Integer, Map<String, Double>> data = new Pair<>(getId(), getControllerComponent().resourceAvailability.get(getId()));
+//				managementTuple.setResourceData(data);
+//				managementTuple.setDestinationDeviceId(deviceId);
+//				sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, managementTuple);
+//			}
+//		}
 	}
 
 	protected void sendDownFreeLink(Tuple tuple, int childId) {
