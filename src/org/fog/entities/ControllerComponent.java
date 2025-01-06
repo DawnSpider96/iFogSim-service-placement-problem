@@ -1,9 +1,12 @@
 package org.fog.entities;
 
+import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.placement.MicroservicePlacementLogic;
 import org.fog.placement.PlacementLogicOutput;
+import org.json.simple.JSONObject;
 
+import javax.naming.ldap.Control;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -86,6 +89,17 @@ public class ControllerComponent {
         }
 
         return null;
+    }
+
+    public void finishNodeExecution(JSONObject objj) {
+        int id = (int) objj.get("id");
+        AppModule vm = (AppModule) objj.get("module");
+        double newMips =  resourceAvailability.get(id).get(ControllerComponent.CPU) + vm.getMips();
+        resourceAvailability.get(id).put(ControllerComponent.CPU, newMips);
+        double newRam =  resourceAvailability.get(id).get(ControllerComponent.RAM) + vm.getRam();
+        resourceAvailability.get(id).put(ControllerComponent.RAM, newRam);
+        double newStorage =  resourceAvailability.get(id).get(ControllerComponent.STORAGE) + vm.getSize();
+        resourceAvailability.get(id).put(ControllerComponent.STORAGE, newStorage);
     }
 
     public void addServiceDiscoveryInfo(String microserviceName, Integer deviceID) {

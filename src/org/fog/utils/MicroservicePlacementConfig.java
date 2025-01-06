@@ -12,7 +12,8 @@ public class MicroservicePlacementConfig {
     public static String PR_PROCESSING_MODE = PERIODIC;
 
     // For periodic placement
-    public static final double PLACEMENT_INTERVAL = 1;
+    public static final double PLACEMENT_PROCESS_INTERVAL = 10;
+    public static final double PLACEMENT_GENERATE_INTERVAL = 50;
 
     //Resource info sharing among cluster nodes
     public static Boolean ENABLE_RESOURCE_DATA_SHARING = false;

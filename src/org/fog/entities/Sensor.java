@@ -14,8 +14,8 @@ import org.fog.utils.distribution.Distribution;
 
 public class Sensor extends SimEntity{
 	
-	private int gatewayDeviceId;
-	private GeoLocation geoLocation;
+	protected int gatewayDeviceId;
+	protected GeoLocation geoLocation;
 	private long outputSize;
 	private String appId;
 	private int userId;
@@ -135,7 +135,6 @@ public class Sensor extends SimEntity{
 			send(getId(), getTransmitDistribution().getNextValue(), FogEvents.EMIT_TUPLE);
 			break;
 		}
-			
 	}
 
 	@Override

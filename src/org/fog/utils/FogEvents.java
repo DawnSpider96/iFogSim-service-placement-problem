@@ -45,5 +45,9 @@ public class FogEvents {
     public static final int UPDATE_RESOURCE_INFO = BASE + 37;
     //---------------------------------------------
     public static final int START_DYNAMIC_CLUSTERING = BASE + 38;
+    // Simon --------------------------------------
+    public static final int MODULE_UNINSTALL = BASE + 39;
+    public static final int NODE_EXECUTION_FINISHED = BASE + 40;
+    public static final int EXECUTION_START_REQUEST = BASE + 41;
 
 }

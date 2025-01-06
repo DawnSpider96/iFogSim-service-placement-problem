@@ -502,6 +502,7 @@ public class FogDevice extends PowerDatacenter {
     protected void checkCloudletCompletion() {
         boolean cloudletCompleted = false;
         List<? extends Host> list = getVmAllocationPolicy().getHostList();
+        // todo Simon says that for OnlinePOC, every policy (AppModuleAllocationPolicy) should only be supervising ONE PowerHost
         for (int i = 0; i < list.size(); i++) {
             Host host = list.get(i);
             for (Vm vm : host.getVmList()) {

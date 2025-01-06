@@ -111,7 +111,7 @@ public class OnlinePOC {
             List<Application> appList = new ArrayList<>();
             appList.add(application);
 
-            int placementAlgo = PlacementLogicFactory.MY_OFFLINE_POC_PLACEMENT;
+            int placementAlgo = PlacementLogicFactory.MY_ONLINE_POC_PLACEMENT;
             MyMicroservicesMobilityController microservicesController = new MyMicroservicesMobilityController("controller", fogDevices, sensors, appList, placementAlgo, locator);
 
             // generate placement requests
@@ -123,6 +123,7 @@ public class OnlinePOC {
                 placementRequests.add(p);
             }
 
+            // TODO Simon says now we need to give them time intervals to send periodically across the Simulation
             microservicesController.submitPlacementRequests(placementRequests, 1);
 
             TimeKeeper.getInstance().setSimulationStartTime(Calendar.getInstance().getTimeInMillis());
@@ -271,16 +272,20 @@ public class OnlinePOC {
     }
 
     private static FogDevice addImmobile(String name, int userId, Application app, int parentId) {
-        FogDevice mobile = createFogDevice(name, 200, 2048, 10000, 270, 0, 87.53, 82.44, MyFogDevice.GENERIC_USER);
+        MyFogDevice mobile = createFogDevice(name, 200, 2048, 10000, 270, 0, 87.53, 82.44, MyFogDevice.GENERIC_USER);
         mobile.setParentId(parentId);
         //locator.setInitialLocation(name,drone.getId());
-        Sensor mobileSensor = new Sensor("s-" + name, "SENSOR", userId, app.getAppId(), new DeterministicDistribution(SENSOR_TRANSMISSION_TIME)); // inter-transmission time of EEG sensor follows a deterministic distribution
+        Sensor mobileSensor = new MySensor("s-" + name, "SENSOR", userId, app.getAppId(), new DeterministicDistribution(SENSOR_TRANSMISSION_TIME)); // inter-transmission time of EEG sensor follows a deterministic distribution
         mobileSensor.setApp(app);
         sensors.add(mobileSensor);
         Actuator mobileDisplay = new Actuator("a-" + name, userId, app.getAppId(), "DISPLAY");
         actuators.add(mobileDisplay);
 
         mobileSensor.setGatewayDeviceId(mobile.getId());
+        // TODO Simon says maybe change this. Very unclean. Originally the User Device should have no children
+        //  This is solely so that User Device can send EXECUTION_START_REQUEST to its sensor
+        mobile.setSensorID(mobileSensor.getId());
+
         mobileSensor.setLatency(6.0);  // latency of connection between EEG sensors and the parent Smartphone is 6 ms
 
         mobileDisplay.setGatewayDeviceId(mobile.getId());
@@ -300,9 +305,9 @@ public class OnlinePOC {
          * Adding modules (vertices) to the application model (directed graph)
          */
         application.addAppModule("clientModule", 128, 150, 100);
-        application.addAppModule("mService1", 512, 250, 200);
-        application.addAppModule("mService2", 1024, 350, 500);
-        application.addAppModule("mService3", 2048, 450, 1000);
+        application.addAppModule("mService1", 128, 250, 200);
+        application.addAppModule("mService2", 128, 350, 500);
+        application.addAppModule("mService3", 128, 450, 1000);
 
         /*
          * Connecting the application modules (vertices) in the application model (directed graph) with edges

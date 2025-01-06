@@ -394,6 +394,11 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 		return null;
 	}
 
+	public int getFinishedCloudletCount() {
+		return getCloudletFinishedList().size();
+	}
+
+
 	/**
 	 * Returns the number of cloudlets runnning in the virtual machine.
 	 * 

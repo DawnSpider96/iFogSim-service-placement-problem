@@ -1,15 +1,15 @@
 package org.fog.entities;
 
 import org.apache.commons.math3.util.Pair;
-import org.cloudbus.cloudsim.Storage;
-import org.cloudbus.cloudsim.Vm;
-import org.cloudbus.cloudsim.VmAllocationPolicy;
+import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.fog.application.AppEdge;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.placement.MicroservicePlacementLogic;
+import org.fog.placement.MyPlacementLogicOutput;
 import org.fog.placement.PlacementLogicOutput;
 import org.fog.utils.*;
 import org.json.simple.JSONObject;
@@ -42,6 +42,7 @@ public class MyFogDevice extends FogDevice {
 	 * closest FON id. If this device is a FON its own id is assigned
 	 */
 	protected int fonID = -1;
+	protected int sensorID = -1;
 
 	/**
 	 * used to forward tuples towards the destination device
@@ -81,13 +82,34 @@ public class MyFogDevice extends FogDevice {
 				updateServiceDiscovery(ev);
 				break;
 			case FogEvents.TRANSMIT_PR:
-				transmitPR((PlacementRequest) ev.getData());
+				JSONObject object = (JSONObject) ev.getData();
+				PlacementRequest pr = (PlacementRequest) object.get("PR");
+				Application application = (Application) object.get("app");
+				/// Periodically resend the same placement request
+				PlacementRequest prNew = new PlacementRequest(pr.getApplicationId(), pr.getPlacementRequestId(), pr.getGatewayDeviceId(), new HashMap<String, Integer>(pr.getPlacedMicroservices()));
+				Map<String, Object> newObject = new HashMap<>();
+				newObject.put("PR", prNew);
+				newObject.put("app", application);
+				JSONObject jsonObject = new JSONObject(newObject);
+				send(getId(), MicroservicePlacementConfig.PLACEMENT_GENERATE_INTERVAL, FogEvents.TRANSMIT_PR, jsonObject);
+
+				installStartingModule(pr, application);
+				transmitPR(pr);
 				break;
 			case FogEvents.MANAGEMENT_TUPLE_ARRIVAL:
 				processManagementTuple(ev);
 				break;
 			case FogEvents.UPDATE_RESOURCE_INFO:
 				updateResourceInfo(ev);
+				break;
+			case FogEvents.MODULE_UNINSTALL:
+				moduleUninstall(ev);
+				break;
+			case FogEvents.NODE_EXECUTION_FINISHED:
+				finishNodeExecution(ev);
+				break;
+			case FogEvents.EXECUTION_START_REQUEST:
+				startExecution(ev);
 				break;
 //			case FogEvents.START_DYNAMIC_CLUSTERING:
 //				//This message is received by the devices to start their clustering
@@ -245,6 +267,7 @@ public class MyFogDevice extends FogDevice {
 
 				}
 			} else {
+				// TODO DONT DELETE BREAKPOINT, I dont know what control flow would actually lead to this, so I put a breakpoint
 				if (tuple.getDirection() == Tuple.DOWN) {
 					if (appToModulesMap.containsKey(tuple.getAppId())) {
 						if (appToModulesMap.get(tuple.getAppId()).contains(tuple.getDestModuleName())) {
@@ -281,8 +304,65 @@ public class MyFogDevice extends FogDevice {
 		}
 	}
 
+	// todo Simon says we call the uninstallation of modules here
+	//  It checks ALL the VMs on the PowerHost belonging to this FogDevice (datacenter) to see if their Cloudlet's execution is complete
+	//  Since OnlinePOC services one Cloudlet per VM, we will uninstall after verifying that Cloudlet execution is complete
+	@Override
+	protected void checkCloudletCompletion() {
+		boolean cloudletCompleted = false;
+		List<? extends Host> list = getVmAllocationPolicy().getHostList();
+		for (int i = 0; i < list.size(); i++) {
+			Host host = list.get(i);
+			for (Vm vm : host.getVmList()) {
+				while (vm.getCloudletScheduler().isFinishedCloudlets()) {
+
+					Cloudlet cl = vm.getCloudletScheduler().getNextFinishedCloudlet();
+					// todo Simon says that for OnlinePOC, every policy (AppModuleAllocationPolicy) should only be supervising ONE PowerHost
+					Cloudlet cl2 = vm.getCloudletScheduler().getNextFinishedCloudlet();
+					if (cl2 != null) {
+						Logger.error("Cloudlet Finished List size error","Expected exactly one finished cloudlet in the CloudletFinishedList for VM ID " + vm.getId() + ", but found more.");
+					}
+					if (cl == null) {
+						Logger.error("Cloudlet Finished List size error","Expected exactly one finished cloudlet in the CloudletFinishedList for VM ID " + vm.getId() + ", but found none.");
+					}
+					else {
+						cloudletCompleted = true;
+						Tuple tuple = (Tuple) cl;
+						TimeKeeper.getInstance().tupleEndedExecution(tuple);
+						Application application = getApplicationMap().get(tuple.getAppId());
+						Logger.debug(getName(), "Completed execution of tuple " + tuple.getCloudletId() + " on " + tuple.getDestModuleName());
+						List<Tuple> resultantTuples = application.getResultantTuples(tuple.getDestModuleName(), tuple, getId(), vm.getId());
+						for (Tuple resTuple : resultantTuples) {
+							resTuple.setModuleCopyMap(new HashMap<String, Integer>(tuple.getModuleCopyMap()));
+							resTuple.getModuleCopyMap().put(((AppModule) vm).getName(), vm.getId());
+							updateTimingsOnSending(resTuple);
+							sendToSelf(resTuple);
+						}
+						sendNow(cl.getUserId(), CloudSimTags.CLOUDLET_RETURN, cl);
+
+						JSONObject obj = new JSONObject();
+						obj.put("module", vm);
+						sendNow(getId(), FogEvents.MODULE_UNINSTALL, obj);
+
+						JSONObject objj = new JSONObject();
+						objj.put("module", vm);
+						objj.put("id", getId());
+						if (deviceType == FCN) sendNow(getFonId(), FogEvents.NODE_EXECUTION_FINISHED, objj);
+					}
+				}
+			}
+		}
+		if (cloudletCompleted)
+			updateAllocatedMips(null);
+	}
+
+	public void finishNodeExecution(SimEvent ev) {
+		JSONObject objj = (JSONObject) ev.getData();
+		controllerComponent.finishNodeExecution(objj);
+	}
+
 	/**
-	 * Both cloud and FON participates in placement process
+	 * Both cloud and FON participates in placement process. But Simon says there are no FON devices.
 	 */
 	public void initializeController(LoadBalancer loadBalancer, MicroservicePlacementLogic mPlacement, Map<Integer, Map<String, Double>> resourceAvailability, Map<String, Application> applications, List<FogDevice> fogDevices) {
 		if (getDeviceType() == MyFogDevice.FON || getDeviceType() == MyFogDevice.CLOUD) {
@@ -322,7 +402,7 @@ public class MyFogDevice extends FogDevice {
 		}
 
 		if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC && placementRequests.size() == 0) {
-			send(getId(), MicroservicePlacementConfig.PLACEMENT_INTERVAL, FogEvents.PROCESS_PRS);
+			send(getId(), MicroservicePlacementConfig.PLACEMENT_PROCESS_INTERVAL, FogEvents.PROCESS_PRS);
 			return;
 		}
 		long startTime = System.nanoTime();
@@ -337,15 +417,15 @@ public class MyFogDevice extends FogDevice {
 			this.placementRequests.remove(0);
 		}
 
-		PlacementLogicOutput placementLogicOutput = getControllerComponent().executeApplicationPlacementLogic(placementRequests);
+		MyPlacementLogicOutput placementLogicOutput = (MyPlacementLogicOutput) getControllerComponent().executeApplicationPlacementLogic(placementRequests);
 		long endTime = System.nanoTime();
 		System.out.println("Placement Algorithm Completed. Time : " + (endTime - startTime) / 1e6);
 
 		Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice = placementLogicOutput.getPerDevice();
 		Map<Integer, List<Pair<String, Integer>>> serviceDicovery = placementLogicOutput.getServiceDiscoveryInfo();
 		Map<PlacementRequest, Integer> placementRequestStatus = placementLogicOutput.getPrStatus();
-
-		int fogDeviceCount = 0;
+		Map<Integer, PlacementRequest> targets = placementLogicOutput.getTargets();
+		int fogDeviceCount = 0; // todo Simon says I still don't know what this variable does. Currently unused (050125).
 		StringBuilder placementString = new StringBuilder();
 		for (int deviceID : perDevice.keySet()) {
 			MyFogDevice f = (MyFogDevice) CloudSim.getEntity(deviceID);
@@ -354,22 +434,23 @@ public class MyFogDevice extends FogDevice {
 			placementString.append(CloudSim.getEntity(deviceID).getName() + " : ");
 			for (Application app : perDevice.get(deviceID).keySet()) {
 				if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC") {
-					//ACTIVE_APP_UPDATE
-					sendNow(deviceID, FogEvents.ACTIVE_APP_UPDATE, app);
-					//APP_SUBMIT
-					sendNow(deviceID, FogEvents.APP_SUBMIT, app);
-					for (ModuleLaunchConfig moduleLaunchConfig : perDevice.get(deviceID).get(app)) {
-						String microserviceName = moduleLaunchConfig.getModule().getName();
-						placementString.append(microserviceName + " , ");
-						//LAUNCH_MODULE
-						sendNow(deviceID, FogEvents.LAUNCH_MODULE, new AppModule(app.getModuleByName(microserviceName)));
-						sendNow(deviceID, FogEvents.LAUNCH_MODULE_INSTANCE, moduleLaunchConfig);
-					}
+//					//ACTIVE_APP_UPDATE
+//					sendNow(deviceID, FogEvents.ACTIVE_APP_UPDATE, app);
+//					//APP_SUBMIT
+//					sendNow(deviceID, FogEvents.APP_SUBMIT, app);
+//					for (ModuleLaunchConfig moduleLaunchConfig : perDevice.get(deviceID).get(app)) {
+//						String microserviceName = moduleLaunchConfig.getModule().getName();
+//						placementString.append(microserviceName + " , ");
+//						//LAUNCH_MODULE
+//						sendNow(deviceID, FogEvents.LAUNCH_MODULE, new AppModule(app.getModuleByName(microserviceName)));
+//						sendNow(deviceID, FogEvents.LAUNCH_MODULE_INSTANCE, moduleLaunchConfig);
+//					}
+					Logger.error("Simulation static mode error", "Simulation should not be static.");
 				}
 			}
 			if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
-				//todo
-				transmitModulesToDeploy(deviceID, perDevice.get(deviceID));
+				if (targets.containsKey(deviceID)) transmitModulesToDeploy(deviceID, perDevice.get(deviceID), targets.get(deviceID));
+				else transmitModulesToDeploy(deviceID, perDevice.get(deviceID));
 			}
 			placementString.append("\n");
 		}
@@ -379,10 +460,11 @@ public class MyFogDevice extends FogDevice {
 				if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
 					transmitServiceDiscoveryData(clientDevice, serviceData);
 				} else if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC") {
-					JSONObject serviceDiscoveryAdd = new JSONObject();
-					serviceDiscoveryAdd.put("service data", serviceData);
-					serviceDiscoveryAdd.put("action", "ADD");
-					sendNow(clientDevice, FogEvents.UPDATE_SERVICE_DISCOVERY, serviceDiscoveryAdd);
+//					JSONObject serviceDiscoveryAdd = new JSONObject();
+//					serviceDiscoveryAdd.put("service data", serviceData);
+//					serviceDiscoveryAdd.put("action", "ADD");
+//					sendNow(clientDevice, FogEvents.UPDATE_SERVICE_DISCOVERY, serviceDiscoveryAdd);
+					Logger.error("Simulation static mode error", "Simulation should not be static.");
 				}
 			}
 		}
@@ -393,13 +475,14 @@ public class MyFogDevice extends FogDevice {
 					transmitPR(pr, placementRequestStatus.get(pr));
 
 				else if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC")
-					sendNow(placementRequestStatus.get(pr), FogEvents.RECEIVE_PR, pr);
+//					sendNow(placementRequestStatus.get(pr), FogEvents.RECEIVE_PR, pr);
+					Logger.error("Simulation static mode error", "Simulation should not be static.");
 
 			}
 		}
 
 		if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC)
-			send(getId(), MicroservicePlacementConfig.PLACEMENT_INTERVAL, FogEvents.PROCESS_PRS);
+			send(getId(), MicroservicePlacementConfig.PLACEMENT_PROCESS_INTERVAL, FogEvents.PROCESS_PRS);
 		else if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.SEQUENTIAL && !this.placementRequests.isEmpty())
 			sendNow(getId(), FogEvents.PROCESS_PRS);
 	}
@@ -441,6 +524,7 @@ public class MyFogDevice extends FogDevice {
 			this.controllerComponent.removeServiceDiscoveryInfo(placement.getFirst(), placement.getSecond());
 	}
 
+	// todo NOTE: Triggered by LAUNCH_MODULE event
 	protected void processModuleArrival(SimEvent ev) {
 		// assumed that a new object of AppModule is sent
 		//todo what if an existing module is sent again in another placement cycle -> vertical scaling instead of having two vms
@@ -451,26 +535,47 @@ public class MyFogDevice extends FogDevice {
 		}
 		if (!appToModulesMap.get(appId).contains(module.getName())) {
 			appToModulesMap.get(appId).add(module.getName());
-			processVmCreate(ev, false);
+//			processVmCreate(ev, false);
+			// Adds entry to mipmap of the VMScheduler of the Host
 			boolean result = getVmAllocationPolicy().allocateHostForVm(module);
 			if (result) {
 				getVmList().add(module);
 				if (module.isBeingInstantiated()) {
 					module.setBeingInstantiated(false);
 				}
-				// todo Simon says this is where the first (non-management) Tuples of the simulation are spawned
-				initializePeriodicTuples(module);
+				// todo Simon says no periodic tuples because the apps have no periodic edges.
+				//  Commented out just in case
+//				initializePeriodicTuples(module);
+				// getAllocatedMipsforVm checks the mipmap of the VMScheduler of the Host
+				//
 				module.updateVmProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(module).getVmScheduler()
 						.getAllocatedMipsForVm(module));
 
-				System.out.println("Module " + module.getName() + "created on " + getName() + " under Launch module");
+				System.out.println("Module " + module.getName() + " created on " + getName() + " under processModuleArrival()");
 				Logger.debug("Module deploy success", "Module " + module.getName() + " placement on " + getName() + " successful. vm id : " + module.getId());
 			} else {
 				Logger.error("Module deploy error", "Module " + module.getName() + " placement on " + getName() + " failed");
 				System.out.println("Module " + module.getName() + " placement on " + getName() + " failed");
 			}
 		} else {
-			System.out.println("Module " + module.getName() + " already deplyed on" + getName());
+			// todo Simon says this should be where the vertical scaling occurs.
+			//  Temporarily we allow the installation of a second module
+			System.out.println("Module " + module.getName() + " already deployed on " + getName());
+			boolean result = getVmAllocationPolicy().allocateHostForVm(module);
+			if (result) {
+				getVmList().add(module);
+				if (module.isBeingInstantiated()) {
+					module.setBeingInstantiated(false);
+				}
+				module.updateVmProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(module).getVmScheduler()
+						.getAllocatedMipsForVm(module));
+
+				System.out.println("Nevertheless, Module " + module.getName() + " created on " + getName() + " under processModuleArrival()");
+				Logger.debug("Module deploy success", "Module " + module.getName() + " placement on " + getName() + " successful. vm id : " + module.getId());
+			} else {
+				Logger.error("Module deploy error", "Module " + module.getName() + " placement on " + getName() + " failed");
+				System.out.println("Module " + module.getName() + " placement on " + getName() + " failed");
+			}
 		}
 	}
 
@@ -511,6 +616,28 @@ public class MyFogDevice extends FogDevice {
 		}
 	}
 
+	protected void moduleUninstall(SimEvent ev) {
+		JSONObject object = (JSONObject) ev.getData();
+		AppModule appModule = (AppModule) object.get("module");
+		System.out.println(getName() + " is uninstalling " + appModule.getName());
+//		NetworkUsageMonitor.sendingModule((double) object.get("delay"), appModule.getSize());
+//		MigrationDelayMonitor.setMigrationDelay((double) object.get("delay"));
+
+		if (moduleInstanceCount.containsKey(appModule.getAppId()) && moduleInstanceCount.get(appModule.getAppId()).containsKey(appModule.getName())) {
+			int moduleCount = moduleInstanceCount.get(appModule.getAppId()).get(appModule.getName());
+			if (moduleCount > 1)
+				moduleInstanceCount.get(appModule.getAppId()).put(appModule.getName(), moduleCount - 1);
+			else {
+				moduleInstanceCount.get(appModule.getAppId()).remove(appModule.getName());
+				appToModulesMap.get(appModule.getAppId()).remove(appModule.getName());
+			}
+			sendNow(getId(), FogEvents.RELEASE_MODULE, appModule);
+		} else {
+			Logger.error("Module uninstall error", "Module " + appModule.getName() + " not found on " + getName());
+			System.out.println("Module " + appModule.getName() + " not found on " + getName());
+		}
+	}
+
 
 	public void setFonID(int fonDeviceId) {
 		fonID = fonDeviceId;
@@ -521,20 +648,50 @@ public class MyFogDevice extends FogDevice {
 	}
 
 	/**
-	 * Used by Client Devices to generate management tuple with pr and send it to cloud
+	 * Cloud will not allocate the clientModule (starting module) because onus is on Users.
+	 * Hence, User will install it on self before transmitting PR to cloud.
+	 * PR will contain clientModule under "placedMicroservices" field.
 	 *
-	 * @param placementRequest
 	 */
-	private void transmitPR(PlacementRequest placementRequest) {
-		transmitPR(placementRequest, fonID);
+
+	private void installStartingModule(PlacementRequest pr, Application application) {
+		// Find the first module placed on the given device (there should only be one)
+		String placedModule = pr.getPlacedMicroservices()
+				.entrySet()
+				.stream()
+				.filter(entry -> entry.getValue().equals(getId()))
+				.map(Map.Entry::getKey)
+				.findFirst()
+				.orElse(null);
+
+		if (placedModule != null) {
+			// Update the application and launch the module on the device
+			sendNow(getId(), FogEvents.ACTIVE_APP_UPDATE, application);
+			sendNow(getId(), FogEvents.APP_SUBMIT, application);
+			AppModule am = new AppModule(application.getModuleByName(placedModule));
+			sendNow(getId(), FogEvents.LAUNCH_MODULE, am);
+			ModuleLaunchConfig moduleLaunchConfig = new ModuleLaunchConfig(am, 1);
+			sendNow(getId(), FogEvents.LAUNCH_MODULE_INSTANCE, moduleLaunchConfig);
+		} else {
+			Logger.error("Module Placement", "Placement Request with target " + getId() + " for PlacementRequest " + pr.getPlacementRequestId() + "sent to this device instead.");
+		}
 	}
 
-	private void transmitPR(PlacementRequest placementRequest, Integer deviceId) {
+	/**
+	 * Used by Client Devices to generate management tuple with pr and send it to cloud
+	 *
+	 * @param pr
+	 */
+	private void transmitPR(PlacementRequest pr) {
+		transmitPR(pr, fonID);
+	}
+
+	private void transmitPR(PlacementRequest placementRequest, Integer fonID) {
 		// todo Simon says this might be the part where edge server (gateway device connected to sensor) forwards the PR to cloud!!!
 		// todo NOTE delay between self and the cloud is taken into account using the ManagementTuple
 		ManagementTuple prTuple = new ManagementTuple(placementRequest.getApplicationId(), FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.PLACEMENT_REQUEST);
-		prTuple.setData(placementRequest);
-		prTuple.setDestinationDeviceId(deviceId);
+		prTuple.setPlacementRequest(placementRequest);
+		prTuple.setDestinationDeviceId(fonID);
 		sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, prTuple);
 	}
 
@@ -546,30 +703,51 @@ public class MyFogDevice extends FogDevice {
 	}
 
 	private void transmitModulesToDeploy(int deviceID, Map<Application, List<ModuleLaunchConfig>> applicationListMap) {
-		ManagementTuple moduleTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.DEPLOYMENTREQUEST);
+		ManagementTuple moduleTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.DEPLOYMENT_REQUEST);
 		moduleTuple.setDeployementSet(applicationListMap);
 		moduleTuple.setDestinationDeviceId(deviceID);
+		sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, moduleTuple);
+	}
+
+	private void transmitModulesToDeploy(int deviceID, Map<Application, List<ModuleLaunchConfig>> applicationListMap, PlacementRequest pr) {
+		// Simon says this is sent only to gateway devices
+		ManagementTuple moduleTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.DEPLOYMENT_REQUEST);
+		moduleTuple.setDeployementSet(applicationListMap);
+		moduleTuple.setDestinationDeviceId(deviceID);
+		moduleTuple.setPlacementRequest(pr);
 		sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, moduleTuple);
 	}
 
 	private void processManagementTuple(SimEvent ev) {
 		ManagementTuple tuple = (ManagementTuple) ev.getData();
 		if (tuple.getDestinationDeviceId() == getId()) {
-			if (tuple.managementTupleType == ManagementTuple.PLACEMENT_REQUEST) {
-				// TODO Simon says we might have to change things such that RECEIVE_PR is sent to cloud straight
-				// todo Especially since this (management tuple) simulates the request travelling up physically through the network
-				sendNow(getId(), FogEvents.RECEIVE_PR, tuple.getPlacementRequest());
-			} else if (tuple.managementTupleType == ManagementTuple.SERVICE_DISCOVERY_INFO) {
-				JSONObject serviceDiscoveryAdd = new JSONObject();
-				serviceDiscoveryAdd.put("service data", tuple.getServiceDiscoveryInfor());
-				serviceDiscoveryAdd.put("action", "ADD");
-				sendNow(getId(), FogEvents.UPDATE_SERVICE_DISCOVERY, serviceDiscoveryAdd);
-			} else if (tuple.managementTupleType == ManagementTuple.DEPLOYMENTREQUEST) {
-				deployModules(tuple.getDeployementSet());
-			} else if (tuple.managementTupleType == ManagementTuple.RESOURCE_UPDATE) {
-				sendNow(getId(), FogEvents.UPDATE_RESOURCE_INFO, tuple.getResourceData());
+			switch (tuple.managementTupleType) {
+				case ManagementTuple.PLACEMENT_REQUEST:
+					// TODO Simon says we might have to change things such that RECEIVE_PR is sent to cloud straight
+					// todo Especially since this (management tuple) simulates the request travelling up physically through the network
+					sendNow(getId(), FogEvents.RECEIVE_PR, tuple.getPlacementRequest());
+					break;
+
+				case ManagementTuple.SERVICE_DISCOVERY_INFO:
+					JSONObject serviceDiscoveryAdd = new JSONObject();
+					serviceDiscoveryAdd.put("service data", tuple.getServiceDiscoveryInfor());
+					serviceDiscoveryAdd.put("action", "ADD");
+					sendNow(getId(), FogEvents.UPDATE_SERVICE_DISCOVERY, serviceDiscoveryAdd);
+					break;
+
+				case ManagementTuple.DEPLOYMENT_REQUEST:
+					deployModulesAndExecute(tuple.getDeployementSet(), tuple.getPlacementRequest());
+					break;
+
+				case ManagementTuple.RESOURCE_UPDATE:
+					sendNow(getId(), FogEvents.UPDATE_RESOURCE_INFO, tuple.getResourceData());
+					break;
+
+				default:
+					throw new IllegalArgumentException("Unknown ManagementTuple type: " + tuple.managementTupleType);
 			}
-		} else if (tuple.getDestinationDeviceId() != -1) {
+		}
+		else if (tuple.getDestinationDeviceId() != -1) {
 			int nextDeviceToSend = routingTable.get(tuple.getDestinationDeviceId());
 			if (nextDeviceToSend == parentId)
 				sendUp(tuple);
@@ -583,7 +761,7 @@ public class MyFogDevice extends FogDevice {
 			Logger.error("Routing error", "Management tuple destination id is -1");
 	}
 
-	private void deployModules(Map<Application, List<ModuleLaunchConfig>> deployementSet) {
+	private void deployModulesAndExecute(Map<Application, List<ModuleLaunchConfig>> deployementSet, PlacementRequest pr) {
 		for (Application app : deployementSet.keySet()) {
 			//ACTIVE_APP_UPDATE
 			sendNow(getId(), FogEvents.ACTIVE_APP_UPDATE, app);
@@ -593,13 +771,33 @@ public class MyFogDevice extends FogDevice {
 				String microserviceName = moduleLaunchConfig.getModule().getName();
 				//LAUNCH_MODULE
 				if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC") {
-					sendNow(getId(), FogEvents.LAUNCH_MODULE, new AppModule(app.getModuleByName(microserviceName)));
+//					sendNow(getId(), FogEvents.LAUNCH_MODULE, new AppModule(app.getModuleByName(microserviceName)));
+					Logger.error("Simulation static mode error", "Simulation should not be static.");
 				} else if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
-					send(getId(), MicroservicePlacementConfig.MODULE_DEPLOYMENT_TIME, FogEvents.LAUNCH_MODULE, new AppModule(app.getModuleByName(microserviceName)));
-				}
+					send(getId(), MicroservicePlacementConfig.MODULE_DEPLOYMENT_TIME, FogEvents.LAUNCH_MODULE, new AppModule(app.getModuleByName(microserviceName)));}
 				sendNow(getId(), FogEvents.LAUNCH_MODULE_INSTANCE, moduleLaunchConfig);
 			}
 		}
+		// Simon says if self is a target, send EXECUTION_START_REQUEST to self's child (user device)
+		if (pr != null) {
+			int childId = pr.getGatewayDeviceId();
+			send(childId, MicroservicePlacementConfig.MODULE_DEPLOYMENT_TIME, FogEvents.EXECUTION_START_REQUEST);
+		}
+	}
+
+	private void startExecution(SimEvent ev) {
+		// Simon says this should only be executed by users
+		if (!(deviceType.equals(AMBULANCE_USER) || deviceType.equals(OPERA_USER) || deviceType.equals(GENERIC_USER))) {
+			Logger.error("Device Type Error", "This device should be a user.");
+		}
+		if (ev.getSource() != parentId) {
+			Logger.error("Parent Error", "This request should have been sent from parent.");
+		}
+		if (getSensorID() == -1) {
+			Logger.error("Child Error", "This user should have a sensor.");
+		}
+		int childSensorId = getSensorID();
+		sendNow(childSensorId, FogEvents.EMIT_TUPLE);
 	}
 
 	/**
@@ -633,6 +831,8 @@ public class MyFogDevice extends FogDevice {
 //		}
 
 		// todo Simon says this block should apply to all devices since there are no FON heads and cloud resource availability doesn't exist
+		//  However, the cloud's knowledge of FCNs' resource availability is updated by NODE_EXECUTION_FINISHED event
+		//  This function is triggered by RELEASE_MODULE, hence updates the FCN's resource availability. But is it necessary??
 		double mips = getControllerComponent().getAvailableResource(getId(), ControllerComponent.CPU) - (config.getModule().getMips() * config.getInstanceCount());
 		getControllerComponent().updateResources(getId(), ControllerComponent.CPU, mips);
 		double ram = getControllerComponent().getAvailableResource(getId(), ControllerComponent.RAM) - (config.getModule().getRam() * config.getInstanceCount());
@@ -696,5 +896,13 @@ public class MyFogDevice extends FogDevice {
 
 	public void addMonitoredDevice(FogDevice fogDevice) {
 		controllerComponent.addMonitoredDevice(fogDevice);
+	}
+
+	public int getSensorID() {
+		return sensorID;
+	}
+
+	public void setSensorID(int sensorID) {
+		this.sensorID = sensorID;
 	}
 }

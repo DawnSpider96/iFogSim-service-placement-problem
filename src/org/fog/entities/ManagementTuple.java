@@ -19,7 +19,7 @@ public class ManagementTuple extends Tuple {
     public static final int PLACEMENT_REQUEST = 1;
     public static final int SERVICE_DISCOVERY_INFO = 2;
     public static final int RESOURCE_UPDATE = 3;
-    public static final int DEPLOYMENTREQUEST = 4;
+    public static final int DEPLOYMENT_REQUEST = 4;
 
     public int managementTupleType;
     protected PlacementRequest placementRequest;
@@ -41,7 +41,7 @@ public class ManagementTuple extends Tuple {
         managementTupleType = tupleType;
     }
 
-    public void setData(PlacementRequest placementRequest) {
+    public void setPlacementRequest(PlacementRequest placementRequest) {
         this.placementRequest = placementRequest;
     }
 

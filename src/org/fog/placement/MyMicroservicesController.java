@@ -9,6 +9,7 @@ import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.entities.*;
 import org.fog.utils.*;
+import org.json.simple.JSONObject;
 
 import java.util.*;
 
@@ -142,7 +143,8 @@ public class MyMicroservicesController extends SimEntity {
         // todo Simon says Placement Decisions will be made dynamically, but only by the Cloud!
         // todo Hence no need for an initialisation
         if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC")
-            initiatePlacementRequestProcessing();
+//            initiatePlacementRequestProcessing();
+            Logger.error("Simulation not Dynamic error", "Simulation mode should be dynamic");
         if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC")
             initiatePlacementRequestProcessingDynamic();
 
@@ -168,16 +170,22 @@ public class MyMicroservicesController extends SimEntity {
 
     protected void initiatePlacementRequestProcessingDynamic() {
         for (PlacementRequest p : placementRequestDelayMap.keySet()) {
-            processPlacedModules(p);
+            // todo Install the starting modules of the PR
+            //  Simon says we can't do it here (because we're doing more than once).
+            //  We must do it before transmitting, in MyFogDevice.transmitPR
+//            processPlacedModules(p);
+            JSONObject jsonSend = new JSONObject();
+            jsonSend.put("PR", p);
+            jsonSend.put("app", applications.get(p.getApplicationId()));
             if (placementRequestDelayMap.get(p) == 0) {
-                sendNow(p.getGatewayDeviceId(), FogEvents.TRANSMIT_PR, p);
+                sendNow(p.getGatewayDeviceId(), FogEvents.TRANSMIT_PR, jsonSend);
             } else
-                send(p.getGatewayDeviceId(), placementRequestDelayMap.get(p), FogEvents.TRANSMIT_PR, p);
+                send(p.getGatewayDeviceId(), placementRequestDelayMap.get(p), FogEvents.TRANSMIT_PR, jsonSend);
         }
         if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC) {
             for (FogDevice f : fogDevices) {
                 // todo Simon says for the Offline POC there are no proxy servers, so the cloud processes all PRs
-                // todo The second OR condition was added for Offline POC, whether it stays tbc
+                //  The second OR condition was added for Offline POC, whether it stays tbc
                 if (((MyFogDevice) f).getDeviceType() == MyFogDevice.FON || ((MyFogDevice) f).getDeviceType() == MyFogDevice.CLOUD) {
                     sendNow(f.getId(), FogEvents.PROCESS_PRS);
                 }
@@ -185,36 +193,38 @@ public class MyMicroservicesController extends SimEntity {
         }
     }
 
-    protected void initiatePlacementRequestProcessing() {
-        for (PlacementRequest p : placementRequestDelayMap.keySet()) {
-            processPlacedModules(p);
-            int fonId = ((MyFogDevice) getFogDeviceById(p.getGatewayDeviceId())).getFonId();
-            if (placementRequestDelayMap.get(p) == 0) {
-                sendNow(fonId, FogEvents.RECEIVE_PR, p);
-            } else
-                // NOTE: Here is TRANSMIT_PR for the CONTROLLER. All other instances are for FogDevice
-                send(getId(), placementRequestDelayMap.get(p), FogEvents.TRANSMIT_PR, p);
-        }
-        if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC) {
-            for (FogDevice f : fogDevices) {
-                // todo Simon says for the Offline POC there are no proxy servers, so the cloud processes all PRs
-                // todo The second OR condition was added for Offline POC, whether it stays tbc
-                if (((MyFogDevice) f).getDeviceType() == MyFogDevice.FON || ((MyFogDevice) f).getDeviceType() == MyFogDevice.CLOUD) {
-                    sendNow(f.getId(), FogEvents.PROCESS_PRS);
-                }
-            }
-        }
-    }
+//    protected void initiatePlacementRequestProcessing() {
+//        for (PlacementRequest p : placementRequestDelayMap.keySet()) {
+//            // todo Install the starting modules of the PR
+//            processPlacedModules(p);
+//
+//            int fonId = ((MyFogDevice) getFogDeviceById(p.getGatewayDeviceId())).getFonId();
+//            if (placementRequestDelayMap.get(p) == 0) {
+//                sendNow(fonId, FogEvents.RECEIVE_PR, p);
+//            } else
+//                // NOTE: Here is TRANSMIT_PR for the CONTROLLER. All other instances are for FogDevice
+//                send(getId(), placementRequestDelayMap.get(p), FogEvents.TRANSMIT_PR, p);
+//        }
+//        if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC) {
+//            for (FogDevice f : fogDevices) {
+//                // todo Simon says for the Offline POC there are no proxy servers, so the cloud processes all PRs
+//                // todo The second OR condition was added for Offline POC, whether it stays tbc
+//                if (((MyFogDevice) f).getDeviceType() == MyFogDevice.FON || ((MyFogDevice) f).getDeviceType() == MyFogDevice.CLOUD) {
+//                    sendNow(f.getId(), FogEvents.PROCESS_PRS);
+//                }
+//            }
+//        }
+//    }
 
-    protected void processPlacedModules(PlacementRequest p) {
-        for (String placed : p.getPlacedMicroservices().keySet()) {
-            int deviceId = p.getPlacedMicroservices().get(placed);
-            Application application = applications.get(p.getApplicationId());
-            sendNow(deviceId, FogEvents.ACTIVE_APP_UPDATE, application);
-            sendNow(deviceId, FogEvents.APP_SUBMIT, application);
-            sendNow(deviceId, FogEvents.LAUNCH_MODULE, new AppModule(application.getModuleByName(placed)));
-        }
-    }
+//    protected void processPlacedModules(PlacementRequest p) {
+//        for (String placed : p.getPlacedMicroservices().keySet()) {
+//            int deviceId = p.getPlacedMicroservices().get(placed);
+//            Application application = applications.get(p.getApplicationId());
+//            sendNow(deviceId, FogEvents.ACTIVE_APP_UPDATE, application);
+//            sendNow(deviceId, FogEvents.APP_SUBMIT, application);
+//            sendNow(deviceId, FogEvents.LAUNCH_MODULE, new AppModule(application.getModuleByName(placed)));
+//        }
+//    }
 
     @Override
     public void processEvent(SimEvent ev) {

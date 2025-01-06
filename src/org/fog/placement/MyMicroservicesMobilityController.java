@@ -12,6 +12,7 @@ import org.fog.entities.Tuple;
 import org.fog.entities.MyFogDevice;
 import org.fog.entities.PlacementRequest;
 import org.fog.mobilitydata.References;
+import org.fog.utils.Config;
 import org.fog.utils.FogEvents;
 import org.fog.utils.MigrationDelayMonitor;
 import org.json.simple.JSONObject;
@@ -112,9 +113,11 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
     }
 
     @Override
-    public void submitPlacementRequests(List<PlacementRequest> placementRequests, int delay) {
+    public void submitPlacementRequests(List<PlacementRequest> placementRequests, int initialDelay) {
+        // todo Simon says we ONLY make the first set of PRs here.
+        //  The periodic sending will be done by FogDevices when TRANSMIT_PR
         for (PlacementRequest p : placementRequests) {
-            placementRequestDelayMap.put(p, delay);
+            placementRequestDelayMap.put(p, initialDelay);
 
             int clientDeviceId = p.getGatewayDeviceId();
             String app = p.getApplicationId();
