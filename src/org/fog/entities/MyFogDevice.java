@@ -199,9 +199,18 @@ public class MyFogDevice extends FogDevice {
 		}
 
 		// TODO Simon says this might need to change, seriously
+		//  With my current implementation of OnlinePOC it so happens that there is only one VM at a time
+		//  but surely this cannot be the default???
 		// Why are we taking the first VM only???
 		if (getHost().getVmList().size() > 0) {
-			final AppModule operator = (AppModule) getHost().getVmList().get(0);
+			AppModule operator = null;
+			for (Vm vm : getHost().getVmList()){
+				AppModule a = (AppModule) vm;
+				if (Objects.equals(a.getName(), tuple.getDestModuleName())){
+					operator = a;
+					break;
+				}
+			}
 			if (CloudSim.clock() > 0) {
 				getHost().getVmScheduler().deallocatePesForVm(operator);
 				getHost().getVmScheduler().allocatePesForVm(operator, new ArrayList<Double>() {
@@ -348,6 +357,17 @@ public class MyFogDevice extends FogDevice {
 						objj.put("module", vm);
 						objj.put("id", getId());
 						if (deviceType == FCN) sendNow(getFonId(), FogEvents.NODE_EXECUTION_FINISHED, objj);
+
+						// Retrieve the map for CPU usages
+//						Map<Integer, Map<Double, Map<String, List<Double>>>> cpuUsages = MyMonitor.getCpuUsages();
+//
+//						if (!cpuUsages.containsKey(getId())) {
+//							// If not, initialize it with a new map
+//							cpuUsages.put(getId(), new HashMap<>());
+//						}
+//
+//						cpuUsages.get(getId()).put(CloudSim.clock(), getHost().getVmScheduler().getMipsMap());
+
 					}
 				}
 			}

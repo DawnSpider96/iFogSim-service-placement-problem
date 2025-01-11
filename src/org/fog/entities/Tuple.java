@@ -52,6 +52,28 @@ public class Tuple extends Cloudlet{
 		setDestinationDeviceId(-1);
 	}
 
+	public Tuple(Tuple other) {
+		super(other.getCloudletId(), other.getCloudletLength(), other.getNumberOfPes(),
+				other.getCloudletFileSize(), other.getCloudletOutputSize(),
+				other.getUtilizationModelCpu(), other.getUtilizationModelRam(), other.getUtilizationModelBw());
+
+		this.appId = other.getAppId();
+		this.tupleType = other.getTupleType();
+		this.destModuleName = other.getDestModuleName();
+		this.srcModuleName = other.getSrcModuleName();
+		this.actualTupleId = other.getActualTupleId();
+		this.direction = other.getDirection();
+		this.actuatorId = other.getActuatorId();
+		this.sourceDeviceId = other.getSourceDeviceId();
+		this.sourceModuleId = other.getSourceModuleId();
+		this.destinationDeviceId = other.getDestinationDeviceId();
+
+		// Deep copy for mutable fields
+		this.moduleCopyMap = new HashMap<>(other.getModuleCopyMap());
+		this.traversedMicroservices = new HashMap<>(other.getTraversed());
+	}
+
+
 	public int getActualTupleId() {
 		return actualTupleId;
 	}

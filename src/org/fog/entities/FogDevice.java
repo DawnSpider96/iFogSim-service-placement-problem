@@ -629,6 +629,10 @@ public class FogDevice extends PowerDatacenter {
             System.out.println("Utilization = " + lastUtilization);
             System.out.println("Power = " + getHost().getPowerModel().getPower(lastUtilization));
             System.out.println("Time passed: " + (timeNow - lastUtilizationUpdateTime));
+            System.out.println("Time passed: " + (timeNow - lastUtilizationUpdateTime));
+            for (Map.Entry<String, List<Double>> entry : getHost().getVmScheduler().getMipsMap().entrySet()) {
+                System.out.println("Key: " + entry.getKey() + ", Value: " + entry.getValue());
+            }
         }
         lastUtilizationUpdateTime = timeNow;
     }

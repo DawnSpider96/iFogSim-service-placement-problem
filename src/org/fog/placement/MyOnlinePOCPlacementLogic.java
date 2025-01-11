@@ -13,11 +13,6 @@ import org.fog.utils.ModuleLaunchConfig;
 
 import java.util.*;
 
-// TODO SIMON SAYS this needs a HUGE overhaul. For POC we should keep it simple.
-//  Maybe random? Or maybe send everything back to the original edge server?
-//  ...Do we need a huge overhaul? Maybe same logic, prioritise parents etc
-//  But the WAY modules are placed HAS to change
-
 public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
     /**
      * Fog network related details
@@ -76,7 +71,7 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
         mappedMicroservices = new HashMap<>();
 
         mapModules();
-        PlacementLogicOutput placement = generatePlacementMap();
+        PlacementLogicOutput placement = generatePlacementDecision();
         updateResources(resourceAvailability);
         postProcessing();
         return placement;
@@ -99,7 +94,7 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
         }
     }
 
-    private PlacementLogicOutput generatePlacementMap() {
+    private PlacementLogicOutput generatePlacementDecision() {
         Map<Integer, Map<String, Integer>> placement = new HashMap<>();
         for (PlacementRequest placementRequest : placementRequests) {
             List<String> toRemove = new ArrayList<>();

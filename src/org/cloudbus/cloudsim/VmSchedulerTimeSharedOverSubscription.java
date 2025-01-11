@@ -52,7 +52,7 @@ public class VmSchedulerTimeSharedOverSubscription extends VmSchedulerTimeShared
 		// if the requested mips is bigger than the capacity of a single PE, we cap
 		// the request to the PE's capacity
 		List<Double> mipsShareRequestedCapped = new ArrayList<Double>();
-		double peMips = getPeCapacity();
+		double peMips = getPeCapacity(); // todo Simon says, does the scheduler only have one PE? Because FogDevice only has one PE? Then why is there a peList?
 		for (Double mips : mipsShareRequested) {
 			if (mips > peMips) {
 				mipsShareRequestedCapped.add(peMips);

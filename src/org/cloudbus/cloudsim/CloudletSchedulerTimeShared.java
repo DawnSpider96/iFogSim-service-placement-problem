@@ -8,10 +8,13 @@
 package org.cloudbus.cloudsim;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.entities.Tuple;
+import org.fog.utils.MyMonitor;
 
 /**
  * CloudletSchedulerTimeShared implements a policy of scheduling performed by a virtual machine.
@@ -251,6 +254,19 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 		rcl.setCloudletStatus(Cloudlet.SUCCESS);
 		rcl.finalizeCloudlet();
 		getCloudletFinishedList().add(rcl);
+
+		Map<Integer, Map<Double, Tuple>> cpuUsages = MyMonitor.getCpuUsages();
+
+		if (rcl.getCloudlet() == null || !(rcl.getCloudlet() instanceof Tuple)) {
+			throw new IllegalArgumentException("Cloudlet is null or not an instance of Tuple");
+		}
+		Tuple t = (Tuple) rcl.getCloudlet();
+		Tuple newt = new Tuple(t);
+		if (!cpuUsages.containsKey(t.getDestinationDeviceId())) {
+			// If not, initialize it with a new map
+			cpuUsages.put(t.getDestinationDeviceId(), new HashMap<>());
+		}
+		cpuUsages.get(t.getDestinationDeviceId()).put(CloudSim.clock(), newt);
 	}
 
 	/**

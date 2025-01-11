@@ -192,7 +192,7 @@ public abstract class VmScheduler {
 	 * 
 	 * @return the mips map
 	 */
-	protected Map<String, List<Double>> getMipsMap() {
+	public Map<String, List<Double>> getMipsMap() {
 		return mipsMap;
 	}
 
