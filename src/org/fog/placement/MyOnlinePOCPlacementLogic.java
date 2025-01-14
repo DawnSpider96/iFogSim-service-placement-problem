@@ -170,7 +170,7 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
             }
         }
 
-        Map<Integer, PlacementRequest> targets = new HashMap();
+        Map<PlacementRequest, Integer> targets = new HashMap();
         // todo Simon says that ALL the parent edge servers of the users that made PRs must receive deployments. Otherwise error.
         for (PlacementRequest pr : placementRequests) {
             int parentOfGateway = Objects.requireNonNull(getDevice(pr.getGatewayDeviceId())).getParentId();
@@ -178,7 +178,7 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
             for (int target : perDevice.keySet()) {
                 if (parentOfGateway == target) {
                     targeted = true;
-                    targets.put(parentOfGateway, pr);
+                    targets.put(pr, parentOfGateway);
                     break;
                 }
             }
@@ -222,10 +222,10 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
     }
 
     public void mapModules() {
-        Map<PlacementRequest, Integer> deviceToPlace = new HashMap<>();
+        Map<PlacementRequest, Integer> currentTargets = new HashMap<>();
         //initiate with the  parent of the client device for this
         for (PlacementRequest placementRequest : placementRequests) {
-            deviceToPlace.put(placementRequest, getDevice(placementRequest.getGatewayDeviceId()).getParentId());
+            currentTargets.put(placementRequest, getDevice(placementRequest.getGatewayDeviceId()).getParentId());
 
             // already placed modules
             mappedMicroservices.put(placementRequest.getPlacementRequestId(), new HashMap<>(placementRequest.getPlacedMicroservices()));
@@ -272,6 +272,7 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
             }
         }
 
+
         Map<PlacementRequest, List<String>> toPlace = new HashMap<>();
 //        Map<PlacementRequest, Integer> clusterNode = new HashMap<>();
 
@@ -294,7 +295,7 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
             }
             for (PlacementRequest placementRequest : placementRequests) {
                 Application app = applicationInfo.get(placementRequest.getApplicationId());
-                int deviceId = deviceToPlace.get(placementRequest); // NOTE: Initially contains parent ID of gateway device (MOBILE USER). Changes depending on how we "forward" the PR (if previous target device lacked resources).
+                int deviceId = currentTargets.get(placementRequest); // NOTE: Initially contains parent ID of gateway device (MOBILE USER). Changes depending on how we "forward" the PR (if previous target device lacked resources).
                 // if not cluster
                 if (deviceId != -1) {
                     FogDevice device = getDevice(deviceId);
@@ -338,7 +339,7 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
                             toPlace.get(placementRequest).remove(m);
                         }
                         if (!toPlace.get(placementRequest).isEmpty()) {
-                            deviceToPlace.put(placementRequest, device.getParentId());
+                            currentTargets.put(placementRequest, device.getParentId());
                         }
                         if (toPlace.get(placementRequest).isEmpty())
                             toPlace.remove(placementRequest);

@@ -1,9 +1,5 @@
 package org.fog.test.perfeval;
 
-import org.fog.application.MyApplication;
-import org.fog.mobilitydata.*;
-import org.fog.utils.Logger;
-
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Pe;
@@ -16,9 +12,13 @@ import org.cloudbus.cloudsim.sdn.overbooking.PeProvisionerOverbooking;
 import org.fog.application.AppEdge;
 import org.fog.application.AppLoop;
 import org.fog.application.Application;
+import org.fog.application.MyApplication;
 import org.fog.application.selectivity.FractionalSelectivity;
 import org.fog.entities.*;
-import org.fog.entities.PlacementRequest;
+import org.fog.mobilitydata.DataParser;
+import org.fog.mobilitydata.OfflineDataParser;
+import org.fog.mobilitydata.RandomMobilityGenerator;
+import org.fog.mobilitydata.References;
 import org.fog.placement.LocationHandler;
 import org.fog.placement.MyMicroservicesMobilityController;
 import org.fog.placement.PlacementLogicFactory;
@@ -26,8 +26,10 @@ import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.scheduler.StreamOperatorScheduler;
 import org.fog.utils.FogLinearPowerModel;
 import org.fog.utils.FogUtils;
+import org.fog.utils.Logger;
 import org.fog.utils.TimeKeeper;
 import org.fog.utils.distribution.DeterministicDistribution;
+import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
 import java.util.*;
@@ -35,9 +37,10 @@ import java.util.*;
 /**
  * Proof of concept for integration of the following iFogSim elements:
  1. Multiple IMMOBILE users
- 2. Multiple edge servers + 1 cloud server
- 3. Application (multiple Microservices in 1 AppLoop)
- 4. Simple Microservice Placement Logic
+ 2. Multiple edge servers + 1 cloud server. Simple Hierarchical structure.
+ 3. However, latencies between the cloud and edge servers will depend on DISTANCE.
+ 4. Simple Application (multiple Microservices in 1 AppLoop)
+ 5. Multiple Microservice Placement Logic. Baseline Heuristics.
  *
  * @author Joseph Poon
  */
@@ -49,7 +52,7 @@ import java.util.*;
  * ENABLE_RESOURCE_DATA_SHARING -> false (not needed as FONs placed at the highest level.
  * DYNAMIC_CLUSTERING -> true (for clustered) and false (for not clustered) * (also compatible with static clustering)
  */
-public class OnlinePOC {
+public class OnlinePOC_DistanceLatency {
     static List<FogDevice> fogDevices = new ArrayList<FogDevice>();
     static List<Sensor> sensors = new ArrayList<Sensor>();
     static List<Actuator> actuators = new ArrayList<Actuator>();
@@ -65,7 +68,7 @@ public class OnlinePOC {
     //cluster link latency 2ms
     static Double clusterLatency = 2.0;
 
-    // TODO: 8/8/2021  not required for this scenario
+    // TODO Simon says consider this for when we add mobility
     // if random mobility generator for users is True, new random dataset will be created for each user
 //    static boolean randomMobility_generator = true; // To use random datasets
 //    static boolean renewDataset = false; // To overwrite existing random datasets
@@ -89,13 +92,9 @@ public class OnlinePOC {
             String appId = "SimonApp"; // identifier of the application
 
             FogBroker broker = new FogBroker("broker");
-            CloudSim.setFogBrokerId(broker.getId());
 
             MyApplication application = createApplication(appId, broker.getId());
             application.setUserId(broker.getId());
-            // Simon (140125) says this is the tuple type that will be processed by mService1
-            // todo Change accordingly if the AppLoop ever changes (or there are more Apploops)
-            broker.getApplicationToFirstMicroserviceMap().put(application, "RAW_DATA");
 
             DataParser dataObject = new OfflineDataParser();
             locator = new LocationHandler(dataObject);
@@ -146,6 +145,14 @@ public class OnlinePOC {
         }
     }
 
+//    private static void createRandomMobilityDatasets(int mobilityModel, String datasetReference, boolean renewDataset) throws IOException, ParseException {
+//        RandomMobilityGenerator randMobilityGenerator = new RandomMobilityGenerator();
+//        for (int i = 0; i < numberOfUser; i++) {
+//
+//            randMobilityGenerator.createRandomData(mobilityModel, i + 1, datasetReference, renewDataset);
+//        }
+//    }
+
     /**
      * Creates 5 fog devices in the physical topology of the simulation.
      *
@@ -182,6 +189,8 @@ public class OnlinePOC {
                 FogDevice gateway = createFogDevice("gateway_" + i, 2800, 4000, 10000, 10000, 0.0, 107.339, 83.4333, MyFogDevice.FCN);
                 locator.linkDataWithInstance(gateway.getId(), locator.getLevelWiseResources(locator.getLevelID("Gateway")).get(i));
                 gateway.setParentId(cloud.getId());
+                // TODO Simon says this has to change, cannot be a fixed value.
+                //  Must depend on distance between self and cloud
                 gateway.setUplinkLatency(4);
                 gateway.setLevel(1);
                 fogDevices.add(gateway);

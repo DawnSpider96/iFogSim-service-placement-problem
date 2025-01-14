@@ -27,7 +27,7 @@ public class PlacementLogicFactory {
             case MY_OFFLINE_POC_PLACEMENT:
                 return new MyOfflinePOCPlacementLogic(fonId);
             case MY_ONLINE_POC_PLACEMENT:
-                return new MyOnlinePOCPlacementLogic(fonId);
+                return new MyOnlinePOCPlacementLogicCopy(fonId);
         }
 
         Logger.error("Placement Logic Error", "Error initializing placement logic");

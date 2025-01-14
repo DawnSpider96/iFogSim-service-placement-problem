@@ -4,6 +4,7 @@ import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.fog.utils.FogEvents;
 import org.fog.utils.GeoLocation;
+import org.fog.utils.Logger;
 import org.fog.utils.distribution.Distribution;
 
 public class MySensor extends Sensor {
@@ -38,6 +39,13 @@ public class MySensor extends Sensor {
                 super.processEvent(ev);
                 break;
         }
+    }
+
+    // Simon says we will use FogBroker as a central control entity that creates tuples.
+    // Hence, sensors will be useless for now (140125)
+    @Override
+    public void transmit(){
+        Logger.error("Unintended event error", "Sensors should not be emitting tuples.");
     }
 
 

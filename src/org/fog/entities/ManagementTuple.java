@@ -27,6 +27,16 @@ public class ManagementTuple extends Tuple {
     protected Map<Application, List<ModuleLaunchConfig>> deployementSet;
     protected Pair<Integer, Map<String, Double>> resourceData;
 
+    public Integer getBatchNumber() {
+        return batchNumber;
+    }
+
+    public void setBatchNumber(Integer batchNumber) {
+        this.batchNumber = batchNumber;
+    }
+
+    protected Integer batchNumber;
+
     //todo check use of this
     public Double processingDelay = 0.0;
 

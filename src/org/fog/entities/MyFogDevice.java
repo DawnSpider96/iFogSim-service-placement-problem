@@ -444,9 +444,19 @@ public class MyFogDevice extends FogDevice {
 		Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice = placementLogicOutput.getPerDevice();
 		Map<Integer, List<Pair<String, Integer>>> serviceDicovery = placementLogicOutput.getServiceDiscoveryInfo();
 		Map<PlacementRequest, Integer> placementRequestStatus = placementLogicOutput.getPrStatus();
-		Map<Integer, PlacementRequest> targets = placementLogicOutput.getTargets();
+		Map<PlacementRequest, Integer> targets = placementLogicOutput.getTargets();
 		int fogDeviceCount = 0; // todo Simon says I still don't know what this variable does. Currently unused (050125).
 		StringBuilder placementString = new StringBuilder();
+
+		// Simon says (140125) we send perDevice and all updated PRs to FogBroker
+		// before sending deployment requests to devices specified in perDevice
+		JSONObject forFogBroker = new JSONObject();
+		forFogBroker.put("targets", targets);
+		forFogBroker.put("perDevice", perDevice);
+		forFogBroker.put("batchNumber", FogBroker.getBatchNumber());
+
+		sendNow(CloudSim.getFogBrokerId(), FogEvents.RECEIVE_PLACEMENT_DECISION, forFogBroker);
+
 		for (int deviceID : perDevice.keySet()) {
 			MyFogDevice f = (MyFogDevice) CloudSim.getEntity(deviceID);
 			if (!f.getDeviceType().equals(MyFogDevice.CLOUD))
@@ -454,36 +464,22 @@ public class MyFogDevice extends FogDevice {
 			placementString.append(CloudSim.getEntity(deviceID).getName() + " : ");
 			for (Application app : perDevice.get(deviceID).keySet()) {
 				if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC") {
-//					//ACTIVE_APP_UPDATE
-//					sendNow(deviceID, FogEvents.ACTIVE_APP_UPDATE, app);
-//					//APP_SUBMIT
-//					sendNow(deviceID, FogEvents.APP_SUBMIT, app);
-//					for (ModuleLaunchConfig moduleLaunchConfig : perDevice.get(deviceID).get(app)) {
-//						String microserviceName = moduleLaunchConfig.getModule().getName();
-//						placementString.append(microserviceName + " , ");
-//						//LAUNCH_MODULE
-//						sendNow(deviceID, FogEvents.LAUNCH_MODULE, new AppModule(app.getModuleByName(microserviceName)));
-//						sendNow(deviceID, FogEvents.LAUNCH_MODULE_INSTANCE, moduleLaunchConfig);
-//					}
 					Logger.error("Simulation static mode error", "Simulation should not be static.");
 				}
 			}
 			if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
-				if (targets.containsKey(deviceID)) transmitModulesToDeploy(deviceID, perDevice.get(deviceID), targets.get(deviceID));
-				else transmitModulesToDeploy(deviceID, perDevice.get(deviceID));
+				transmitModulesToDeploy(deviceID, perDevice.get(deviceID), FogBroker.getBatchNumber());
 			}
 			placementString.append("\n");
 		}
+		FogBroker.setBatchNumber(FogBroker.getBatchNumber() + 1);
+
 		System.out.println(placementString.toString());
 		for (int clientDevice : serviceDicovery.keySet()) {
 			for (Pair serviceData : serviceDicovery.get(clientDevice)) {
 				if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
 					transmitServiceDiscoveryData(clientDevice, serviceData);
 				} else if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC") {
-//					JSONObject serviceDiscoveryAdd = new JSONObject();
-//					serviceDiscoveryAdd.put("service data", serviceData);
-//					serviceDiscoveryAdd.put("action", "ADD");
-//					sendNow(clientDevice, FogEvents.UPDATE_SERVICE_DISCOVERY, serviceDiscoveryAdd);
 					Logger.error("Simulation static mode error", "Simulation should not be static.");
 				}
 			}
@@ -597,6 +593,8 @@ public class MyFogDevice extends FogDevice {
 				System.out.println("Module " + module.getName() + " placement on " + getName() + " failed");
 			}
 		}
+
+
 	}
 
 	@Override
@@ -722,21 +720,22 @@ public class MyFogDevice extends FogDevice {
 		sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, sdTuple);
 	}
 
-	private void transmitModulesToDeploy(int deviceID, Map<Application, List<ModuleLaunchConfig>> applicationListMap) {
+	private void transmitModulesToDeploy(int deviceID, Map<Application, List<ModuleLaunchConfig>> applicationListMap, int batchNumber) {
 		ManagementTuple moduleTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.DEPLOYMENT_REQUEST);
 		moduleTuple.setDeployementSet(applicationListMap);
 		moduleTuple.setDestinationDeviceId(deviceID);
+		moduleTuple.setBatchNumber(batchNumber);
 		sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, moduleTuple);
 	}
 
-	private void transmitModulesToDeploy(int deviceID, Map<Application, List<ModuleLaunchConfig>> applicationListMap, PlacementRequest pr) {
-		// Simon says this is sent only to gateway devices
-		ManagementTuple moduleTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.DEPLOYMENT_REQUEST);
-		moduleTuple.setDeployementSet(applicationListMap);
-		moduleTuple.setDestinationDeviceId(deviceID);
-		moduleTuple.setPlacementRequest(pr);
-		sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, moduleTuple);
-	}
+//	private void transmitModulesToDeploy(int deviceID, Map<Application, List<ModuleLaunchConfig>> applicationListMap, PlacementRequest pr) {
+//		// Simon says this is sent only to gateway devices
+//		ManagementTuple moduleTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.DEPLOYMENT_REQUEST);
+//		moduleTuple.setDeployementSet(applicationListMap);
+//		moduleTuple.setDestinationDeviceId(deviceID);
+//		moduleTuple.setPlacementRequest(pr);
+//		sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, moduleTuple);
+//	}
 
 	private void processManagementTuple(SimEvent ev) {
 		ManagementTuple tuple = (ManagementTuple) ev.getData();
@@ -756,7 +755,7 @@ public class MyFogDevice extends FogDevice {
 					break;
 
 				case ManagementTuple.DEPLOYMENT_REQUEST:
-					deployModulesAndExecute(tuple.getDeployementSet(), tuple.getPlacementRequest());
+					deployModulesAndExecute(tuple.getDeployementSet(), tuple.getBatchNumber());
 					break;
 
 				case ManagementTuple.RESOURCE_UPDATE:
@@ -781,13 +780,13 @@ public class MyFogDevice extends FogDevice {
 			Logger.error("Routing error", "Management tuple destination id is -1");
 	}
 
-	private void deployModulesAndExecute(Map<Application, List<ModuleLaunchConfig>> deployementSet, PlacementRequest pr) {
-		for (Application app : deployementSet.keySet()) {
+	private void deployModulesAndExecute(Map<Application, List<ModuleLaunchConfig>> deploymentSet, int batchNumber) {
+		for (Application app : deploymentSet.keySet()) {
 			//ACTIVE_APP_UPDATE
 			sendNow(getId(), FogEvents.ACTIVE_APP_UPDATE, app);
 			//APP_SUBMIT
 			sendNow(getId(), FogEvents.APP_SUBMIT, app);
-			for (ModuleLaunchConfig moduleLaunchConfig : deployementSet.get(app)) {
+			for (ModuleLaunchConfig moduleLaunchConfig : deploymentSet.get(app)) {
 				String microserviceName = moduleLaunchConfig.getModule().getName();
 				//LAUNCH_MODULE
 				if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC") {
@@ -798,26 +797,33 @@ public class MyFogDevice extends FogDevice {
 				sendNow(getId(), FogEvents.LAUNCH_MODULE_INSTANCE, moduleLaunchConfig);
 			}
 		}
+		// Simon says (140125) FogDevice will send ack to FogBroker a bit AFTER LAUNCH_MODULE is processed
+		send(CloudSim.getFogBrokerId(), MicroservicePlacementConfig.MODULE_DEPLOYMENT_TIME + CloudSim.getMinTimeBetweenEvents(), FogEvents.RECEIVE_INSTALL_NOTIF, batchNumber);
+
+		// Simon says (140125) that we are shelving this functionality for a while
+		// Instead, fog broker will send the tuples
 		// Simon says if self is a target, send EXECUTION_START_REQUEST to self's child (user device)
-		if (pr != null) {
-			int childId = pr.getGatewayDeviceId();
-			send(childId, MicroservicePlacementConfig.MODULE_DEPLOYMENT_TIME, FogEvents.EXECUTION_START_REQUEST);
-		}
+//		if (pr != null) {
+//			int childId = pr.getGatewayDeviceId();
+//			send(childId, MicroservicePlacementConfig.MODULE_DEPLOYMENT_TIME, FogEvents.EXECUTION_START_REQUEST);
+//		}
 	}
 
 	private void startExecution(SimEvent ev) {
+		// Simon says (140125) we will be shelving this functionality for now
+		Logger.error("Unintended event error", "Mobile users should not be notified to executing!");
 		// Simon says this should only be executed by users
-		if (!(deviceType.equals(AMBULANCE_USER) || deviceType.equals(OPERA_USER) || deviceType.equals(GENERIC_USER))) {
-			Logger.error("Device Type Error", "This device should be a user.");
-		}
-		if (ev.getSource() != parentId) {
-			Logger.error("Parent Error", "This request should have been sent from parent.");
-		}
-		if (getSensorID() == -1) {
-			Logger.error("Child Error", "This user should have a sensor.");
-		}
-		int childSensorId = getSensorID();
-		sendNow(childSensorId, FogEvents.EMIT_TUPLE);
+//		if (!(deviceType.equals(AMBULANCE_USER) || deviceType.equals(OPERA_USER) || deviceType.equals(GENERIC_USER))) {
+//			Logger.error("Device Type Error", "This device should be a user.");
+//		}
+//		if (ev.getSource() != parentId) {
+//			Logger.error("Parent Error", "This request should have been sent from parent.");
+//		}
+//		if (getSensorID() == -1) {
+//			Logger.error("Child Error", "This user should have a sensor.");
+//		}
+//		int childSensorId = getSensorID();
+//		sendNow(childSensorId, FogEvents.EMIT_TUPLE);
 	}
 
 	/**
@@ -925,4 +931,8 @@ public class MyFogDevice extends FogDevice {
 	public void setSensorID(int sensorID) {
 		this.sensorID = sensorID;
 	}
+
+//	public static final Comparator<MyFogDevice> BY_CPU_THEN_RAM = Comparator
+//			.comparingInt(MyFogDevice::getCpu)
+//			.thenComparingInt(MyFogDevice::getRam);
 }

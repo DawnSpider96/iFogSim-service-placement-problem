@@ -64,6 +64,16 @@ public class CloudSim {
 
 	/** The minimal time between events. Events within shorter periods after the last event are discarded. */
 	private static double minTimeBetweenEvents = 0.1;
+
+	// Simon (140125)
+	private static int FogBrokerId;
+
+	public static int getFogBrokerId(){
+		return FogBrokerId;
+	}
+	public static void setFogBrokerId(int id){
+		FogBrokerId = id;
+	}
 	
 	/**
 	 * Initialises all the common attributes.

@@ -35,7 +35,7 @@ public class Sensor extends SimEntity{
 		this.setAppId(appId);
 		this.gatewayDeviceId = gatewayDeviceId;
 		this.geoLocation = geoLocation;
-		this.outputSize = 3;
+		this.outputSize = Config.SENSOR_OUTPUT_SIZE;
 		this.setTransmitDistribution(transmitDistribution);
 		setUserId(userId);
 		setDestModuleName(destModuleName);
@@ -50,7 +50,7 @@ public class Sensor extends SimEntity{
 		this.setAppId(appId);
 		this.gatewayDeviceId = gatewayDeviceId;
 		this.geoLocation = geoLocation;
-		this.outputSize = 3;
+		this.outputSize = Config.SENSOR_OUTPUT_SIZE;
 		this.setTransmitDistribution(transmitDistribution);
 		setUserId(userId);
 		setTupleType(tupleType);

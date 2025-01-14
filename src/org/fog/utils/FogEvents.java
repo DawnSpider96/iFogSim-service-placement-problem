@@ -49,5 +49,8 @@ public class FogEvents {
     public static final int MODULE_UNINSTALL = BASE + 39;
     public static final int NODE_EXECUTION_FINISHED = BASE + 40;
     public static final int EXECUTION_START_REQUEST = BASE + 41;
-
+    // FogBroker ----------------------------------
+    public static final int RECEIVE_PLACEMENT_DECISION = BASE + 50;
+    public static final int RECEIVE_INSTALL_NOTIF = BASE + 51;
+    public static final int EXECUTION_TIMEOUT = BASE + 52;
 }
