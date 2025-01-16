@@ -93,9 +93,10 @@ public class OnlinePOC {
 
             MyApplication application = createApplication(appId, broker.getId());
             application.setUserId(broker.getId());
-            // Simon (140125) says this is the tuple type that will be processed by mService1
+            // Simon (140125) says tuples will be sent to FogDevices and executed under mService1
+            // because source module is clientModule but dest module is mService1
             // todo Change accordingly if the AppLoop ever changes (or there are more Apploops)
-            broker.getApplicationToFirstMicroserviceMap().put(application, "RAW_DATA");
+            broker.getApplicationToFirstMicroserviceMap().put(application, "clientModule");
 
             DataParser dataObject = new OfflineDataParser();
             locator = new LocationHandler(dataObject);

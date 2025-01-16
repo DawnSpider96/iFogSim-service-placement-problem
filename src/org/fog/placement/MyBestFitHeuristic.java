@@ -1,10 +1,11 @@
 package org.fog.placement;
 
+import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
-import org.fog.entities.FogDevice;
 import org.fog.entities.PlacementRequest;
 import org.fog.utils.Logger;
+import org.fog.utils.ModuleLaunchConfig;
 
 import java.util.*;
 
@@ -15,6 +16,8 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
     public MyBestFitHeuristic(int fonID) {
         super(fonID);
     }
+
+    private List<DeviceState> deviceStates;
 
     @Override
     public void postProcessing() {
@@ -48,64 +51,182 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
     }
 
     @Override
-    protected void mapModules() {
+    protected Map<PlacementRequest, Integer> mapModules() {
         Map<PlacementRequest, List<String>> toPlace = new HashMap<>();
 
         int placementCompleteCount = 0;
-        while (placementCompleteCount < placementRequests.size()) {
-            if (toPlace.isEmpty()) {
-                // Update toPlace and placementCompleteCount
-                placementCompleteCount = fillToPlace(placementCompleteCount, toPlace, placementRequests);
+        if (toPlace.isEmpty()) {
+            // Update toPlace and placementCompleteCount
+            placementCompleteCount = fillToPlace(placementCompleteCount, toPlace, placementRequests);
+        }
+
+        // Simon says for now all the microservices go in one big map.
+        // Simon (15015) says this is now unnecessary. We will hence use toPlace normally.
+        // appId -> microservices to place (can be multiple)
+//        // TODO Verify that the microservices are in order! (Because they are ordered in Simonstrator)
+//        Map<String, Map<PlacementRequest, List<String>>> microservices = new HashMap<>();
+//        for (Map.Entry<PlacementRequest, List<String>> entry : toPlace.entrySet()) {
+//            String applicationId = entry.getKey().getApplicationId();
+//            List<String> valueList = entry.getValue();
+//            microservices.computeIfAbsent(applicationId, k -> new HashMap<>());
+//            microservices.get(applicationId).put(entry.getKey(), valueList);
+//        }
+
+        // Simon (160125) says this is no longer necessary. Only FCNs should appear in fogDevices
+//        Set<Integer> deviceIdsToInclude = new HashSet<>();
+//        for (FogDevice fogDevice : fogDevices) {
+//            MyFogDevice mfd = (MyFogDevice) fogDevice;
+//            if (Objects.equals(mfd.getDeviceType(), MyFogDevice.FCN)) {
+//                deviceIdsToInclude.add(mfd.getId());
+//            }
+//        }
+
+        for (Map.Entry<Integer, Map<String, Double>> entry : resourceAvailability.entrySet()) {
+//            if (deviceIdsToInclude.contains(entry.getKey())) { // Check if the current device ID is in the set
+//                deviceStates.add(new DeviceState(entry.getKey(), entry.getValue()));
+//            }
+            deviceStates.add(new DeviceState(entry.getKey(), entry.getValue()));
+        }
+
+        Map<PlacementRequest, Integer> prStatus = new HashMap<>();
+        // Process every PR individually
+        for (Map.Entry<PlacementRequest, List<String>> entry : toPlace.entrySet()) {
+            PlacementRequest placementRequest = entry.getKey();
+            Application app = applicationInfo.get(placementRequest.getApplicationId());
+            List<String> microservices = entry.getValue();
+            // -1 if success, cloudId if failure
+            // Cloud will resend to itself
+            // Type int for flexibility: In more complex simulations there may be more FON heads, not just the cloud.
+            int status = tryPlacingOnePr(microservices, app, placementRequest);
+            prStatus.put(placementRequest, status);
+        }
+        return prStatus;
+    }
+
+    @Override
+    protected int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
+        // Initialize temporary state
+//        final double[] cpusum = new double[1];
+//        Consumer<Double> addToCpu = (value) -> cpusum[0] += value;
+//        final int[] ramsum = new int[1];
+//        Consumer<Integer> addToRam = (value) -> ramsum[0] += value;
+//        final long[] storagesum = new long[1];
+//        Consumer<Long> addToStorage = (value) -> storagesum[0] += value;
+        Map<String, Integer> placed = new HashMap<>();
+        for (String microservice : microservices) {
+            placed.put(microservice, -1);
+        }
+//        Consumer<String> markAsPlaced = microservice -> {
+//            if (placed.containsKey(microservice)) {
+//                placed.put(microservice, 1);
+//            }
+//        };
+
+        for (String s : microservices) {
+            AppModule service = getModule(s, app);
+            Collections.sort(deviceStates);
+
+            for (int i = 0; i < deviceStates.size(); i++) {
+                // Try to place
+                if (deviceStates.get(i).canFit(service.getMips(), service.getRam())) {
+
+//                    deviceStates.get(i).allocate(service.getMips(), service.getRam());
+//                    addToCpu.accept(getModule(microservice, app).getMips());
+//                    addToRam.accept(getModule(microservice, app).getRam());
+//                    addToStorage.accept(getModule(microservice, app).getSize());
+//                    markAsPlaced.accept(microservice);
+
+                    // Update temporary state
+                    placed.put(s, deviceStates.get(i).deviceId);
+
+//                    tryPlacingAllHelper(microservice, device, app, markAsPlaced, addToCpu, addToRam, addToStorage, placementRequest.getPlacementRequestId());
+                    break;
+                }
             }
 
-            // Simon says for now all the microservices go in one big list
-            List<String> microservices = new ArrayList<>();
-            for (List<String> valueList : toPlace.values()) {
-                microservices.addAll(valueList);
+            if (placed.get(s) < 0) {
+                // todo Simon says what do we do when failure?
+                //  (160125) Nothing. Because (aggregated) failure will be determined outside the for loop
+                System.out.println("Failed to place module " + s + "on PR " + placementRequest.getPlacementRequestId());
             }
+        }
 
-            List<DeviceState> deviceStates = new ArrayList<>();
-            for (Map.Entry<Integer, Map<String, Double>> entry : resourceAvailability.entrySet()) {
-                deviceStates.add(new DeviceState(entry.getKey(), entry.getValue()));
-            }
+        boolean allPlaced = placed.values().stream().allMatch(value -> value > -1);
 
-            Map<AppModule, Integer> placements = new HashMap<>(); // service -> deviceId
-
-            // Initialize loads to 0
-//            resourceAvailability.keySet().forEach(deviceId -> {
-//                getCurrentCpuLoad().put(deviceId, 0.0);
-//                getCurrentRamLoad().put(deviceId, 0.0);
-//            });
-
-            // Try to place each service
-            for (String s : microservices) {
-                Application app = applicationInfo.get(moduleToApp.get(s));
+        if (allPlaced) {
+            for (String s: microservices) {
                 AppModule service = getModule(s, app);
-                Collections.sort(deviceStates);
+                int deviceId = placed.get(s);
 
-                boolean placed = false;
+                DeviceState targetDeviceState = null;
                 for (DeviceState deviceState : deviceStates) {
-                    if (deviceState.canFit(service.getMips(), service.getRam())) {
-                        // Update device state
-                        deviceState.allocate(service.getMips(), service.getRam());
-
-                        // TODO Simon says here is where we update all the relevant state
-                        placements.put(service, deviceState.deviceId);
-                        getCurrentCpuLoad().put(deviceState.deviceId,
-                                getCurrentCpuLoad().get(deviceState.deviceId) + service.getMips());
-                        getCurrentRamLoad().put(deviceState.deviceId,
-                                getCurrentRamLoad().get(deviceState.deviceId) + service.getRam());
-
-                        placed = true;
+                    if (deviceState.deviceId == deviceId) {
+                        targetDeviceState = deviceState;
                         break;
                     }
                 }
+                assert targetDeviceState != null;
+                targetDeviceState.allocate(service.getMips(), service.getRam());
 
-                if (!placed) {
-                    // TODO Simon says what do we do when failure?
-                }
+                Logger.debug("ModulePlacementEdgeward", "Placement of operator " + s + " on device " + CloudSim.getEntityName(deviceId) + " successful.");
+                System.out.println("Placement of operator " + s + " on device " + CloudSim.getEntityName(deviceId) + " successful.");
+
+                moduleToApp.put(s, app.getAppId());
+
+                if (!currentModuleMap.get(deviceId).contains(s))
+                    currentModuleMap.get(deviceId).add(s);
+
+                mappedMicroservices.get(placementRequest.getPlacementRequestId()).put(s, deviceId);
+
+                //currentModuleLoad
+                if (!currentModuleLoadMap.get(deviceId).containsKey(s))
+                    currentModuleLoadMap.get(deviceId).put(s, service.getMips());
+                else
+                    currentModuleLoadMap.get(deviceId).put(s, service.getMips() + currentModuleLoadMap.get(deviceId).get(s)); // todo Simon says isn't this already vertical scaling? But is on PR side not FogDevice side
+
+                //currentModuleInstance
+                if (!currentModuleInstanceNum.get(deviceId).containsKey(s))
+                    currentModuleInstanceNum.get(deviceId).put(s, 1);
+                else
+                    currentModuleInstanceNum.get(deviceId).put(s, currentModuleInstanceNum.get(deviceId).get(s) + 1);
             }
         }
+        else {
+            System.out.println("Failed placement " + placementRequest.getPlacementRequestId());
+        }
+//        placements.computeIfAbsent(entry.getKey(), k -> new HashMap<>());
+//        placements.get(entry.getKey()).put(service, deviceState.deviceId);
+//        getCurrentCpuLoad().put(deviceState.deviceId,
+//                getCurrentCpuLoad().get(deviceState.deviceId) + service.getMips());
+//        getCurrentRamLoad().put(deviceState.deviceId,
+//                getCurrentRamLoad().get(deviceState.deviceId) + service.getRam());
+
+        if (allPlaced) return -1;
+        else return getFonID();
+    }
+
+
+    @Override
+    protected Map<PlacementRequest, Integer> determineTargets(Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice) {
+        // Simon says that ALL the parent edge servers of the users that made PRs must receive deployments. Otherwise, error.
+        Map<PlacementRequest, Integer> targets = new HashMap<>();
+        for (PlacementRequest pr : placementRequests) {
+            int parentOfGateway = closestNodes.get(pr);
+            boolean targeted = false;
+            for (int target : perDevice.keySet()) {
+                if (parentOfGateway == target) {
+                    targeted = true;
+                    targets.put(pr, parentOfGateway);
+                    break;
+                }
+            }
+            if (!targeted) {
+                Logger.error("Deployment Error", "Deployment Request is not being sent to "
+                        + parentOfGateway + ", the parent of gateway device " + Objects.requireNonNull(getDevice(pr.getGatewayDeviceId())).getName());
+            }
+        }
+        return targets;
+
     }
 
     //    public Placement schedule() {
@@ -171,16 +292,16 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
 
         @Override
         public int compareTo(DeviceState other) {
-            // Sort by available CPU, then by RAM if CPU is equal
+            // Sort by available CPU, then by RAM if CPU is equal, from biggest to smallest
             int cpuCompare = Double.compare(
-                    this.remainingResources.get("cpu"),
-                    other.remainingResources.get("cpu")
+                    other.remainingResources.get("cpu"), // Biggest first
+                    this.remainingResources.get("cpu")
             );
             if (cpuCompare != 0) return cpuCompare;
 
             return Double.compare(
-                    this.remainingResources.get("ram"),
-                    other.remainingResources.get("ram")
+                    other.remainingResources.get("ram"), // Biggest first
+                    this.remainingResources.get("ram")
             );
         }
     }

@@ -52,8 +52,8 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
     @Override
     public PlacementLogicOutput run(List<FogDevice> fogDevices, Map<String, Application> applicationInfo, Map<Integer, Map<String, Double>> resourceAvailability, List<PlacementRequest> prs) {
         resetTemporaryState(fogDevices, applicationInfo, resourceAvailability, prs);
-        mapModules();
-        PlacementLogicOutput placement = generatePlacementDecision();
+        Map<PlacementRequest, Integer> prStatus = mapModules();
+        PlacementLogicOutput placement = generatePlacementDecision(prStatus);
         updateResources(resourceAvailability);
         postProcessing();
         return placement;
@@ -77,7 +77,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             for (String microservice : app.getSpecialPlacementInfo().keySet()) {
                 for (String deviceName : app.getSpecialPlacementInfo().get(microservice)) {
                     FogDevice device = getDeviceByName(deviceName);
-                    tryPlacing(microservice, device, app, m->{}, placementRequest.getPlacementRequestId());
+                    tryPlacingMicroserviceNoAggregate(microservice, device, app, m->{}, placementRequest.getPlacementRequestId());
                 }
             }
         }
@@ -100,7 +100,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
      *  -
      * @return A map reflecting the updated entries after cleaning.
      */
-    protected void tryPlacing(String microservice, FogDevice device, Application app, Consumer<String> onPlaced, int prId) {
+    protected void tryPlacingMicroserviceNoAggregate(String microservice, FogDevice device, Application app, Consumer<String> onPlaced, int prId) {
         int deviceId = device.getId();
 
         if (canFit(microservice, deviceId, app)) {
@@ -123,7 +123,6 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             else
                 currentModuleLoadMap.get(deviceId).put(microservice, getModule(microservice, app).getMips() + currentModuleLoadMap.get(deviceId).get(microservice)); // todo Simon says isn't this already vertical scaling? But is on PR side not FogDevice side
 
-
             //currentModuleInstance
             if (!currentModuleInstanceNum.get(deviceId).containsKey(microservice))
                 currentModuleInstanceNum.get(deviceId).put(microservice, 1);
@@ -133,6 +132,8 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             onPlaced.accept(microservice);
         }
     }
+
+    protected abstract int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest);
 
     /**
      * Prunes mappedMicroservices and updates placementRequests such that their entries reflect the modules placed in THIS cycle only.
@@ -205,7 +206,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         return modulesToPlace;
     }
 
-    protected abstract void mapModules();
+    protected abstract Map<PlacementRequest, Integer> mapModules();
 
     protected void resetTemporaryState(List<FogDevice> fogDevices, Map<String, Application> applicationInfo, Map<Integer, Map<String, Double>> resourceAvailability, List<PlacementRequest> prs){
         this.fogDevices = fogDevices;
@@ -257,6 +258,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
      * @param mappedMicroservices A map of service IDs to their corresponding microservice details.
      *                            Entries that match the outdated placement requests will be removed.
      * @return A map reflecting the updated entries after cleaning.
+     * PRid ->  Map(microservice name -> target deviceId)
      */
     protected Map<Integer, Map<String, Integer>> cleanPlacementRequests(List <PlacementRequest> placementRequests, Map<Integer, Map<String, Integer>> mappedMicroservices) {
         Map<Integer, Map<String, Integer>> placement = new HashMap<>();
@@ -281,20 +283,22 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
     /**
      * State queried: applicationInfo, currentModuleInstanceNum
      *
+     * @param prStatus Map of placement requests to their result. Was outputted by MapModules()
+     *
      * @return Placement Decision containing:
      *  - perDevice
      *  - ServiceDiscovery
      *  - prStatus
      *  - Targets
      */
-    protected PlacementLogicOutput generatePlacementDecision() {
+    protected PlacementLogicOutput generatePlacementDecision(Map<PlacementRequest, Integer> prStatus) {
+        // placements: PRid ->  Map(microservice name -> target deviceId)
         Map<Integer, Map<String, Integer>> placements = cleanPlacementRequests(placementRequests, mappedMicroservices);
 
         //todo it assumed that modules are not shared among applications.
         // <deviceid, < app, list of modules to deploy > this is to remove deploying same module more than once on a certain device.
         Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice = new HashMap<>();
         Map<Integer, List<Pair<String, Integer>>> serviceDiscoveryInfo = new HashMap<>();
-        Map<PlacementRequest, Integer> prStatus = new HashMap<>();
         if (placements != null) {
             for (int prID : placements.keySet()) {
                 //retrieve application
@@ -319,8 +323,6 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
                         }
                     }
                 }
-                // all prs get placed in this placement algorithm
-                prStatus.put(placementRequest, -1);
             }
 
             //todo module is created new here check if this is needed
@@ -348,29 +350,22 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             }
         }
 
-        Map<PlacementRequest, Integer> targets = new HashMap();
-        // Simon says that ALL the parent edge servers of the users that made PRs must receive deployments. Otherwise, error.
-        for (PlacementRequest pr : placementRequests) {
-            int parentOfGateway = closestNodes.get(pr);
-            boolean targeted = false;
-            for (int target : perDevice.keySet()) {
-                if (parentOfGateway == target) {
-                    targeted = true;
-                    targets.put(pr, parentOfGateway);
-                    break;
-                }
-            }
-            if (!targeted) {
-                Logger.error("Deployment Error", "Deployment Request is not being sent to "
-                        + parentOfGateway + ", the parent of gateway device " + Objects.requireNonNull(getDevice(pr.getGatewayDeviceId())).getName());
-            }
-        }
+        Map<PlacementRequest, Integer> targets = determineTargets(perDevice);
+
 
         return new MyPlacementLogicOutput(perDevice, serviceDiscoveryInfo, prStatus, targets);
     }
 
 
-
+    /**
+    * State that can be used:
+    *   - List<PlacementRequest> placementRequests
+    *   - Map<PlacementRequest, Integer> closestNodes
+    *  - Map<Integer, Application> applicationInfo
+    * @param perDevice
+    * @return Map of each PR to the deviceId that the FogBroker will inform to begin execution
+    * */
+    protected abstract Map<PlacementRequest, Integer> determineTargets(Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice);
 
     protected List<Integer> getClientServiceNodeIds(Application application, String
             microservice, Map<String, Integer> placed, Map<String, Integer> placementPerPr) {

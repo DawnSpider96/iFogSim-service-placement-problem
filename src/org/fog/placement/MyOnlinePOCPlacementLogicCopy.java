@@ -4,6 +4,7 @@ import org.fog.application.Application;
 import org.fog.entities.FogDevice;
 import org.fog.entities.PlacementRequest;
 import org.fog.utils.Logger;
+import org.fog.utils.ModuleLaunchConfig;
 
 import java.util.*;
 
@@ -13,6 +14,13 @@ public class MyOnlinePOCPlacementLogicCopy extends MyHeuristic implements Micros
      */
     public MyOnlinePOCPlacementLogicCopy(int fonID) {
         super(fonID);
+    }
+
+    @Override
+    protected int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
+        // Not used in this heuristic.
+        // -1 means success, so return -2 just in case
+        return -2;
     }
 
     @Override
@@ -49,12 +57,12 @@ public class MyOnlinePOCPlacementLogicCopy extends MyHeuristic implements Micros
 
     /**
      * State updated:
-     *  -
-     *
+     * -
      */
     @Override
-    protected void mapModules() {
+    protected Map<PlacementRequest, Integer> mapModules() {
         Map<PlacementRequest, List<String>> toPlace = new HashMap<>();
+        Map<PlacementRequest, Integer> currentTargets = new HashMap<>(closestNodes);
 
         int placementCompleteCount = 0;
         while (placementCompleteCount < placementRequests.size()) {
@@ -64,21 +72,22 @@ public class MyOnlinePOCPlacementLogicCopy extends MyHeuristic implements Micros
             }
             for (PlacementRequest placementRequest : placementRequests) {
                 Application app = applicationInfo.get(placementRequest.getApplicationId());
-                int deviceId = closestNodes.get(placementRequest); // NOTE: Initially contains parent ID of gateway device (MOBILE USER). Changes depending on how we "forward" the PR (if previous target device lacked resources).
+                int deviceId = currentTargets.get(placementRequest); // NOTE: Initially contains parent ID of gateway device (MOBILE USER). Changes depending on how we "forward" the PR (if previous target device lacked resources).
                 // if not cluster
                 if (deviceId != -1) {
                     FogDevice device = getDevice(deviceId);
                     assert device != null;
                     List<String> placed = new ArrayList<>();
+
                     if (toPlace.containsKey(placementRequest)) {
                         for (String microservice : toPlace.get(placementRequest)) {
-                            tryPlacing(microservice, device, app, placed::add, placementRequest.getPlacementRequestId());
+                            tryPlacingMicroserviceNoAggregate(microservice, device, app, placed::add, placementRequest.getPlacementRequestId());
                         }
                         for (String m : placed) {
                             toPlace.get(placementRequest).remove(m);
                         }
                         if (!toPlace.get(placementRequest).isEmpty()) {
-                            closestNodes.put(placementRequest, device.getParentId());
+                            currentTargets.put(placementRequest, device.getParentId());
                         }
                         if (toPlace.get(placementRequest).isEmpty())
                             toPlace.remove(placementRequest);
@@ -89,5 +98,33 @@ public class MyOnlinePOCPlacementLogicCopy extends MyHeuristic implements Micros
                 }
             }
         }
+        Map<PlacementRequest, Integer> prStatus = new HashMap<>();
+        for (PlacementRequest placementRequest : placementRequests) {
+            prStatus.put(placementRequest, -1);
+        }
+        return prStatus;
+    }
+
+
+    @Override
+    protected Map<PlacementRequest, Integer> determineTargets(Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice) {
+        // Simon says that ALL the parent edge servers of the users that made PRs must receive deployments. Otherwise, error.
+        Map<PlacementRequest, Integer> targets = new HashMap<>();
+        for (PlacementRequest pr : placementRequests) {
+            int parentOfGateway = closestNodes.get(pr);
+            boolean targeted = false;
+            for (int target : perDevice.keySet()) {
+                if (parentOfGateway == target) {
+                    targeted = true;
+                    targets.put(pr, parentOfGateway);
+                    break;
+                }
+            }
+            if (!targeted) {
+                Logger.error("Deployment Error", "Deployment Request is not being sent to "
+                        + parentOfGateway + ", the parent of gateway device " + Objects.requireNonNull(getDevice(pr.getGatewayDeviceId())).getName());
+            }
+        }
+        return targets;
     }
 }

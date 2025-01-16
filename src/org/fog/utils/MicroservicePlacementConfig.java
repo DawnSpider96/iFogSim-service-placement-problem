@@ -18,7 +18,7 @@ public class MicroservicePlacementConfig {
     //Resource info sharing among cluster nodes
     public static Boolean ENABLE_RESOURCE_DATA_SHARING = false;
     public static double MODULE_DEPLOYMENT_TIME = 0.0;
-    public static double EXECUTION_TIMEOUT_TIME = 20.0;
+    public static double EXECUTION_TIMEOUT_TIME = 30.0;
 
     // Certain Placement Logic will behave differently according to the Topology of the network
     // TODO Simon says this is not the proper way to configure. This configuration needs to sync with the actual topology as defined in the simulation file
@@ -26,6 +26,4 @@ public class MicroservicePlacementConfig {
     public static String FEDERATED = "federated";
     public static String DISTRIBUTED = "distributed";
     public static String NETWORK_TOPOLOGY = CENTRALISED;
-
-
 }

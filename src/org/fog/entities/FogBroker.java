@@ -39,9 +39,15 @@ public class FogBroker extends PowerDatacenterBroker{
 				break;
 			case FogEvents.RECEIVE_INSTALL_NOTIF:
 				handleInstallationNotification(ev.getSource(), (int) ev.getData());
+				break;
 			case FogEvents.EXECUTION_TIMEOUT:
 				handleExecutionTimeout((int) ev.getData());
+				break;
+			case FogEvents.TUPLE_ACK:
+				System.out.println("Tuple acknowledged by device " + ev.getSource());
+				break;
 			default:
+				super.processOtherEvent(ev);
 				break;
 		}
 	}
@@ -59,6 +65,7 @@ public class FogBroker extends PowerDatacenterBroker{
 		createChecklist(perDevice, batchNumber);
 		setToSend(targets, batchNumber);
 		send(getId(), MicroservicePlacementConfig.EXECUTION_TIMEOUT_TIME, FogEvents.EXECUTION_TIMEOUT, batchNumber);
+		Logger.debug("Notification", "FogBroker sent out execution Timeout");
 //		setBatchNumber(getBatchNumber() + 1);
 	}
 
@@ -91,7 +98,7 @@ public class FogBroker extends PowerDatacenterBroker{
 
 	public void handleExecutionTimeout(int batchNumber) {
 		if (!allAcknowledged(batchNumber)) {
-			Logger.error("Execution timeout", "Not all devices acknowledged installation.");
+			Logger.error("Execution timeout Error", "Not all devices acknowledged installation on batch " + batchNumber);
 		}
 	}
 
@@ -118,14 +125,17 @@ public class FogBroker extends PowerDatacenterBroker{
 	}
 
 	public void transmit(int targetId, Application app){
-		String tupleType = applicationToFirstMicroserviceMap.get(app);
+		String firstMicroservice = applicationToFirstMicroserviceMap.get(app);
 		AppEdge _edge = null;
 		for(AppEdge edge : app.getEdges()){
-			if(edge.getSource().equals(tupleType))
+			if(edge.getSource().equals(firstMicroservice)) {
 				_edge = edge;
+				break;
+			}
 		}
 		long cpuLength = (long) _edge.getTupleCpuLength();
 		long nwLength = (long) _edge.getTupleNwLength();
+		String tupleType = _edge.getTupleType();
 
 		Tuple tuple = new Tuple(app.getAppId(), FogUtils.generateTupleId(), Tuple.UP, cpuLength, 1, nwLength, Config.SENSOR_OUTPUT_SIZE,
 				new UtilizationModelFull(), new UtilizationModelFull(), new UtilizationModelFull());
@@ -133,13 +143,11 @@ public class FogBroker extends PowerDatacenterBroker{
 		tuple.setTupleType(tupleType);
 
 		tuple.setDestModuleName(_edge.getDestination());
-		// NOTE: The SensorName and tupleType fields in Sensor class share the same value (String)
-		tuple.setSrcModuleName(tupleType);
+		tuple.setSrcModuleName(firstMicroservice);
 		Logger.debug(getName(), "Sending tuple with tupleId = " + tuple.getCloudletId());
 
 		tuple.setDestinationDeviceId(targetId);
 
-		// Here tupleType was supposed to be SensorName too
 		int actualTupleId = updateTimings(tupleType, tuple.getDestModuleName(), app);
 		tuple.setActualTupleId(actualTupleId);
 
@@ -165,14 +173,12 @@ public class FogBroker extends PowerDatacenterBroker{
 
 	@Override
 	public void startEntity() {
-		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void shutdownEntity() {
-		// TODO Auto-generated method stub
-		
+
 	}
 
 	public static int getBatchNumber(){
