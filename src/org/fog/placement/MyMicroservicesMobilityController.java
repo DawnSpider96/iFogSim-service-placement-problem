@@ -234,7 +234,8 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
     private void setNewOrchestratorNode(FogDevice fogDevice, FogDevice newParent) {
         int parentId = newParent.getId();
         while(parentId!=-1){
-            if(((MyFogDevice)newParent).getDeviceType().equals(MyFogDevice.FON)){
+            if(((MyFogDevice)newParent).getDeviceType().equals(MyFogDevice.FON) ||
+                    ((MyFogDevice)newParent).getDeviceType().equals(MyFogDevice.CLOUD)){
                 int currentFon = ((MyFogDevice)fogDevice).getFonId();
                 if(currentFon!=parentId) {
                     ((MyFogDevice)getFogDeviceById(currentFon)).removeMonitoredDevice(fogDevice);

@@ -383,8 +383,7 @@ public class MyMicroservicesController extends SimEntity {
 
     protected List<FogDevice> getDevicesForFON(FogDevice f) {
         List<FogDevice> fogDevices = new ArrayList<>();
-        // Simon (160125) says the cloud itself won't be considered for placements
-//        fogDevices.add(f);
+        fogDevices.add(f);
         ((MyFogDevice) f).setFonID(f.getId());
         List<FogDevice> connected = new ArrayList<>();
         connected.add(f);
@@ -400,11 +399,11 @@ public class MyMicroservicesController extends SimEntity {
                     connected.add(device);
                     if (!fogDevices.contains(device)) {
                         MyFogDevice mfd = (MyFogDevice) device;
-                        if (mfd.getDeviceType() == MyFogDevice.FCN) {
-                            fogDevices.add(mfd);
-                            mfd.setFonID(f.getId());
-                            changed = true;
-                        }
+//                        if (mfd.getDeviceType() == MyFogDevice.FCN) {
+                        fogDevices.add(mfd);
+//                        }
+                        mfd.setFonID(f.getId());
+                        changed = true;
 //                    FogDevice device = getFogDeviceById(cluster);
 //                    connected.add(device);
                     }

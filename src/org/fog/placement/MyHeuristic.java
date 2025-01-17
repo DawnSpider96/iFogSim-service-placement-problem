@@ -4,10 +4,7 @@ import org.apache.commons.math3.util.Pair;
 import org.fog.application.AppEdge;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
-import org.fog.entities.ControllerComponent;
-import org.fog.entities.FogDevice;
-import org.fog.entities.PlacementRequest;
-import org.fog.entities.Tuple;
+import org.fog.entities.*;
 import org.fog.utils.Logger;
 import org.fog.utils.ModuleLaunchConfig;
 
@@ -18,10 +15,11 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
     /**
      * Fog network related details
      */
-    protected List<FogDevice> fogDevices; //fog devices considered by FON for placements of requests
+    protected List<FogDevice> fogDevices; // ALL fog devices in the network
+    protected List<FogDevice> availableFogDevices = new ArrayList<>(); // Fog devices in the network that are in consideration for placement
     protected List<PlacementRequest> placementRequests; // requests to be processed
     protected Map<Integer, Map<String, Double>> resourceAvailability;
-    protected Map<String, Application> applicationInfo = new HashMap<>();
+    protected Map<String, Application> applicationInfo = new HashMap<>(); // map app name to Application
     protected Map<String, String> moduleToApp = new HashMap<>();
     protected Map<PlacementRequest, Integer> closestNodes = new HashMap<>();
 
@@ -210,6 +208,20 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
 
     protected void resetTemporaryState(List<FogDevice> fogDevices, Map<String, Application> applicationInfo, Map<Integer, Map<String, Double>> resourceAvailability, List<PlacementRequest> prs){
         this.fogDevices = fogDevices;
+
+        Set<Integer> deviceIdsToInclude = new HashSet<>();
+        for (FogDevice fogDevice : fogDevices) {
+            MyFogDevice mfd = (MyFogDevice) fogDevice;
+            if (Objects.equals(mfd.getDeviceType(), MyFogDevice.FCN)) {
+                deviceIdsToInclude.add(mfd.getId());
+            }
+        }
+        for (FogDevice fogDevice : this.fogDevices) {
+            if (deviceIdsToInclude.contains(fogDevice.getId())) {
+                availableFogDevices.add(fogDevice);
+            }
+        }
+
         this.placementRequests = prs;
         this.resourceAvailability = resourceAvailability;
         this.applicationInfo = applicationInfo;
@@ -255,8 +267,10 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
      *
      * @param placementRequests A list of outdated (only containing initial modules) placement requests.
      *                          Entries will be added to the `placedMicroservices` field according to entries from `mappedMicroservices`.
+     *                          End result: placedMicroservices field contains ALL microservices
      * @param mappedMicroservices A map of service IDs to their corresponding microservice details.
      *                            Entries that match the outdated placement requests will be removed.
+     *                            End result: Entries will
      * @return A map reflecting the updated entries after cleaning.
      * PRid ->  Map(microservice name -> target deviceId)
      */
