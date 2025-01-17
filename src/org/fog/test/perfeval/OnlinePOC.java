@@ -96,8 +96,10 @@ public class OnlinePOC {
             // Simon (140125) says tuples will be sent to FogDevices and executed under mService1
             // because source module is clientModule but dest module is mService1
             // todo Change accordingly if the AppLoop ever changes (or there are more Apploops)
-            broker.getApplicationToFirstMicroserviceMap().put(application, "clientModule");
-
+            FogBroker.getApplicationToFirstMicroserviceMap().put(application, "clientModule");
+            List<String> simonAppSecondMicroservices = new ArrayList<>();
+            simonAppSecondMicroservices.add("mService1");
+            FogBroker.getApplicationToSecondMicroservicesMap().put(application, simonAppSecondMicroservices);
             DataParser dataObject = new OfflineDataParser();
             locator = new LocationHandler(dataObject);
 

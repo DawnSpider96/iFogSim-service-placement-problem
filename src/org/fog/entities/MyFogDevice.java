@@ -211,6 +211,7 @@ public class MyFogDevice extends FogDevice {
 					break;
 				}
 			}
+			assert operator != null;
 			if (CloudSim.clock() > 0) {
 				getHost().getVmScheduler().deallocatePesForVm(operator);
 				getHost().getVmScheduler().allocatePesForVm(operator, new ArrayList<Double>() {

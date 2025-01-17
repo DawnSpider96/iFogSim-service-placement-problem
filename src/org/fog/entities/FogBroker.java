@@ -25,8 +25,8 @@ public class FogBroker extends PowerDatacenterBroker{
 
 	private static int batchNumber = 1;
 
-	private Map<Application, String> applicationToFirstMicroserviceMap = new HashMap<>();
-
+	private static Map<Application, String> applicationToFirstMicroserviceMap = new HashMap<>();
+	private static Map<Application, List<String>> applicationToSecondMicroservicesMap = new HashMap<>();
 
 	public FogBroker(String name) throws Exception {
 		super(name);
@@ -189,8 +189,12 @@ public class FogBroker extends PowerDatacenterBroker{
 		FogBroker.batchNumber = batchNumber;
 	}
 
-	public Map<Application, String> getApplicationToFirstMicroserviceMap() {
+	public static Map<Application, String> getApplicationToFirstMicroserviceMap() {
 		return applicationToFirstMicroserviceMap;
+	}
+
+	public static Map<Application, List<String>> getApplicationToSecondMicroservicesMap() {
+		return applicationToSecondMicroservicesMap;
 	}
 
 }
