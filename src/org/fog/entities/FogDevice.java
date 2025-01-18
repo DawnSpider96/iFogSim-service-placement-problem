@@ -433,18 +433,18 @@ public class FogDevice extends PowerDatacenter {
                 minTime = time;
             }
 
-            Log.formatLine(
-                    "%.2f: [Host #%d] utilization is %.2f%%",
-                    currentTime,
-                    host.getId(),
-                    host.getUtilizationOfCpu() * 100);
+//            Log.formatLine(
+//                    "%.2f: [Host #%d] utilization is %.2f%%",
+//                    currentTime,
+//                    host.getId(),
+//                    host.getUtilizationOfCpu() * 100);
         }
 
         if (timeDiff > 0) {
-            Log.formatLine(
-                    "\nEnergy consumption for the last time frame from %.2f to %.2f:",
-                    getLastProcessTime(),
-                    currentTime);
+//            Log.formatLine(
+//                    "\nEnergy consumption for the last time frame from %.2f to %.2f:",
+//                    getLastProcessTime(),
+//                    currentTime);
 
             for (PowerHost host : this.<PowerHost>getHostList()) {
                 double previousUtilizationOfCpu = host.getPreviousUtilizationOfCpu();
@@ -455,25 +455,25 @@ public class FogDevice extends PowerDatacenter {
                         timeDiff);
                 timeFrameDatacenterEnergy += timeFrameHostEnergy;
 
-                Log.printLine();
-                Log.formatLine(
-                        "%.2f: [Host #%d] utilization at %.2f was %.2f%%, now is %.2f%%",
-                        currentTime,
-                        host.getId(),
-                        getLastProcessTime(),
-                        previousUtilizationOfCpu * 100,
-                        utilizationOfCpu * 100);
-                Log.formatLine(
-                        "%.2f: [Host #%d] energy is %.2f W*sec",
-                        currentTime,
-                        host.getId(),
-                        timeFrameHostEnergy);
+//                Log.printLine();
+//                Log.formatLine(
+//                        "%.2f: [Host #%d] utilization at %.2f was %.2f%%, now is %.2f%%",
+//                        currentTime,
+//                        host.getId(),
+//                        getLastProcessTime(),
+//                        previousUtilizationOfCpu * 100,
+//                        utilizationOfCpu * 100);
+//                Log.formatLine(
+//                        "%.2f: [Host #%d] energy is %.2f W*sec",
+//                        currentTime,
+//                        host.getId(),
+//                        timeFrameHostEnergy);
             }
 
-            Log.formatLine(
-                    "\n%.2f: Data center's energy is %.2f W*sec\n",
-                    currentTime,
-                    timeFrameDatacenterEnergy);
+//            Log.formatLine(
+//                    "\n%.2f: Data center's energy is %.2f W*sec\n",
+//                    currentTime,
+//                    timeFrameDatacenterEnergy);
         }
 
         setPower(getPower() + timeFrameDatacenterEnergy);
