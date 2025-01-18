@@ -216,7 +216,6 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
                 deviceIdsToInclude.add(mfd.getId());
             }
         }
-        availableFogDevices = new ArrayList<>();
         for (FogDevice fogDevice : this.fogDevices) {
             if (deviceIdsToInclude.contains(fogDevice.getId())) {
                 availableFogDevices.add(fogDevice);
