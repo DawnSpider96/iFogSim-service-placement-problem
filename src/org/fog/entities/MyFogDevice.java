@@ -198,31 +198,27 @@ public class MyFogDevice extends FogDevice {
 			return;
 		}
 
-		// TODO Simon says this might need to change, seriously
-		//  With my current implementation of OnlinePOC it so happens that there is only one VM at a time
-		//  but surely this cannot be the default???
-		// Why are we taking the first VM only???
-		if (getHost().getVmList().size() > 0) {
-			AppModule operator = null;
-			for (Vm vm : getHost().getVmList()){
-				AppModule a = (AppModule) vm;
-				if (Objects.equals(a.getName(), tuple.getDestModuleName())){
-					operator = a;
-					break;
-				}
-			}
-			assert operator != null;
-			if (CloudSim.clock() > 0) {
-				getHost().getVmScheduler().deallocatePesForVm(operator);
-				getHost().getVmScheduler().allocatePesForVm(operator, new ArrayList<Double>() {
-					protected static final long serialVersionUID = 1L;
-
-					{
-						add((double) getHost().getTotalMips());
-					}
-				});
-			}
-		}
+//		if (getHost().getVmList().size() > 0) {
+//			AppModule operator = null;
+//			for (Vm vm : getHost().getVmList()){
+//				AppModule a = (AppModule) vm;
+//				if (Objects.equals(a.getName(), tuple.getDestModuleName())){
+//					operator = a;
+//					break;
+//				}
+//			}
+//			assert operator != null;
+//			if (CloudSim.clock() > 0) {
+//				getHost().getVmScheduler().deallocatePesForVm(operator);
+//				getHost().getVmScheduler().allocatePesForVm(operator, new ArrayList<Double>() {
+//					protected static final long serialVersionUID = 1L;
+//
+//					{
+//						add((double) getHost().getTotalMips());
+//					}
+//				});
+//			}
+//		}
 
 		if (deviceType.equals(MyFogDevice.CLOUD) && tuple.getDestModuleName() == null) {
 			sendNow(getControllerId(), FogEvents.TUPLE_FINISHED, null);
@@ -246,15 +242,35 @@ public class MyFogDevice extends FogDevice {
 			}
 		}
 
-		if (tuple.getDestinationDeviceId() == getId()) {
-			int vmId = -1;
-			for (Vm vm : getHost().getVmList()) {
-				if (((AppModule) vm).getName().equals(tuple.getDestModuleName()))
-					vmId = vm.getId();
+		if ((!getHost().getVmList().isEmpty()) && (tuple.getDestinationDeviceId() == getId())) {
+//			int vmId = -1;
+//			for (Vm vm : getHost().getVmList()) {
+//				if (((AppModule) vm).getName().equals(tuple.getDestModuleName()))
+//					vmId = vm.getId();
+//			}
+			AppModule operator = null;
+			for (Vm vm : getHost().getVmList()){
+				AppModule a = (AppModule) vm;
+				if (Objects.equals(a.getName(), tuple.getDestModuleName())){
+					operator = a;
+					break;
+				}
 			}
-			if (vmId < 0
-					|| (tuple.getModuleCopyMap().containsKey(tuple.getDestModuleName()) &&
-					tuple.getModuleCopyMap().get(tuple.getDestModuleName()) != vmId)) {
+            assert operator != null;
+            int vmId = operator.getId();
+			if (CloudSim.clock() > 0) {
+				getHost().getVmScheduler().deallocatePesForVm(operator);
+				getHost().getVmScheduler().allocatePesForVm(operator, new ArrayList<Double>() {
+					private static final long serialVersionUID = 1L;
+					{
+						add((double) getHost().getTotalMips());
+					}
+				});
+			}
+			// Simon (170125) says VmId will always have a value under OnlinePOC
+			// because operator cannot be null
+			if(tuple.getModuleCopyMap().containsKey(tuple.getDestModuleName()) &&
+					tuple.getModuleCopyMap().get(tuple.getDestModuleName()) != vmId) {
 				return;
 			}
 			tuple.setVmId(vmId);
@@ -794,7 +810,10 @@ public class MyFogDevice extends FogDevice {
 //					sendNow(getId(), FogEvents.LAUNCH_MODULE, new AppModule(app.getModuleByName(microserviceName)));
 					Logger.error("Simulation static mode error", "Simulation should not be static.");
 				} else if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
-					send(getId(), MicroservicePlacementConfig.MODULE_DEPLOYMENT_TIME, FogEvents.LAUNCH_MODULE, new AppModule(app.getModuleByName(microserviceName)));}
+					for (int i = 0 ; i < moduleLaunchConfig.getInstanceCount(); i++) {
+						send(getId(), MicroservicePlacementConfig.MODULE_DEPLOYMENT_TIME, FogEvents.LAUNCH_MODULE, new AppModule(app.getModuleByName(microserviceName)));
+					}
+				}
 				sendNow(getId(), FogEvents.LAUNCH_MODULE_INSTANCE, moduleLaunchConfig);
 			}
 		}
@@ -847,25 +866,18 @@ public class MyFogDevice extends FogDevice {
 			moduleInstanceCount.get(appId).put(moduleName, count);
 		}
 
-		// in FONs resource availability is updated by placement algorithm
-//		if (getDeviceType() != FON) {
-//			double mips = getControllerComponent().getAvailableResource(getId(), ControllerComponent.CPU) - (config.getModule().getMips() * config.getInstanceCount());
-//			getControllerComponent().updateResources(getId(), ControllerComponent.CPU, mips);
-//			double ram = getControllerComponent().getAvailableResource(getId(), ControllerComponent.RAM) - (config.getModule().getRam() * config.getInstanceCount());
-//			getControllerComponent().updateResources(getId(), ControllerComponent.RAM, ram);
-//			double storage = getControllerComponent().getAvailableResource(getId(), ControllerComponent.STORAGE) - (config.getModule().getSize() * config.getInstanceCount());
-//			getControllerComponent().updateResources(getId(), ControllerComponent.STORAGE, storage);
-//		}
-
 		// todo Simon says this block should apply to all devices since there are no FON heads and cloud resource availability doesn't exist
 		//  However, the cloud's knowledge of FCNs' resource availability is updated by NODE_EXECUTION_FINISHED event
 		//  This function is triggered by RELEASE_MODULE, hence updates the FCN's resource availability. But is it necessary??
-		double mips = getControllerComponent().getAvailableResource(getId(), ControllerComponent.CPU) - (config.getModule().getMips() * config.getInstanceCount());
-		getControllerComponent().updateResources(getId(), ControllerComponent.CPU, mips);
-		double ram = getControllerComponent().getAvailableResource(getId(), ControllerComponent.RAM) - (config.getModule().getRam() * config.getInstanceCount());
-		getControllerComponent().updateResources(getId(), ControllerComponent.RAM, ram);
-		double storage = getControllerComponent().getAvailableResource(getId(), ControllerComponent.STORAGE) - (config.getModule().getSize() * config.getInstanceCount());
-		getControllerComponent().updateResources(getId(), ControllerComponent.STORAGE, storage);
+		// in FONs resource availability is updated by placement algorithm
+		if (getDeviceType() != FON) {
+			double mips = getControllerComponent().getAvailableResource(getId(), ControllerComponent.CPU) - (config.getModule().getMips() * config.getInstanceCount());
+			getControllerComponent().updateResources(getId(), ControllerComponent.CPU, mips);
+			double ram = getControllerComponent().getAvailableResource(getId(), ControllerComponent.RAM) - (config.getModule().getRam() * config.getInstanceCount());
+			getControllerComponent().updateResources(getId(), ControllerComponent.RAM, ram);
+			double storage = getControllerComponent().getAvailableResource(getId(), ControllerComponent.STORAGE) - (config.getModule().getSize() * config.getInstanceCount());
+			getControllerComponent().updateResources(getId(), ControllerComponent.STORAGE, storage);
+		}
 
 		if (isInCluster && MicroservicePlacementConfig.ENABLE_RESOURCE_DATA_SHARING) {
 			for (Integer deviceId : getClusterMembers()) {

@@ -2,6 +2,7 @@ package org.fog.entities;
 
 import org.cloudbus.cloudsim.UtilizationModelFull;
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.power.PowerDatacenterBroker;
 import org.fog.application.AppEdge;
@@ -32,6 +33,11 @@ public class FogBroker extends PowerDatacenterBroker{
 		super(name);
 	}
 
+	// Simon (170125) says DatacenterBroker class has
+	// some weird CloudSim functionality that we don't want
+	@Override
+	public void processEvent(SimEvent ev) {processOtherEvent(ev);};
+
 	protected void processOtherEvent(SimEvent ev) {
 		switch (ev.getTag()) {
 			case FogEvents.RECEIVE_PLACEMENT_DECISION:
@@ -45,6 +51,10 @@ public class FogBroker extends PowerDatacenterBroker{
 				break;
 			case FogEvents.TUPLE_ACK:
 				System.out.println("Tuple acknowledged by device " + ev.getSource());
+				break;
+			case CloudSimTags.CLOUDLET_RETURN:
+				Tuple cl = (Tuple) ev.getData();
+				System.out.println("Cloudlet " + cl.getCloudletId() + " came from device " + ev.getSource() + " and is received by broker.");
 				break;
 			default:
 				super.processOtherEvent(ev);
@@ -113,7 +123,7 @@ public class FogBroker extends PowerDatacenterBroker{
 			boolean transmitted = false;
 			for (Application a : applicationToFirstMicroserviceMap.keySet()) {
 				if (a.getAppId() == pr.getApplicationId()) {
-					transmit(deviceId, a);
+					transmit(deviceId, a, pr);
 					transmitted = true;
 					break;
 				}
@@ -124,7 +134,7 @@ public class FogBroker extends PowerDatacenterBroker{
 		}
 	}
 
-	public void transmit(int targetId, Application app){
+	public void transmit(int targetId, Application app, PlacementRequest pr){
 		String firstMicroservice = applicationToFirstMicroserviceMap.get(app);
 		AppEdge _edge = null;
 		for(AppEdge edge : app.getEdges()){
@@ -144,6 +154,11 @@ public class FogBroker extends PowerDatacenterBroker{
 
 		tuple.setDestModuleName(_edge.getDestination());
 		tuple.setSrcModuleName(firstMicroservice);
+
+		// Simon (180125) says this is a bit hacky
+		// We are pretending the Tuple passed through clientModule though it didn't
+		tuple.addToTraversedMicroservices(pr.getGatewayDeviceId(), firstMicroservice);
+
 		Logger.debug(getName(), "Sending tuple with tupleId = " + tuple.getCloudletId());
 
 		tuple.setDestinationDeviceId(targetId);
