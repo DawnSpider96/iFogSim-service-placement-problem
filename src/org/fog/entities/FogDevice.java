@@ -818,7 +818,7 @@ public class FogDevice extends PowerDatacenter {
             int instances = -1;
             for (String _moduleName : module.getDownInstanceIdsMaps().keySet()) {
                 instances = Math.max(module.getDownInstanceIdsMaps().get(_moduleName).size(), instances);
-            }
+            } // TODO Simon says might need to change logic. We want the number of instances for module itself?
             module.setNumInstances(instances);
         }
 

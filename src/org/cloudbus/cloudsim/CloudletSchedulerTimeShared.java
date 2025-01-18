@@ -452,6 +452,10 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 		return (List<T>) cloudletExecList;
 	}
 
+	public int getCloudletExecListSize() {
+		return cloudletExecList.size();
+	}
+
 	/**
 	 * Sets the cloudlet exec list.
 	 * 

@@ -11,6 +11,7 @@ import org.fog.application.Application;
 import org.fog.placement.MicroservicePlacementLogic;
 import org.fog.placement.MyPlacementLogicOutput;
 import org.fog.placement.PlacementLogicOutput;
+import org.fog.scheduler.TupleScheduler;
 import org.fog.utils.*;
 import org.json.simple.JSONObject;
 
@@ -252,8 +253,18 @@ public class MyFogDevice extends FogDevice {
 			for (Vm vm : getHost().getVmList()){
 				AppModule a = (AppModule) vm;
 				if (Objects.equals(a.getName(), tuple.getDestModuleName())){
-					operator = a;
-					break;
+					TupleScheduler ts = (TupleScheduler) a.getCloudletScheduler();
+					int numberOfCloudletsExecuting = ts.getCloudletExecListSize();
+					if (numberOfCloudletsExecuting == 0) {
+						operator = a;
+						break;
+					}
+					else if (numberOfCloudletsExecuting == 1) {
+						System.out.println("Encountered full VM.");
+					}
+					else {
+						Logger.debug("Control Flow Error", "This vm has more than 1 Cloudlet!");
+					}
 				}
 			}
             assert operator != null;
