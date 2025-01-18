@@ -7,14 +7,12 @@ import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.power.PowerDatacenterBroker;
 import org.fog.application.AppEdge;
 import org.fog.application.AppLoop;
+import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.utils.*;
 import org.json.simple.JSONObject;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
+import java.util.*;
 
 public class FogBroker extends PowerDatacenterBroker{
 
@@ -155,9 +153,33 @@ public class FogBroker extends PowerDatacenterBroker{
 		tuple.setDestModuleName(_edge.getDestination());
 		tuple.setSrcModuleName(firstMicroservice);
 
+		AppModule firstMicroserviceModule = null;
+		for (AppModule am : app.getModules()) {
+			if (Objects.equals(am.getName(), firstMicroservice)) {
+				firstMicroserviceModule = am;
+				break;
+			}
+		}
+		assert firstMicroserviceModule != null;
+		// Simon (180125) says
+		// This is to generate a unique sourceModuleId for each AppModule
+		// See FogDevice.executeTuple, the part involving getDownInstanceIdsMaps()
+		AppModule firstMicroserviceModuleCopy = new AppModule(firstMicroserviceModule);
+
+
 		// Simon (180125) says this is a bit hacky
 		// We are pretending the Tuple passed through clientModule though it didn't
+		// Edit 4 fields of the Tuple. Imitate the state of tuple in OnlinePOC at the point it is processed in MyFogDevice.processTupleArrival
+		Map<String, Integer> moduleCopyMap = new HashMap<>();
+		moduleCopyMap.put(firstMicroservice, firstMicroserviceModuleCopy.getId());
+		tuple.setModuleCopyMap(moduleCopyMap);
+
+		tuple.setSourceModuleId(firstMicroserviceModuleCopy.getId());
+
+		tuple.setSourceDeviceId(pr.getGatewayDeviceId());
+
 		tuple.addToTraversedMicroservices(pr.getGatewayDeviceId(), firstMicroservice);
+//		updateTimingsOnSending(resTuple);
 
 		Logger.debug(getName(), "Sending tuple with tupleId = " + tuple.getCloudletId());
 
