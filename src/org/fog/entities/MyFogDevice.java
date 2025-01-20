@@ -280,10 +280,10 @@ public class MyFogDevice extends FogDevice {
 			}
 			// Simon (170125) says VmId will always have a value under OnlinePOC
 			// because operator cannot be null
-//			if(tuple.getModuleCopyMap().containsKey(tuple.getDestModuleName()) &&
-//					tuple.getModuleCopyMap().get(tuple.getDestModuleName()) != vmId) {
-//				return;
-//			}
+			if(tuple.getModuleCopyMap().containsKey(tuple.getDestModuleName()) &&
+					tuple.getModuleCopyMap().get(tuple.getDestModuleName()) != vmId) {
+				Logger.debug("Control Flow Error", "VmId should match tuple's destination vmId");
+			}
 			tuple.setVmId(vmId);
 			tuple.addToTraversedMicroservices(getId(), tuple.getDestModuleName());
 

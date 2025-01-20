@@ -1,6 +1,7 @@
 package org.fog.entities;
 
 import org.cloudbus.cloudsim.UtilizationModelFull;
+import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEvent;
@@ -9,6 +10,7 @@ import org.fog.application.AppEdge;
 import org.fog.application.AppLoop;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
+import org.fog.placement.MyHeuristic;
 import org.fog.utils.*;
 import org.json.simple.JSONObject;
 
@@ -153,28 +155,17 @@ public class FogBroker extends PowerDatacenterBroker{
 		tuple.setDestModuleName(_edge.getDestination());
 		tuple.setSrcModuleName(firstMicroservice);
 
-		AppModule firstMicroserviceModule = null;
-		for (AppModule am : app.getModules()) {
-			if (Objects.equals(am.getName(), firstMicroservice)) {
-				firstMicroserviceModule = am;
-				break;
-			}
-		}
-		assert firstMicroserviceModule != null;
-		// Simon (180125) says
-		// This is to generate a unique sourceModuleId for each AppModule
-		// See FogDevice.executeTuple, the part involving getDownInstanceIdsMaps()
-		AppModule firstMicroserviceModuleCopy = new AppModule(firstMicroserviceModule);
-
+		// Retrieve the exact instance of the first microservice from the gateway device itself
+		AppModule firstMicroserviceModule = getAppModule(pr, firstMicroservice);
 
 		// Simon (180125) says this is a bit hacky
 		// We are pretending the Tuple passed through clientModule though it didn't
 		// Edit 4 fields of the Tuple. Imitate the state of tuple in OnlinePOC at the point it is processed in MyFogDevice.processTupleArrival
 		Map<String, Integer> moduleCopyMap = new HashMap<>();
-		moduleCopyMap.put(firstMicroservice, firstMicroserviceModuleCopy.getId());
+		moduleCopyMap.put(firstMicroservice, firstMicroserviceModule.getId());
 		tuple.setModuleCopyMap(moduleCopyMap);
 
-		tuple.setSourceModuleId(firstMicroserviceModuleCopy.getId());
+		tuple.setSourceModuleId(firstMicroserviceModule.getId());
 
 		tuple.setSourceDeviceId(pr.getGatewayDeviceId());
 
@@ -189,6 +180,21 @@ public class FogBroker extends PowerDatacenterBroker{
 		tuple.setActualTupleId(actualTupleId);
 
 		sendNow(targetId, FogEvents.TUPLE_ARRIVAL, tuple);
+	}
+
+	private static AppModule getAppModule(PlacementRequest pr, String firstMicroservice) {
+		MyFogDevice device = (MyFogDevice) CloudSim.getEntity(pr.getGatewayDeviceId());
+
+		AppModule firstMicroserviceModule = null;
+		for (Vm vm : device.getVmList()) {
+			AppModule am = (AppModule) vm;
+			if (am.getName() == firstMicroservice) {
+				firstMicroserviceModule = am;
+				break;
+			}
+		}
+		assert firstMicroserviceModule != null;
+		return firstMicroserviceModule;
 	}
 
 	protected int updateTimings(String src, String dest, Application app){
