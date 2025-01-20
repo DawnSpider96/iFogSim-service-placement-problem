@@ -176,7 +176,7 @@ public class FogBroker extends PowerDatacenterBroker{
 
 		tuple.setDestinationDeviceId(targetId);
 
-		int actualTupleId = updateTimings(tupleType, tuple.getDestModuleName(), app);
+		int actualTupleId = updateTimings(firstMicroservice, tuple.getDestModuleName(), app);
 		tuple.setActualTupleId(actualTupleId);
 
 		sendNow(targetId, FogEvents.TUPLE_ARRIVAL, tuple);
