@@ -16,7 +16,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
      * Fog network related details
      */
     protected List<FogDevice> fogDevices; // ALL fog devices in the network
-    protected List<FogDevice> availableFogDevices = new ArrayList<>(); // Fog devices in the network that are in consideration for placement
+    protected List<FogDevice> edgeFogDevices = new ArrayList<>(); // Fog devices in the network that are in consideration for placement
     protected List<PlacementRequest> placementRequests; // requests to be processed
     protected Map<Integer, Map<String, Double>> resourceAvailability;
     protected Map<String, Application> applicationInfo = new HashMap<>(); // map app name to Application
@@ -216,10 +216,10 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
                 deviceIdsToInclude.add(mfd.getId());
             }
         }
-        availableFogDevices = new ArrayList<>();
+        edgeFogDevices = new ArrayList<>();
         for (FogDevice fogDevice : this.fogDevices) {
             if (deviceIdsToInclude.contains(fogDevice.getId())) {
-                availableFogDevices.add(fogDevice);
+                edgeFogDevices.add(fogDevice);
             }
         }
 
@@ -471,6 +471,71 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
                 return fogDevice;
         }
         return null;
+    }
+
+    // Class to track resource state during placement decisions
+    public static class DeviceState implements Comparable<DeviceState>{
+        private final Integer deviceId;
+        private final Map<String, Double> remainingResources;
+        private final Map<String, Double> totalResources;
+
+        public DeviceState(Integer deviceId, Map<String, Double> initialResources, double mips, double ram, double storage) {
+            this.deviceId = deviceId;
+            this.remainingResources = new HashMap<>(initialResources);
+            this.totalResources = new HashMap<>();
+            this.totalResources.put("cpu", mips);
+            this.totalResources.put("ram", ram);
+            this.totalResources.put("storage", storage);
+        }
+
+        public boolean canFit(double cpuReq, double ramReq, double storageReq) {
+            return remainingResources.get("cpu") >= cpuReq &&
+                    remainingResources.get("ram") >= ramReq &&
+                    remainingResources.get("storage") >= storageReq;
+        }
+
+        public void allocate(double cpuReq, double ramReq, double storageReq) {
+            remainingResources.put("cpu", remainingResources.get("cpu") - cpuReq);
+            remainingResources.put("ram", remainingResources.get("ram") - ramReq);
+            remainingResources.put("storage", remainingResources.get("storage") - storageReq);
+        }
+
+        public void deallocate(double cpuReq, double ramReq, double storageReq) {
+            remainingResources.put("cpu", remainingResources.get("cpu") + cpuReq);
+            remainingResources.put("ram", remainingResources.get("ram") + ramReq);
+            remainingResources.put("storage", remainingResources.get("storage") + storageReq);
+        }
+
+        public Integer getId() {
+            return deviceId;
+        }
+
+        public double getCPUUtil() {
+            double totalCPU = this.totalResources.get("cpu");
+            double availableCPU = this.remainingResources.get("cpu");
+            return (totalCPU - availableCPU) / totalCPU;
+        }
+
+        public double getRAMUtil() {
+            double totalRAM = this.totalResources.get("ram");
+            double availableRAM = this.remainingResources.get("ram");
+            return (totalRAM - availableRAM) / totalRAM;
+        }
+
+        @Override
+        public int compareTo(DeviceState other) {
+            // Sort by available CPU, then by RAM if CPU is equal, from biggest to smallest
+            int cpuCompare = Double.compare(
+                    other.remainingResources.get("cpu"), // Biggest first
+                    this.remainingResources.get("cpu")
+            );
+            if (cpuCompare != 0) return cpuCompare;
+
+            return Double.compare(
+                    other.remainingResources.get("ram"), // Biggest first
+                    this.remainingResources.get("ram")
+            );
+        }
     }
 
 }

@@ -13,6 +13,10 @@ public class PlacementLogicFactory {
     public static final int MY_MICROSERVICES_PLACEMENT = 4;
     public static final int MY_OFFLINE_POC_PLACEMENT = 5;
     public static final int MY_ONLINE_POC_PLACEMENT = 6;
+    public static final int BEST_FIT = 7;
+    public static final int CLOSEST_FIT = 8;
+    public static final int ACO = 9;
+
 
     public MicroservicePlacementLogic getPlacementLogic(int logic, int fonId) {
         switch (logic) {
@@ -27,7 +31,13 @@ public class PlacementLogicFactory {
             case MY_OFFLINE_POC_PLACEMENT:
                 return new MyOfflinePOCPlacementLogic(fonId);
             case MY_ONLINE_POC_PLACEMENT:
+                return new MyOnlinePOCPlacementLogicCopy(fonId);
+            case BEST_FIT:
                 return new MyBestFitHeuristic(fonId);
+            case CLOSEST_FIT:
+                return new MyClosestFitHeuristic(fonId);
+            case ACO:
+                return new MyACO(fonId);
         }
 
         Logger.error("Placement Logic Error", "Error initializing placement logic");

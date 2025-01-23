@@ -13,7 +13,7 @@ public class MicroservicePlacementConfig {
 
     // For periodic placement
     public static final double PLACEMENT_PROCESS_INTERVAL = 10;
-    public static final double PLACEMENT_GENERATE_INTERVAL = 50;
+    public static final double PLACEMENT_GENERATE_INTERVAL = 70;
 
     //Resource info sharing among cluster nodes
     public static Boolean ENABLE_RESOURCE_DATA_SHARING = false;
@@ -22,8 +22,8 @@ public class MicroservicePlacementConfig {
 
     // Certain Placement Logic will behave differently according to the Topology of the network
     // TODO Simon says this is not the proper way to configure. This configuration needs to sync with the actual topology as defined in the simulation file
-    public static String CENTRALISED = "centralised";
-    public static String FEDERATED = "federated";
-    public static String DISTRIBUTED = "distributed";
+    public static final String CENTRALISED = "centralised";
+    public static final String FEDERATED = "federated";
+    public static final String DECENTRALISED = "decentralised";
     public static String NETWORK_TOPOLOGY = CENTRALISED;
 }

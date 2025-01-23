@@ -19,15 +19,15 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
         super(fonID);
     }
 
-    private List<DeviceState> deviceStates = new ArrayList<>();
+    private List<DeviceState> DeviceStates = new ArrayList<>();
 
     @Override
     public void postProcessing() {
     }
 
     /**
-     * Prunes mappedMicroservices and updates placementRequests such that their entries reflect the modules placed in THIS cycle only.
-     * This function should ONLY be called when placementRequests and mappedMicroservices do NOT contain matching entries.
+     * Determines all the modules to place in this cycle.
+     * This implementation traces the AppLoop and compiles ALL modules from the AppLoop.
      *
      * @param toPlace           An empty/incomplete map of PlacementRequest to the list of Microservices (String) that require placement.
      *                          CPU and RAM requirements of each Microservice can be obtained with getModule() method.
@@ -44,6 +44,7 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
             List<String> completeModuleList = getAllModulesToPlace(new HashSet<>(alreadyPlaced), app);
 
             if (completeModuleList.isEmpty()) {
+                Logger.error("Flow Control Error", "fillToPlace is called on a completed PR");
                 f++;  // Increment only if no more modules can be placed
             } else {
                 toPlace.put(placementRequest, completeModuleList);
@@ -62,28 +63,10 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
             placementCompleteCount = fillToPlace(placementCompleteCount, toPlace, placementRequests);
         }
 
-        // Simon says for now all the microservices go in one big map.
-        // Simon (15015) says this is now unnecessary. We will hence use toPlace normally.
-        // appId -> microservices to place (can be multiple)
-//        // TODO Verify that the microservices are in order! (Because they are ordered in Simonstrator)
-//        Map<String, Map<PlacementRequest, List<String>>> microservices = new HashMap<>();
-//        for (Map.Entry<PlacementRequest, List<String>> entry : toPlace.entrySet()) {
-//            String applicationId = entry.getKey().getApplicationId();
-//            List<String> valueList = entry.getValue();
-//            microservices.computeIfAbsent(applicationId, k -> new HashMap<>());
-//            microservices.get(applicationId).put(entry.getKey(), valueList);
-//        }
-
-//        Set<Integer> deviceIdsToInclude = new HashSet<>();
-//        for (FogDevice fogDevice : fogDevices) {
-//            MyFogDevice mfd = (MyFogDevice) fogDevice;
-//            if (Objects.equals(mfd.getDeviceType(), MyFogDevice.FCN)) {
-//                deviceIdsToInclude.add(mfd.getId());
-//            }
-//        }
-        deviceStates = new ArrayList<>();
-        for (FogDevice fogDevice : availableFogDevices) {
-            deviceStates.add(new DeviceState(fogDevice.getId(), resourceAvailability.get(fogDevice.getId())));
+        DeviceStates = new ArrayList<>();
+        for (FogDevice fogDevice : edgeFogDevices) {
+            DeviceStates.add(new DeviceState(fogDevice.getId(), resourceAvailability.get(fogDevice.getId()),
+                    fogDevice.getHost().getTotalMips(), fogDevice.getHost().getRam(), fogDevice.getHost().getStorage()));
         }
 
         Map<PlacementRequest, Integer> prStatus = new HashMap<>();
@@ -92,7 +75,8 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
             PlacementRequest placementRequest = entry.getKey();
             Application app = applicationInfo.get(placementRequest.getApplicationId());
             List<String> microservices = entry.getValue();
-            // -1 if success, cloudId if failure
+
+            // status is -1 if success, cloudId if failure
             // Cloud will resend to itself
             // Type int for flexibility: In more complex simulations there may be more FON heads, not just the cloud.
             int status = tryPlacingOnePr(microservices, app, placementRequest);
@@ -122,22 +106,20 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
 
         for (String s : microservices) {
             AppModule service = getModule(s, app);
-            Collections.sort(deviceStates);
+            Collections.sort(DeviceStates);
 
-            for (int i = 0; i < deviceStates.size(); i++) {
+            for (int i = 0; i < DeviceStates.size(); i++) {
                 // Try to place
-                if (deviceStates.get(i).canFit(service.getMips(), service.getRam())) {
+                if (DeviceStates.get(i).canFit(service.getMips(), service.getRam(), service.getSize())) {
 
-                    deviceStates.get(i).allocate(service.getMips(), service.getRam());
+                    DeviceStates.get(i).allocate(service.getMips(), service.getRam(), service.getSize());
 //                    addToCpu.accept(getModule(microservice, app).getMips());
 //                    addToRam.accept(getModule(microservice, app).getRam());
 //                    addToStorage.accept(getModule(microservice, app).getSize());
 //                    markAsPlaced.accept(microservice);
 
                     // Update temporary state
-                    placed.put(s, deviceStates.get(i).deviceId);
-
-//                    tryPlacingAllHelper(microservice, device, app, markAsPlaced, addToCpu, addToRam, addToStorage, placementRequest.getPlacementRequestId());
+                    placed.put(s, DeviceStates.get(i).getId());
                     break;
                 }
             }
@@ -153,15 +135,15 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
                     int deviceId = placed.get(microservice);
                     if (deviceId != -1) {
                         DeviceState targetDeviceState = null;
-                        for (DeviceState deviceState : deviceStates) {
-                            if (deviceState.deviceId == deviceId) {
-                                targetDeviceState = deviceState;
+                        for (DeviceState DeviceState : DeviceStates) {
+                            if (DeviceState.getId() == deviceId) {
+                                targetDeviceState = DeviceState;
                                 break;
                             }
                         }
                         assert targetDeviceState != null;
                         AppModule placedService = getModule(microservice, app);
-                        targetDeviceState.deallocate(placedService.getMips(), placedService.getRam());
+                        targetDeviceState.deallocate(placedService.getMips(), placedService.getRam(), placedService.getSize());
                     }
                 }
                 break;
@@ -174,16 +156,6 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
             for (String s: placed.keySet()) {
                 AppModule service = getModule(s, app);
                 int deviceId = placed.get(s);
-
-//                DeviceState targetDeviceState = null;
-//                for (DeviceState deviceState : deviceStates) {
-//                    if (deviceState.deviceId == deviceId) {
-//                        targetDeviceState = deviceState;
-//                        break;
-//                    }
-//                }
-//                assert targetDeviceState != null;
-//                targetDeviceState.allocate(service.getMips(), service.getRam());
 
                 Logger.debug("ModulePlacementEdgeward", "Placement of operator " + s + " on device " + CloudSim.getEntityName(deviceId) + " successful.");
                 System.out.println("Placement of operator " + s + " on device " + CloudSim.getEntityName(deviceId) + " successful.");
@@ -211,21 +183,25 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
         else {
             Logger.error("Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
         }
-//        placements.computeIfAbsent(entry.getKey(), k -> new HashMap<>());
-//        placements.get(entry.getKey()).put(service, deviceState.deviceId);
-//        getCurrentCpuLoad().put(deviceState.deviceId,
-//                getCurrentCpuLoad().get(deviceState.deviceId) + service.getMips());
-//        getCurrentRamLoad().put(deviceState.deviceId,
-//                getCurrentRamLoad().get(deviceState.deviceId) + service.getRam());
 
         if (allPlaced) return -1;
         else return getFonID();
     }
 
 
+    /**
+     * Queries FogBroker to obtain the name(s) of second Microservice(s) in the AppLoop
+     * Iterates through all Placement Requests, using them to extract target for the second Microservice(s)
+     * State that can be used:
+     *   - List<PlacementRequest> placementRequests:    This has the completed placement target IDs.
+     *   - Map<PlacementRequest, Integer> closestNodes
+     *  - Map<Integer, Application> applicationInfo
+     * @param perDevice     Actually not very needed. Contains details of exactly how many module instance requests
+     *                      were sent to each device. Includes the module instances themselves.
+     * @return Map of each PR to the deviceId that the FogBroker will inform to begin execution
+     * */
     @Override
     protected Map<PlacementRequest, Integer> determineTargets(Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice) {
-        // Simon says that ALL the parent edge servers of the users that made PRs must receive deployments. Otherwise, error.
         Map<PlacementRequest, Integer> targets = new HashMap<>();
         for (PlacementRequest pr : placementRequests) {
             Application app = applicationInfo.get(pr.getApplicationId());
@@ -249,50 +225,6 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
         }
         return targets;
 
-    }
-
-
-
-
-    // Class to track resource state during placement decisions
-    private static class DeviceState implements Comparable<DeviceState> {
-        private final Integer deviceId;
-        private final Map<String, Double> remainingResources;
-
-        public DeviceState(Integer deviceId, Map<String, Double> initialResources) {
-            this.deviceId = deviceId;
-            this.remainingResources = new HashMap<>(initialResources);
-        }
-
-        public boolean canFit(double cpuReq, double ramReq) {
-            return remainingResources.get("cpu") >= cpuReq &&
-                    remainingResources.get("ram") >= ramReq;
-        }
-
-        public void allocate(double cpuReq, double ramReq) {
-            remainingResources.put("cpu", remainingResources.get("cpu") - cpuReq);
-            remainingResources.put("ram", remainingResources.get("ram") - ramReq);
-        }
-
-        public void deallocate(double cpuReq, double ramReq) {
-            remainingResources.put("cpu", remainingResources.get("cpu") + cpuReq);
-            remainingResources.put("ram", remainingResources.get("ram") + ramReq);
-        }
-
-        @Override
-        public int compareTo(DeviceState other) {
-            // Sort by available CPU, then by RAM if CPU is equal, from biggest to smallest
-            int cpuCompare = Double.compare(
-                    other.remainingResources.get("cpu"), // Biggest first
-                    this.remainingResources.get("cpu")
-            );
-            if (cpuCompare != 0) return cpuCompare;
-
-            return Double.compare(
-                    other.remainingResources.get("ram"), // Biggest first
-                    this.remainingResources.get("ram")
-            );
-        }
     }
 }
 

@@ -118,7 +118,7 @@ public class OnlinePOC {
             List<Application> appList = new ArrayList<>();
             appList.add(application);
 
-            int placementAlgo = PlacementLogicFactory.MY_ONLINE_POC_PLACEMENT;
+            int placementAlgo = PlacementLogicFactory.ACO;
             MyMicroservicesMobilityController microservicesController = new MyMicroservicesMobilityController("controller", fogDevices, sensors, appList, placementAlgo, locator);
 
             // generate placement requests
