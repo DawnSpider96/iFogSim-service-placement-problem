@@ -92,17 +92,14 @@ public class DataParser {
 
     }
 
-    @SuppressWarnings("unchecked")
-    public void parseResourceData() throws NumberFormatException, IOException {
-
-
+    public void parseResourceData(String filename) throws NumberFormatException, IOException {
         int numOfLevels = levelID.get("LevelsNum");
         ArrayList<String>[] resouresOnLevels = new ArrayList[numOfLevels];
         for (int i = 0; i < numOfLevels; i++)
             resouresOnLevels[i] = new ArrayList<String>();
 
 
-        BufferedReader csvReader = new BufferedReader(new FileReader("./dataset/edgeResources-melbCBD.csv"));
+        BufferedReader csvReader = new BufferedReader(new FileReader(filename));
         String row;
         while ((row = csvReader.readLine()) != null) {
             String[] data = row.split(",");
@@ -120,5 +117,9 @@ public class DataParser {
             levelwiseResources.put(i, resouresOnLevels[i]);
         }
         csvReader.close();
+    }
+
+    public void parseResourceData() throws NumberFormatException, IOException {
+        parseResourceData("./dataset/edgeResources-melbCBD.csv");
     }
 }

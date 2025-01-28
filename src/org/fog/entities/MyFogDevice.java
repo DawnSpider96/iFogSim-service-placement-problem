@@ -254,7 +254,7 @@ public class MyFogDevice extends FogDevice {
 				AppModule a = (AppModule) vm;
 				if (Objects.equals(a.getName(), tuple.getDestModuleName())){
 					TupleScheduler ts = (TupleScheduler) a.getCloudletScheduler();
-					int numberOfCloudletsExecuting = ts.getCloudletExecListSize();
+					int numberOfCloudletsExecuting = ts.runningCloudlets();
 					if (numberOfCloudletsExecuting == 0) {
 						operator = a;
 						break;
@@ -401,7 +401,7 @@ public class MyFogDevice extends FogDevice {
 			}
 		}
 		if (cloudletCompleted)
-			updateAllocatedMips(null);
+			updateAllocatedMips(null); // Dynamically reallocated mips from finished Modules
 	}
 
 	public void finishNodeExecution(SimEvent ev) {

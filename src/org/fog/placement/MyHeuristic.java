@@ -488,6 +488,13 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             this.totalResources.put("storage", storage);
         }
 
+        public DeviceState(DeviceState other) {
+            this.deviceId = other.deviceId;
+            this.remainingResources = new HashMap<>(other.remainingResources);
+            this.totalResources = new HashMap<>(other.totalResources);
+        }
+
+
         public boolean canFit(double cpuReq, double ramReq, double storageReq) {
             return remainingResources.get("cpu") >= cpuReq &&
                     remainingResources.get("ram") >= ramReq &&
@@ -524,16 +531,17 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
 
         @Override
         public int compareTo(DeviceState other) {
-            // Sort by available CPU, then by RAM if CPU is equal, from biggest to smallest
-            int cpuCompare = Double.compare(
-                    other.remainingResources.get("cpu"), // Biggest first
-                    this.remainingResources.get("cpu")
+            // Sort by CPU Util, then by RAM Util if CPU is equal, from smallest to biggest
+            int cpuCompare;
+            cpuCompare = Double.compare(
+                    this.getCPUUtil(), // Smallest first
+                    other.getCPUUtil()
             );
             if (cpuCompare != 0) return cpuCompare;
 
             return Double.compare(
-                    other.remainingResources.get("ram"), // Biggest first
-                    this.remainingResources.get("ram")
+                    this.getRAMUtil(), // Smallest first
+                    other.getRAMUtil()
             );
         }
     }

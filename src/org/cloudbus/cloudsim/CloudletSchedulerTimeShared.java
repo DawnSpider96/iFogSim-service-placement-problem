@@ -14,6 +14,7 @@ import java.util.Map;
 
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.entities.Tuple;
+import org.fog.utils.Logger;
 import org.fog.utils.MyMonitor;
 
 /**
@@ -452,9 +453,9 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 		return (List<T>) cloudletExecList;
 	}
 
-	public int getCloudletExecListSize() {
-		return cloudletExecList.size();
-	}
+//	public int getCloudletExecListSize() {
+//		return cloudletExecList.size();
+//	}
 
 	/**
 	 * Sets the cloudlet exec list.
@@ -514,7 +515,13 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 	 */
 	@Override
 	public List<Double> getCurrentRequestedMips() {
+		// Simon (250125) says this is a pretty useless function but is necessary for the installation of modules.
+		// Allocates Pes for a VM, we pass in this argument which ensures that the allocation always happens.
+		// Actual allocation of Pes (+ updating of VMScheduler.mipsMap) will happen upon Tuple execution
 		List<Double> mipsShare = new ArrayList<Double>();
+//		for (ResCloudlet c : cloudletExecList) {
+//			mipsShare.add(c.);
+//		}
 		return mipsShare;
 	}
 

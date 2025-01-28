@@ -11,11 +11,11 @@ import org.fog.utils.ModuleLaunchConfig;
 
 import java.util.*;
 
-public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
+public class MyMultiOptHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
     /**
      * Fog network related details
      */
-    public MyBestFitHeuristic(int fonID) {
+    public MyMultiOptHeuristic(int fonID) {
         super(fonID);
     }
 
@@ -23,6 +23,30 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
 
     @Override
     public void postProcessing() {
+    }
+
+    class Result implements Comparable<Result> {
+
+        private int index;
+        private double score;
+
+        public Result(int index, double score) {
+            this.index = index;
+            this.score = score;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        public double getScore() {
+            return score;
+        }
+
+        @Override
+        public int compareTo(Result arg0) {
+            return this.score < arg0.getScore() ? -1 : this.score == arg0.getScore() ? 0 : 1;
+        }
     }
 
     /**
@@ -88,53 +112,44 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
     @Override
     protected int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
         // Initialize temporary state
-//        final double[] cpusum = new double[1];
-//        Consumer<Double> addToCpu = (value) -> cpusum[0] += value;
-//        final int[] ramsum = new int[1];
-//        Consumer<Integer> addToRam = (value) -> ramsum[0] += value;
-//        final long[] storagesum = new long[1];
-//        Consumer<Long> addToStorage = (value) -> storagesum[0] += value;
         int[] placed = new int[microservices.size()];
         for (int i = 0 ; i < microservices.size() ; i++) {
             placed[i] = -1;
         }
-//        Consumer<String> markAsPlaced = microservice -> {
-//            if (placed.containsKey(microservice)) {
-//                placed.put(microservice, 1);
-//            }
-//        };
 
-        for (int j = 0 ; j < microservices.size() ; j++) {
-            String s = microservices.get(j);
+        List<DeviceState> servers = DeviceStates;
+
+        for (int i = 0; i < placed.length; i++) {
+            List<Result> results = new ArrayList<>();
+            String s = microservices.get(i);
             AppModule service = getModule(s, app);
-            Collections.sort(DeviceStates);
 
-            for (int i = 0; i < DeviceStates.size(); i++) {
-                // Try to place
-                if (DeviceStates.get(i).canFit(service.getMips(), service.getRam(), service.getSize())) {
-
-                    DeviceStates.get(i).allocate(service.getMips(), service.getRam(), service.getSize());
-//                    addToCpu.accept(getModule(microservice, app).getMips());
-//                    addToRam.accept(getModule(microservice, app).getRam());
-//                    addToStorage.accept(getModule(microservice, app).getSize());
-//                    markAsPlaced.accept(microservice);
-
-                    // Update temporary state
-                    placed[j]  = DeviceStates.get(i).getId();
-                    break;
+            for (int j = 0; j < servers.size(); j++) {
+                if (servers.get(j).canFit(service.getMips(), service.getRam(), service.getSize())) {
+                    double rateCPU = (servers.get(j).getCPUUtil() * 100) / (1 - (servers.get(j).getCPUUtil() * 100));
+                    double rateRAM = (servers.get(j).getRAMUtil() * 100) / (1 - (servers.get(j).getRAMUtil() * 100));
+                    double score = 0.5 * rateCPU + 0.5 * rateRAM;
+                    results.add(new Result(j, score));
                 }
             }
 
-            if (placed[j] < 0) {
+            if (!results.isEmpty()) {
+                Collections.sort(results);
+                DeviceState edgeServer = servers.get(results.get(0).getIndex());
+                placed[i] = edgeServer.getId();
+                servers.get(results.get(0).getIndex()).allocate(service.getMips(), service.getRam(), service.getSize());
+            }
+
+            if (placed[i] < 0) {
                 // todo Simon says what do we do when failure?
                 //  (160125) Nothing. Because (aggregated) failure will be determined outside the for loop
                 System.out.println("Failed to place module " + s + "on PR " + placementRequest.getPlacementRequestId());
                 System.out.println("Failed placement " + placementRequest.getPlacementRequestId());
 
                 // Undo every "placement" recorded in placed. Only deviceStates was changed, so we change it back
-                for (int i = 0 ; i < placed.length ; i++) {
-                    int deviceId = placed[i];
-                    String microservice = microservices.get(i);
+                for (int k = 0 ; k < placed.length ; k++) {
+                    int deviceId = placed[k];
+                    String microservice = microservices.get(k);
                     if (deviceId != -1) {
                         DeviceState targetDeviceState = null;
                         for (DeviceState DeviceState : DeviceStates) {

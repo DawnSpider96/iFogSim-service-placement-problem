@@ -33,6 +33,8 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
     private double tau0 = 1.0;
     private int antsNumber = 10;
 
+    private List<DeviceState> DeviceStates = new ArrayList<>();
+
     @Override
     public void postProcessing() {
     }
@@ -87,6 +89,15 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
             placementCompleteCount = fillToPlace(placementCompleteCount, toPlace, placementRequests);
         }
 
+        // Simon says in the ACO algorithm itself, copies of these DeviceStates will be made.
+        // This initialisation occurs only once,
+        // capturing the state of resourceAvailability (and fogDevices) at this point in time
+        DeviceStates = new ArrayList<>();
+        for (FogDevice fogDevice : edgeFogDevices) {
+            DeviceStates.add(new DeviceState(fogDevice.getId(), resourceAvailability.get(fogDevice.getId()),
+                    fogDevice.getHost().getTotalMips(), fogDevice.getHost().getRam(), fogDevice.getHost().getStorage()));
+        }
+
         Map<PlacementRequest, Integer> prStatus = new HashMap<>();
         // Process every PR individually
         for (Map.Entry<PlacementRequest, List<String>> entry : toPlace.entrySet()) {
@@ -103,9 +114,6 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
     }
 
     private double[][] fillGlobalLatencies(int length, Map<Integer, Integer> indices) {
-        // Simon (210125) says this matrix is missing information:
-        // latencies[cloud][children] have values, but latencies[children][cloud] are -1
-        // For any int device, latencies[device][device] should be 0 but are currently -1
         double[][] latencies = new double[length][length];
         for (int i = 0; i < length; i++) {
             for (int j = 0; j < length; j++) {
@@ -129,7 +137,7 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
     protected int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
         // Length of microservices should be equal to length of placement
         int requestReceiver = closestNodes.get(placementRequest);
-        MyACOHelper acoHelper = new MyACOHelper(microservices, edgeFogDevices, app, globalLatencies, indices, antsNumber, tau0, requestReceiver);
+        MyACOHelper acoHelper = new MyACOHelper(microservices, DeviceStates, app, globalLatencies, indices, antsNumber, tau0, requestReceiver);
         int[] placement = acoHelper.acoSchedule();
 
         // Initialize temporary state
@@ -138,61 +146,27 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
 //            placed.put(microservice, -1);
 //        }
 
-
-//        for (String s : microservices) {
-//            AppModule service = getModule(s, app);
-//
-//            for (int i = 0; i < nodes.size(); i++) {
-//                int deviceId = nodes.get(i).fogDevice.getId();
-//                // Try to place
-//                if (canFit(s, deviceId, app)) {
-//
-//                    // Update temporary state
-//                    allocate(deviceId, service.getMips(), service.getRam(), service.getSize());
-//                    placed.put(s, deviceId);
-//                    break;
-//                }
-//            }
-//
-//            if (placed.get(s) < 0) {
-//                // todo Simon says what do we do when failure?
-//                //  (160125) Nothing. Because (aggregated) failure will be determined outside the for loop
-//                System.out.println("Failed to place module " + s + "on PR " + placementRequest.getPlacementRequestId());
-//                System.out.println("Failed placement " + placementRequest.getPlacementRequestId());
-//
-//                // Undo every "placement" recorded in placed. Only deviceStates was changed, so we change it back
-//                for (String microservice : placed.keySet()) {
-//                    int deviceId = placed.get(microservice);
-//                    if (deviceId != -1) {
-//                        RelativeLatencyFogDevice targetNode = null;
-//                        for (RelativeLatencyFogDevice node: nodes) {
-//                            if (node.fogDevice.getId() == deviceId) {
-//                                targetNode = node;
-//                                break;
-//                            }
-//                        }
-//                        assert targetNode != null;
-//                        AppModule placedService = getModule(microservice, app);
-//                        deallocate(targetNode.fogDevice.getId(), placedService.getMips(), placedService.getRam(), placedService.getSize());
-//                    }
-//                }
-//                break;
-//            }
-//        }
-
         boolean allPlaced = true;
         for (int p : placement) {
             if (p == -1) allPlaced = false;
         }
 
         if (allPlaced) {
-            for (int i=0 ; i<microservices.size(); i++) {
+            for (int i = 0 ; i < microservices.size(); i++) {
                 String s = microservices.get(i);
                 AppModule service = getModule(s, app);
                 int deviceId = placement[i];
 
                 Logger.debug("ModulePlacementEdgeward", "Placement of operator " + s + " on device " + CloudSim.getEntityName(deviceId) + " successful.");
                 System.out.println("Placement of operator " + s + " on device " + CloudSim.getEntityName(deviceId) + " successful.");
+
+                // DeviceStates will go into future ACOHelper objects
+                // Then all the "copy" DeviceStates will contain the updated resource information
+                for (DeviceState d : DeviceStates) {
+                    if (d.getId() == deviceId) {
+                        d.allocate(service.getMips(), service.getRam(), service.getSize());
+                    }
+                }
 
                 moduleToApp.put(s, app.getAppId());
 
@@ -215,7 +189,8 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
             }
         }
         else {
-            Logger.error("Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
+            Logger.debug("Placement Failed", "But temporary state not affected");
+
         }
 //        placements.computeIfAbsent(entry.getKey(), k -> new HashMap<>());
 //        placements.get(entry.getKey()).put(service, deviceState.deviceId);
@@ -284,7 +259,7 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
 
         private List<String> microservices;
 
-        private List<FogDevice> edgeServers;
+        private List<DeviceState> edgeServers;
 
         private double[][] latencies;
 
@@ -338,12 +313,12 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
         private int requestReceiver;
         private final Application app;
 
-        MyACOHelper(List<String> microservices, List<FogDevice> fogDevices, Application app, double[][] latencies, Map<Integer, Integer> serversIds, int antsNumber, double tau0, int requestReceiver) {
+        MyACOHelper(List<String> microservices, List<DeviceState> edgeServers, Application app, double[][] latencies, Map<Integer, Integer> serversIds, int antsNumber, double tau0, int requestReceiver) {
             this.microservices = microservices;
 
             // TODO NOTE these are not actual copies of the fogDevices
             //  Find out what the copies are used for and whether copying is truly necessary
-            this.edgeServers = new ArrayList<>(fogDevices);
+            this.edgeServers = edgeServers;
 
             this.app = app;
 
@@ -371,10 +346,13 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
                     // TODO These are "copies" of the FogDevices, only containing state that we need.
                     //  Verify that it is indeed ok to have them disappear after each iteration of this FOR loop.
                     List<DeviceState> serversIteration = new ArrayList<>();
-                    for (FogDevice fogDevice : edgeServers) {
-                        serversIteration.add(new DeviceState(fogDevice.getId(), resourceAvailability.get(fogDevice.getId()),
-                                fogDevice.getHost().getTotalMips(), fogDevice.getHost().getRam(), fogDevice.getHost().getStorage()));
+                    for (DeviceState server : edgeServers) {
+                        serversIteration.add(new DeviceState(server));
                     }
+//                    for (FogDevice fogDevice : edgeServers) {
+//                        serversIteration.add(new DeviceState(fogDevice.getId(), resourceAvailability.get(fogDevice.getId()),
+//                                fogDevice.getHost().getTotalMips(), fogDevice.getHost().getRam(), fogDevice.getHost().getStorage()));
+//                    }
                     for (int j = 0; j < this.getMicroservices().size(); j++) {
                         // computeHeuristic();
                         String microservice = this.getMicroservices().get(j);
@@ -608,11 +586,11 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
             this.microservices = microservices;
         }
 
-        public List<FogDevice> getEdgeServers() {
+        public List<DeviceState> getEdgeServers() {
             return edgeServers;
         }
 
-        public void setEdgeServers(List<FogDevice> edgeServers) {
+        public void setEdgeServers(List<DeviceState> edgeServers) {
             this.edgeServers = edgeServers;
         }
 

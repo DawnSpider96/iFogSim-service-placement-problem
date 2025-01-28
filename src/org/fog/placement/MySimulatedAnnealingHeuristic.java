@@ -12,11 +12,11 @@ import org.fog.utils.ModuleLaunchConfig;
 
 import java.util.*;
 
-public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
+public class MySimulatedAnnealingHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
     /**
      * Fog network related details
      */
-    public MyClosestFitHeuristic(int fonID) {
+    public MySimulatedAnnealingHeuristic(int fonID) {
         super(fonID);
     }
 
@@ -24,6 +24,12 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
     // Maps DeviceId to index (on latencies and `fogDevices` state)
     private Map<Integer, Integer> indices;
     private double [][] globalLatencies;
+
+    private List<DeviceState> DeviceStates = new ArrayList<>();
+
+    // Simulated Annealing parameters
+    private static double temperature = 1000;
+    private static double coolingFactor = 0.995;
 
     @Override
     public void postProcessing() {
@@ -79,6 +85,16 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
             placementCompleteCount = fillToPlace(placementCompleteCount, toPlace, placementRequests);
         }
 
+        // Simon says in the algorithm itself, copies of these DeviceStates will be made.
+        // This initialisation occurs only once,
+        // capturing the state of resourceAvailability (and fogDevices) at this point in time
+        DeviceStates = new ArrayList<>();
+        for (FogDevice fogDevice : edgeFogDevices) {
+            DeviceStates.add(new DeviceState(fogDevice.getId(), resourceAvailability.get(fogDevice.getId()),
+                    fogDevice.getHost().getTotalMips(), fogDevice.getHost().getRam(), fogDevice.getHost().getStorage()));
+        }
+
+
         Map<PlacementRequest, Integer> prStatus = new HashMap<>();
         // Process every PR individually
         for (Map.Entry<PlacementRequest, List<String>> entry : toPlace.entrySet()) {
@@ -113,70 +129,138 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
         return latencies;
     }
 
+    /**
+     * Calculates cumulative latency of all placements to the users closest host
+     *
+     * @param placement
+     * @return
+     */
+    private double placementLatencySum(int[] placement, FogDevice closestNode) {
+
+        List<FogDevice> servers = this.edgeFogDevices;
+        double totalLatency = 0.0;
+        // create list with calculated user relative latency
+        for (int j = 0; j < placement.length; j++) {
+            for (int i = 0; i < servers.size(); i++) {
+
+                if (servers.get(i).getId() == placement[j]) {
+
+                    RelativeLatencyFogDevice relativeEdgeNode = new RelativeLatencyFogDevice(servers.get(i), closestNode, this.globalLatencies);
+
+                    totalLatency = totalLatency + relativeEdgeNode.latencyToClosestHost;
+                    break;
+                }
+
+            }
+        }
+        return totalLatency;
+    }
+
+    /**
+     * Makes a copy of DeviceStates. DeviceStates is updated after every placement.
+     *.
+     * @return
+     */
+    private List<DeviceState> getEdgeNodesListClone(List<DeviceState> nodes) {
+
+        List<DeviceState> listClone = new ArrayList<>();
+        for (DeviceState server : nodes) {
+            listClone.add(new DeviceState(server));
+        }
+
+        return listClone;
+    }
+
+    public static double probabilityOfAcceptance(double currentLatency, double neighborLatency, double temp) {
+        // neighbour is smaller, we accept always
+        if (neighborLatency < currentLatency)
+            return 1;
+        // else we might accept neighbour depending on the difference with
+        // existing solution and temperature
+        return Math.exp((currentLatency - neighborLatency) / temp);
+    }
+
 
     @Override
     protected int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
-
-        // Simon says the closest node changes with every PR
-        // Hence `nodes` needs to be remade repeatedly
-        List<RelativeLatencyFogDevice> nodes = new ArrayList<>();
+        
         FogDevice closestFogDevice = getDevice(closestNodes.get(placementRequest));
 
-        for (FogDevice fogDevice : edgeFogDevices) {
-            nodes.add(new RelativeLatencyFogDevice(fogDevice, closestFogDevice, globalLatencies));
+        // create empty placement list
+        int[] placements = new int[microservices.size()];
+        // initialise to null
+        for (int i = 0; i < placements.length; i++) {
+            placements[i] = -1;
         }
 
-        Collections.sort(nodes);
+        // duplicate to not use original values
+        int[] bestPlacement = placements.clone();
+        List<DeviceState> nodesBestPlacement = getEdgeNodesListClone(DeviceStates);
 
-        // Initialize temporary state
-        int[] placed = new int[microservices.size()];
-        for (int i = 0 ; i < microservices.size() ; i++) {
-            placed[i] = -1;
-        }
-
-
-        for (int j = 0 ; j < microservices.size() ; j++) {
-            String s = microservices.get(j);
-            AppModule service = getModule(s, app);
-
-            for (int i = 0; i < nodes.size(); i++) {
-                int deviceId = nodes.get(i).fogDevice.getId();
-                // Try to place
-                if (canFit(s, deviceId, app)) {
-
-                    // Update temporary state
-                    allocate(deviceId, service.getMips(), service.getRam(), service.getSize());
-                    placed[j] = deviceId;
+        // use FirstFit for an initial "best" placement generation
+        for (int i = 0; i < microservices.size(); i++) {
+            for (int j = 0; j < nodesBestPlacement.size(); j++) {
+                AppModule service = getModule(microservices.get(i), app);
+                if (nodesBestPlacement.get(j).canFit(service.getMips(), service.getRam(), service.getSize())) {
+                    nodesBestPlacement.get(j).allocate(service.getMips(), service.getRam(), service.getSize());
+                    bestPlacement[i] = nodesBestPlacement.get(j).getId();
                     break;
                 }
             }
+        }
 
-            if (placed[j] < 0) {
-                // todo Simon says what do we do when failure?
-                //  (160125) Nothing. Because (aggregated) failure will be determined outside the for loop
-                System.out.println("Failed to place module " + s + "on PR " + placementRequest.getPlacementRequestId());
-                System.out.println("Failed placement " + placementRequest.getPlacementRequestId());
+        // Current placement is also the "best" so far
+        int[] currentPlacement = bestPlacement.clone();
 
-                // Undo every "placement" recorded in placed. Only deviceStates was changed, so we change it back
-                for (int i = 0 ; i < placed.length ; i++) {
-                    int deviceId = placed[i];
-                    String microservice = microservices.get(i);
-                    if (deviceId != -1) {
-                        RelativeLatencyFogDevice targetNode = null;
-                        for (RelativeLatencyFogDevice node: nodes) {
-                            if (node.fogDevice.getId() == deviceId) {
-                                targetNode = node;
-                                break;
-                            }
-                        }
-                        assert targetNode != null;
-                        AppModule placedService = getModule(microservice, app);
-                        deallocate(targetNode.fogDevice.getId(), placedService.getMips(), placedService.getRam(), placedService.getSize());
+        // iterate while reducing temperature by a cooling factor (step)
+        for (double t = temperature; t > 1; t *= coolingFactor) {
+            int[] neighbourPlacement = currentPlacement.clone();
+            // also need a copy of nodes as we would update these as we book
+            // resources
+            List<DeviceState> nodesNeighborPlacement = getEdgeNodesListClone(DeviceStates);
+
+            // for each service function find a random node with ram and cpu
+            for (int i = 0; i < microservices.size(); i++) {
+                // pre-select only fitting nodes for random selection
+                List<DeviceState> onlyFittingNodesSubset = new ArrayList<DeviceState>();
+                AppModule service = getModule(microservices.get(i), app);
+
+                for (DeviceState node : nodesNeighborPlacement) {
+                    if (node.canFit(service.getMips(), service.getRam(), service.getSize())) {
+                        onlyFittingNodesSubset.add(node);
                     }
                 }
-                break;
+
+                // if no candidates was found set placement to -1
+                if (onlyFittingNodesSubset.size() < 1) {
+                    neighbourPlacement[i] = -1;
+                } else {
+                    // get random fitting node
+                    int j = (int) (onlyFittingNodesSubset.size() * Math.random());
+                    // Update the node resources
+                    onlyFittingNodesSubset.get(j).allocate(service.getMips(), service.getRam(), service.getSize());
+                    // add to placement
+                    neighbourPlacement[i] = onlyFittingNodesSubset.get(j).getId();
+                }
+            }
+
+            double currentLatency = placementLatencySum(currentPlacement, closestFogDevice);
+            double neighborLatency = placementLatencySum(neighbourPlacement, closestFogDevice);
+
+            if (Math.random() < probabilityOfAcceptance(currentLatency, neighborLatency, t)) {
+                currentPlacement = neighbourPlacement.clone();
+                currentLatency = neighborLatency;
+            }
+
+            // if solution is the best then put it aside
+            double bestLatency = placementLatencySum(bestPlacement, closestFogDevice);
+            if (currentLatency < bestLatency) {
+                bestPlacement = currentPlacement.clone();
             }
         }
+
+        // End up bestPlacement is the final placement
+        int[] placed = bestPlacement.clone();
 
         boolean allPlaced = true;
         for (int p : placed) {
@@ -191,6 +275,14 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
 
                 Logger.debug("ModulePlacementEdgeward", "Placement of operator " + s + " on device " + CloudSim.getEntityName(deviceId) + " successful.");
                 System.out.println("Placement of operator " + s + " on device " + CloudSim.getEntityName(deviceId) + " successful.");
+
+                // DeviceStates will go into future ACOHelper objects
+                // Then all the "copy" DeviceStates will contain the updated resource information
+                for (DeviceState d : DeviceStates) {
+                    if (d.getId() == deviceId) {
+                        d.allocate(service.getMips(), service.getRam(), service.getSize());
+                    }
+                }
 
                 moduleToApp.put(s, app.getAppId());
 
@@ -213,7 +305,7 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
             }
         }
         else {
-            Logger.error("Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
+            Logger.debug("Placement Failed", "But temporary state not affected");
         }
 //        placements.computeIfAbsent(entry.getKey(), k -> new HashMap<>());
 //        placements.get(entry.getKey()).put(service, deviceState.deviceId);
@@ -224,18 +316,6 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
 
         if (allPlaced) return -1;
         else return getFonID();
-    }
-
-    private void allocate(int deviceId, double mips, int ram, long size) {
-        getCurrentCpuLoad().put(deviceId, mips + getCurrentCpuLoad().get(deviceId));
-        getCurrentRamLoad().put(deviceId, ram + getCurrentRamLoad().get(deviceId));
-        getCurrentStorageLoad().put(deviceId, size + getCurrentStorageLoad().get(deviceId));
-    }
-
-    private void deallocate(int deviceId, double mips, int ram, long size) {
-        getCurrentCpuLoad().put(deviceId, mips - getCurrentCpuLoad().get(deviceId));
-        getCurrentRamLoad().put(deviceId, ram - getCurrentRamLoad().get(deviceId));
-        getCurrentStorageLoad().put(deviceId, size - getCurrentStorageLoad().get(deviceId));
     }
 
 

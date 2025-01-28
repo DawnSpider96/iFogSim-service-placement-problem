@@ -16,6 +16,7 @@ import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.lists.PeList;
 import org.cloudbus.cloudsim.provisioners.BwProvisioner;
 import org.cloudbus.cloudsim.provisioners.RamProvisioner;
+import org.fog.utils.Logger;
 
 /**
  * The class of a host supporting dynamic workloads and performance degradation.
@@ -67,74 +68,97 @@ public class HostDynamicWorkload extends Host {
 		setUtilizationMips(0);
 		double hostTotalRequestedMips = 0;
 
-		for (Vm vm : getVmList()) {
-			getVmScheduler().deallocatePesForVm(vm);
-		}
+		// todo Simon (250125) says this code checks cloudlet exec lists and reallocates mips accordingly
+		//  But we don't even need to do this because checkCloudletCompletion will reallocate mips
+		// 	depending on the
+//		for (Vm vm : getVmList()) {
+//			getVmScheduler().deallocatePesForVm(vm);
+//		}
+//
+//		for (Vm vm : getVmList()) {
+//			if (((CloudletSchedulerTimeShared) vm.getCloudletScheduler()).getCloudletExecListSize() > 1) {
+//				Logger.error("Control Flow Error", "Cloudlet should not have more than 1 cloudlet executing");
+//			}
+//			else if (((CloudletSchedulerTimeShared) vm.getCloudletScheduler()).getCloudletExecListSize() == 1) {
+//				getVmScheduler().allocatePesForVm(vm, new ArrayList<Double>() {
+//					private static final long serialVersionUID = 1L;
+//					{
+//						add((double) getTotalMips());
+//					}
+//				});
+//			}
+//			else { // No cloudlets executing, mipsmap can be assigned 0
+//				getVmScheduler().allocatePesForVm(vm, new ArrayList<Double>() {
+//					private static final long serialVersionUID = 1L;
+//					{
+//						add(0.0);
+//					}
+//				});
+//			}
+//		}
 
-		for (Vm vm : getVmList()) {
-			getVmScheduler().allocatePesForVm(vm, vm.getCurrentRequestedMips());
-		}
+		// todo Simon (250125) says this code is the useless one (null values)
+		//  because CloudletScheduler.getCurrentRequestedTotalMips etc have been hardcoded to return 0
+//		for (Vm vm : getVmList()) {
+//			double totalRequestedMips = vm.getCurrentRequestedTotalMips();
+//			double totalAllocatedMips = getVmScheduler().getTotalAllocatedMipsForVm(vm);
 
-		for (Vm vm : getVmList()) {
-			double totalRequestedMips = vm.getCurrentRequestedTotalMips();
-			double totalAllocatedMips = getVmScheduler().getTotalAllocatedMipsForVm(vm);
-
-			if (!Log.isDisabled()) {
-				Log.formatLine(
-						"%.2f: [Host #" + getId() + "] Total allocated MIPS for VM #" + vm.getId()
-								+ " (Host #" + vm.getHost().getId()
-								+ ") is %.2f, was requested %.2f out of total %.2f (%.2f%%)",
-						CloudSim.clock(),
-						totalAllocatedMips,
-						totalRequestedMips,
-						vm.getMips(),
-						totalRequestedMips / vm.getMips() * 100);
-
-				List<Pe> pes = getVmScheduler().getPesAllocatedForVM(vm);
-				StringBuilder pesString = new StringBuilder();
-				for (Pe pe : pes) {
-					pesString.append(String.format(" PE #" + pe.getId() + ": %.2f.", pe.getPeProvisioner()
-							.getTotalAllocatedMipsForVm(vm)));
-				}
-				Log.formatLine(
-						"%.2f: [Host #" + getId() + "] MIPS for VM #" + vm.getId() + " by PEs ("
-								+ getNumberOfPes() + " * " + getVmScheduler().getPeCapacity() + ")."
-								+ pesString,
-						CloudSim.clock());
-			}
-
-			if (getVmsMigratingIn().contains(vm)) {
-				Log.formatLine("%.2f: [Host #" + getId() + "] VM #" + vm.getId()
-						+ " is being migrated to Host #" + getId(), CloudSim.clock());
-			} else {
-				if (totalAllocatedMips + 0.1 < totalRequestedMips) {
-					Log.formatLine("%.2f: [Host #" + getId() + "] Under allocated MIPS for VM #" + vm.getId()
-							+ ": %.2f", CloudSim.clock(), totalRequestedMips - totalAllocatedMips);
-				}
-
-				vm.addStateHistoryEntry(
-						currentTime,
-						totalAllocatedMips,
-						totalRequestedMips,
-						(vm.isInMigration() && !getVmsMigratingIn().contains(vm)));
-
-				if (vm.isInMigration()) {
-					Log.formatLine(
-							"%.2f: [Host #" + getId() + "] VM #" + vm.getId() + " is in migration",
-							CloudSim.clock());
-					totalAllocatedMips /= 0.9; // performance degradation due to migration - 10%
-				}
-			}
-
-			setUtilizationMips(getUtilizationMips() + totalAllocatedMips);
-			hostTotalRequestedMips += totalRequestedMips;
-		}
-
-		addStateHistoryEntry(
-				currentTime,
-				getUtilizationMips(),
-				hostTotalRequestedMips,
-				(getUtilizationMips() > 0));
+//			if (!Log.isDisabled()) {
+//				Log.formatLine(
+//						"%.2f: [Host #" + getId() + "] Total allocated MIPS for VM #" + vm.getId()
+//								+ " (Host #" + vm.getHost().getId()
+//								+ ") is %.2f, was requested %.2f out of total %.2f (%.2f%%)",
+//						CloudSim.clock(),
+//						totalAllocatedMips,
+//						totalRequestedMips,
+//						vm.getMips(),
+//						totalRequestedMips / vm.getMips() * 100);
+//
+//				List<Pe> pes = getVmScheduler().getPesAllocatedForVM(vm);
+//				StringBuilder pesString = new StringBuilder();
+//				for (Pe pe : pes) {
+//					pesString.append(String.format(" PE #" + pe.getId() + ": %.2f.", pe.getPeProvisioner()
+//							.getTotalAllocatedMipsForVm(vm)));
+//				}
+//				Log.formatLine(
+//						"%.2f: [Host #" + getId() + "] MIPS for VM #" + vm.getId() + " by PEs ("
+//								+ getNumberOfPes() + " * " + getVmScheduler().getPeCapacity() + ")."
+//								+ pesString,
+//						CloudSim.clock());
+//			}
+//
+//			if (getVmsMigratingIn().contains(vm)) {
+//				Log.formatLine("%.2f: [Host #" + getId() + "] VM #" + vm.getId()
+//						+ " is being migrated to Host #" + getId(), CloudSim.clock());
+//			} else {
+//				if (totalAllocatedMips + 0.1 < totalRequestedMips) {
+//					Log.formatLine("%.2f: [Host #" + getId() + "] Under allocated MIPS for VM #" + vm.getId()
+//							+ ": %.2f", CloudSim.clock(), totalRequestedMips - totalAllocatedMips);
+//				}
+//
+//				vm.addStateHistoryEntry(
+//						currentTime,
+//						totalAllocatedMips,
+//						totalRequestedMips,
+//						(vm.isInMigration() && !getVmsMigratingIn().contains(vm)));
+//
+//				if (vm.isInMigration()) {
+//					Log.formatLine(
+//							"%.2f: [Host #" + getId() + "] VM #" + vm.getId() + " is in migration",
+//							CloudSim.clock());
+//					totalAllocatedMips /= 0.9; // performance degradation due to migration - 10%
+//				}
+//			}
+//
+//			setUtilizationMips(getUtilizationMips() + totalAllocatedMips);
+//			hostTotalRequestedMips += totalRequestedMips;
+//		}
+//
+//		addStateHistoryEntry(
+//				currentTime,
+//				getUtilizationMips(),
+//				hostTotalRequestedMips,
+//				(getUtilizationMips() > 0));
 
 		return smallerTime;
 	}

@@ -478,7 +478,7 @@ public class FogDevice extends PowerDatacenter {
 
         setPower(getPower() + timeFrameDatacenterEnergy);
 
-        checkCloudletCompletion();
+        checkCloudletCompletion(); // Simon (250125) says this function call is where mips are dynamically reallocated from finished Modules
 
         /** Remove completed VMs **/
         /**

@@ -5,9 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.fog.mobilitydata.ExperimentDataParser;
 import org.fog.mobilitydata.Location;
 import org.fog.mobilitydata.DataParser;
-import org.fog.mobilitydata.OfflineDataParser;
 import org.fog.mobilitydata.References;
 import org.fog.utils.Config;
 
@@ -148,6 +148,11 @@ public class LocationHandler {
 	public void parseResourceInfo() throws NumberFormatException, IOException {
 		// TODO Auto-generated method stub
 		getDataObject().parseResourceData();
+	}
+
+	public void parseResourceInfo(int numberOfEdge) throws NumberFormatException, IOException {
+		// TODO Auto-generated method stub
+		((ExperimentDataParser) getDataObject()).parseResourceData(numberOfEdge);
 	}
 
 	public List<String> getMobileUserDataId() {

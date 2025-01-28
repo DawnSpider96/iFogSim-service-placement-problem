@@ -1,9 +1,5 @@
 package org.fog.test.perfeval;
 
-import org.fog.application.MyApplication;
-import org.fog.mobilitydata.*;
-import org.fog.utils.Logger;
-
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Pe;
@@ -16,9 +12,13 @@ import org.cloudbus.cloudsim.sdn.overbooking.PeProvisionerOverbooking;
 import org.fog.application.AppEdge;
 import org.fog.application.AppLoop;
 import org.fog.application.Application;
+import org.fog.application.MyApplication;
 import org.fog.application.selectivity.FractionalSelectivity;
 import org.fog.entities.*;
-import org.fog.entities.PlacementRequest;
+import org.fog.mobilitydata.DataParser;
+import org.fog.mobilitydata.ExperimentDataParser;
+import org.fog.mobilitydata.OfflineDataParser;
+import org.fog.mobilitydata.References;
 import org.fog.placement.LocationHandler;
 import org.fog.placement.MyMicroservicesMobilityController;
 import org.fog.placement.PlacementLogicFactory;
@@ -26,6 +26,7 @@ import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.scheduler.StreamOperatorScheduler;
 import org.fog.utils.FogLinearPowerModel;
 import org.fog.utils.FogUtils;
+import org.fog.utils.Logger;
 import org.fog.utils.TimeKeeper;
 import org.fog.utils.distribution.DeterministicDistribution;
 
@@ -33,11 +34,14 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Proof of concept for integration of the following iFogSim elements:
- 1. Multiple IMMOBILE users
- 2. Multiple edge servers + 1 cloud server
- 3. Application (multiple Microservices in 1 AppLoop)
- 4. Simple Microservice Placement Logic
+ * Platform to run the OnlinePOC simulation under variable parameters:
+ *      1. Number of edge servers
+ *      2. Length of AppLoop
+ *      3. Placement Logic
+ *
+ * Metrics:
+ *      1. Average Latency
+ *      2. CPU Utilization
  *
  * @author Joseph Poon
  */
@@ -49,7 +53,7 @@ import java.util.*;
  * ENABLE_RESOURCE_DATA_SHARING -> false (not needed as FONs placed at the highest level.
  * DYNAMIC_CLUSTERING -> true (for clustered) and false (for not clustered) * (also compatible with static clustering)
  */
-public class OnlinePOC {
+public class MyExperiment {
     static List<FogDevice> fogDevices = new ArrayList<FogDevice>();
     static List<Sensor> sensors = new ArrayList<Sensor>();
     static List<Actuator> actuators = new ArrayList<Actuator>();
@@ -62,24 +66,48 @@ public class OnlinePOC {
     static double SENSOR_TRANSMISSION_TIME = 10;
     static int numberOfUser = 5;
 
-    //cluster link latency 2ms
-    static Double clusterLatency = 2.0;
-
     // TODO: 8/8/2021  not required for this scenario
     // if random mobility generator for users is True, new random dataset will be created for each user
 //    static boolean randomMobility_generator = true; // To use random datasets
 //    static boolean renewDataset = false; // To overwrite existing random datasets
 //    static List<Integer> clusteringLevels = new ArrayList<Integer>(); // The selected fog layers for clustering
 
-
     public static void main(String[] args) {
+        List<SimulationConfig> configs = Arrays.asList(
+                new SimulationConfig(10, 1, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(50, 1, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(100, 1, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(10, 3, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(50, 3, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(100, 3, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(10, 5, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(50, 5, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(100, 5, PlacementLogicFactory.MULTI_OPT)
+        );
+
+        for (SimulationConfig config : configs) {
+            run(config);
+        }
+    }
+
+
+    private static void run(SimulationConfig simulationConfig) {
 
         Log.printLine("Starting Simon's Online Application...");
 
-        try {
+        // Reset temporary state
+        fogDevices.clear();
+        sensors.clear();
+        actuators.clear();
+        locator = null;
 
-            Log.enable();
-            Logger.ENABLED = true;
+
+        try {
+            Log.disable();
+            Logger.ENABLED = false;
+            int numberOfEdge = simulationConfig.numberOfEdge;
+            int appLoopLength = simulationConfig.appLoopLength;
+            int placementLogicType = simulationConfig.placementLogic;
             int num_user = 1; // number of cloud users
             Calendar calendar = Calendar.getInstance();
             boolean trace_flag = false; // mean trace events
@@ -95,12 +123,12 @@ public class OnlinePOC {
             application.setUserId(broker.getId());
             // Simon (140125) says tuples will be sent to FogDevices and executed under mService1
             // because source module is clientModule but dest module is mService1
-            // todo Change accordingly if the AppLoop ever changes (or there are more Apploops)
+            // TODO Change accordingly if the AppLoop ever changes (or there are more AppLoops)
             FogBroker.getApplicationToFirstMicroserviceMap().put(application, "clientModule");
             List<String> simonAppSecondMicroservices = new ArrayList<>();
             simonAppSecondMicroservices.add("mService1");
             FogBroker.getApplicationToSecondMicroservicesMap().put(application, simonAppSecondMicroservices);
-            DataParser dataObject = new OfflineDataParser();
+            DataParser dataObject = new ExperimentDataParser();
             locator = new LocationHandler(dataObject);
 
 //            if (randomMobility_generator) {
@@ -109,7 +137,7 @@ public class OnlinePOC {
 //            }
 
             createImmobileUsers(broker.getId(), application);
-            createFogDevices(broker.getId(), application);
+            createFogDevices(broker.getId(), application, numberOfEdge);
 
 
             /**
@@ -137,9 +165,6 @@ public class OnlinePOC {
             Log.printLine("Simon app START!");
 
             CloudSim.startSimulation();
-
-            Log.printLine("Simon app ONGOING!");
-
             CloudSim.stopSimulation();
 
             Log.printLine("Simon app finished!");
@@ -150,13 +175,12 @@ public class OnlinePOC {
     }
 
     /**
-     * Creates 5 fog devices in the physical topology of the simulation.
+     * Creates variable number of fog devices in the physical topology of the simulation.
      *
      * @param userId
      */
-    private static void createFogDevices(int userId, Application app) throws NumberFormatException, IOException {
-        locator.parseResourceInfo();
-
+    private static void createFogDevices(int userId, Application app, int numberOfEdge) throws NumberFormatException, IOException {
+        locator.parseResourceInfo(numberOfEdge);
 
         if (locator.getLevelWiseResources(locator.getLevelID("Cloud")).size() == 1) {
 
@@ -367,5 +391,40 @@ public class OnlinePOC {
         return application;
     }
 
+}
 
+class SimulationConfig {
+    int numberOfEdge;
+    int appLoopLength;
+    int placementLogic;
+
+    public SimulationConfig(int numberOfEdge, int appLoopLength, int placementLogic) {
+        this.numberOfEdge = numberOfEdge;
+        this.appLoopLength = appLoopLength;
+        this.placementLogic = placementLogic;
+    }
+
+    public double getAppLoopLength() {
+        return appLoopLength;
+    }
+
+    public void setAppLoopLength(int appLoopLength) {
+        this.appLoopLength = appLoopLength;
+    }
+
+    public int getPlacementLogic() {
+        return placementLogic;
+    }
+
+    public void setPlacementLogic(int placementLogic) {
+        this.placementLogic = placementLogic;
+    }
+
+    public int getNumberOfEdge() {
+        return numberOfEdge;
+    }
+
+    public void setNumberOfEdge(int numberOfEdge) {
+        this.numberOfEdge = numberOfEdge;
+    }
 }

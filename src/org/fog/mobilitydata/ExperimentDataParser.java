@@ -8,11 +8,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class OfflineDataParser extends DataParser {
+public class ExperimentDataParser extends DataParser {
 
 //    public Map<String, Location> immobileUserLocationData = new HashMap<String, Location>();
 
-    public OfflineDataParser() {
+    public ExperimentDataParser() {
         levelID.put("LevelsNum", 3);
         levelID.put("Cloud", 0);
         // Todo Simon says no Proxy servers
@@ -49,8 +49,7 @@ public class OfflineDataParser extends DataParser {
 
     }
 
-    @Override
-    public void parseResourceData(String filename) throws NumberFormatException, IOException {
+    public void parseResourceData(String filename, int numberOfEdge) throws NumberFormatException, IOException {
 
         int numOfLevels = levelID.get("LevelsNum");
         ArrayList<String>[] resouresOnLevels = new ArrayList[numOfLevels];
@@ -60,8 +59,13 @@ public class OfflineDataParser extends DataParser {
 
         BufferedReader csvReader = new BufferedReader(new FileReader(filename));
         String row;
+
+        // Simon says we
+        // read the first numberOfEdge entries from the file (that have level==levelID.get("Gateway"))
+        // Ensures that we only have numberOfEdge edge servers (gateway is edge server)
         while ((row = csvReader.readLine()) != null) {
             String[] data = row.split(",");
+            int edgesPut = 0;
             //System.out.println(row);
             if (data[6].equals("VIC")) {
                 //System.out.println(row);
@@ -69,6 +73,14 @@ public class OfflineDataParser extends DataParser {
                 resouresOnLevels[Integer.parseInt(data[4])].add("res_" + data[0]);
                 resourceAndUserToLevel.put("res_" + data[0], Integer.parseInt(data[4]));
                 resourceLocationData.put("res_" + data[0], rl);
+
+                if (Integer.parseInt(data[4]) == levelID.get("Gateway")) {
+                    edgesPut++;
+                }
+            }
+
+            if (edgesPut == numberOfEdge) {
+                break;
             }
         }
 
@@ -78,8 +90,7 @@ public class OfflineDataParser extends DataParser {
         csvReader.close();
     }
 
-    @Override
-    public void parseResourceData() throws NumberFormatException, IOException {
-        parseResourceData("./dataset/edgeResources-melbCBD_OfflinePOC.csv");
+    public void parseResourceData(int numberOfEdge) throws NumberFormatException, IOException {
+        parseResourceData("./dataset/edgeResources-melbCBD_Experiments.csv", numberOfEdge);
     }
 }

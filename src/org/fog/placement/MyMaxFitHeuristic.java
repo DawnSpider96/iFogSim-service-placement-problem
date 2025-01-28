@@ -11,11 +11,11 @@ import org.fog.utils.ModuleLaunchConfig;
 
 import java.util.*;
 
-public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
+public class MyMaxFitHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
     /**
      * Fog network related details
      */
-    public MyBestFitHeuristic(int fonID) {
+    public MyMaxFitHeuristic(int fonID) {
         super(fonID);
     }
 
@@ -108,6 +108,7 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
             String s = microservices.get(j);
             AppModule service = getModule(s, app);
             Collections.sort(DeviceStates);
+            Collections.reverse(DeviceStates);
 
             for (int i = 0; i < DeviceStates.size(); i++) {
                 // Try to place
