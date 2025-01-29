@@ -16,9 +16,10 @@ public class PlacementLogicFactory {
     public static final int BEST_FIT = 7;
     public static final int CLOSEST_FIT = 8;
     public static final int MAX_FIT = 9;
-    public static final int MULTI_OPT = 10;
-    public static final int SIMULATED_ANNEALING = 11;
-    public static final int ACO = 12;
+    public static final int RANDOM = 10;
+    public static final int MULTI_OPT = 11;
+    public static final int SIMULATED_ANNEALING = 12;
+    public static final int ACO = 13;
 
 
     public MicroservicePlacementLogic getPlacementLogic(int logic, int fonId) {
@@ -41,6 +42,8 @@ public class PlacementLogicFactory {
                 return new MyClosestFitHeuristic(fonId);
             case MAX_FIT:
                 return new MyMaxFitHeuristic(fonId);
+            case RANDOM:
+                return new MyRandomHeuristic(fonId);
             case MULTI_OPT:
                 return new MyMultiOptHeuristic(fonId);
             case SIMULATED_ANNEALING:

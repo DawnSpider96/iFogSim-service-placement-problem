@@ -118,7 +118,7 @@ public class OnlinePOC {
             List<Application> appList = new ArrayList<>();
             appList.add(application);
 
-            int placementAlgo = PlacementLogicFactory.MULTI_OPT;
+            int placementAlgo = PlacementLogicFactory.RANDOM;
             MyMicroservicesMobilityController microservicesController = new MyMicroservicesMobilityController("controller", fogDevices, sensors, appList, placementAlgo, locator);
 
             // generate placement requests
@@ -312,8 +312,8 @@ public class OnlinePOC {
          * Adding modules (vertices) to the application model (directed graph)
          */
         application.addAppModule("clientModule", 128, 150, 100);
-        application.addAppModule("mService1", 128, 250, 200);
-        application.addAppModule("mService2", 128, 350, 500);
+        application.addAppModule("mService1", 3000, 250, 200);
+        application.addAppModule("mService2", 3000, 350, 500);
         application.addAppModule("mService3", 128, 450, 1000);
 
         /*
