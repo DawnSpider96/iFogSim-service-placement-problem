@@ -63,9 +63,9 @@ public class ExperimentDataParser extends DataParser {
         // Simon says we
         // read the first numberOfEdge entries from the file (that have level==levelID.get("Gateway"))
         // Ensures that we only have numberOfEdge edge servers (gateway is edge server)
+        int edgesPut = 0;
         while ((row = csvReader.readLine()) != null) {
             String[] data = row.split(",");
-            int edgesPut = 0;
             //System.out.println(row);
             if (data[6].equals("VIC")) {
                 //System.out.println(row);

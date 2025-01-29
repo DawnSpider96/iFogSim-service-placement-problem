@@ -233,6 +233,14 @@ public class CloudSim {
 		}
 	}
 
+	// Simon says we only empty the queues, CloudSim will reset its (static) state
+	// init should be called again later (in main sim file)
+	public static void clearQueues() {
+		CloudSim.future = new FutureQueue();
+		CloudSim.deferred = new DeferredQueue();
+	}
+
+
 	/**
 	 * This method is called if one wants to terminate the simulation.
 	 * 
@@ -571,6 +579,7 @@ public class CloudSim {
 	 */
 	public static void runStop() {
 		printMessage("Simulation completed.");
+		System.out.println("Simulation completed.");
 	}
 
 	/**
@@ -922,7 +931,7 @@ public class CloudSim {
 		double clock = clock();
 
 		finishSimulation();
-		runStop();
+//		runStop();
 
 		return clock;
 	}

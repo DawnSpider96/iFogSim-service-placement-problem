@@ -12,7 +12,6 @@ import org.fog.entities.Tuple;
 import org.fog.entities.MyFogDevice;
 import org.fog.entities.PlacementRequest;
 import org.fog.mobilitydata.References;
-import org.fog.utils.Config;
 import org.fog.utils.FogEvents;
 import org.fog.utils.MigrationDelayMonitor;
 import org.json.simple.JSONObject;
@@ -93,18 +92,28 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
                 processMobility(ev);
                 break;
             case FogEvents.STOP_SIMULATION:
-                CloudSim.stopSimulation();
                 printTimeDetails();
                 printPowerDetails();
                 printCostDetails();
                 printNetworkUsageDetails();
                 printMigrationDelayDetails();
-                System.exit(0);
+                endSimulation();
+                // Simon (280125) says for experiment purposes we can't forcibly stop execution.
+//                System.exit(0);
                 break;
             default:
                 super.processEvent(ev);
                 break;
         }
+    }
+
+    // In your entity that decides to stop the simulation
+    public void endSimulation() {
+        CloudSim.stopSimulation();  // Stops the simulation internally
+//        for (SimEntity entity : CloudSim.getEntityList()) {
+//            entity.shutdownEntity();  // Make sure this method clears each entity's state
+//        }
+        CloudSim.clearQueues();  // A hypothetical method to clear static variables if implemented
     }
 
     private void printMigrationDelayDetails() {

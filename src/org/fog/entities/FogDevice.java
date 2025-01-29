@@ -1198,5 +1198,11 @@ public class FogDevice extends PowerDatacenter {
         return clusterTupleQueue;
     }
 
+    // Simon (280125) this is useless lol
+    @Override
+    public void shutdownEntity(){
+        this.setState(FINISHED);
+    }
+
 
 }

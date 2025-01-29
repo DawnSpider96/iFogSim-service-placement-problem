@@ -17,7 +17,6 @@ import org.fog.application.selectivity.FractionalSelectivity;
 import org.fog.entities.*;
 import org.fog.mobilitydata.DataParser;
 import org.fog.mobilitydata.ExperimentDataParser;
-import org.fog.mobilitydata.OfflineDataParser;
 import org.fog.mobilitydata.References;
 import org.fog.placement.LocationHandler;
 import org.fog.placement.MyMicroservicesMobilityController;
@@ -74,15 +73,15 @@ public class MyExperiment {
 
     public static void main(String[] args) {
         List<SimulationConfig> configs = Arrays.asList(
-                new SimulationConfig(10, 1, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(50, 1, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(100, 1, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(10, 3, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(50, 3, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(100, 3, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(10, 5, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(50, 5, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(100, 5, PlacementLogicFactory.MULTI_OPT)
+                new SimulationConfig(10, 1, PlacementLogicFactory.CLOSEST_FIT),
+                new SimulationConfig(50, 1, PlacementLogicFactory.CLOSEST_FIT)
+//                new SimulationConfig(100, 1, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(10, 3, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(50, 3, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(100, 3, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(10, 5, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(50, 5, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(100, 5, PlacementLogicFactory.MULTI_OPT)
         );
 
         for (SimulationConfig config : configs) {
@@ -93,15 +92,15 @@ public class MyExperiment {
 
     private static void run(SimulationConfig simulationConfig) {
 
-        Log.printLine("Starting Simon's Online Application...");
+        System.out.println("Starting Simon's Experiment...");
 
-        // Reset temporary state
+        // Reset THIS class's temporary state
         fogDevices.clear();
         sensors.clear();
         actuators.clear();
         locator = null;
-
-
+        FogBroker.getApplicationToFirstMicroserviceMap().clear();
+        FogBroker.getApplicationToSecondMicroservicesMap().clear();
         try {
             Log.disable();
             Logger.ENABLED = false;
@@ -119,7 +118,7 @@ public class MyExperiment {
             FogBroker broker = new FogBroker("broker");
             CloudSim.setFogBrokerId(broker.getId());
 
-            MyApplication application = createApplication(appId, broker.getId());
+            MyApplication application = createApplication(appId, broker.getId(), appLoopLength);
             application.setUserId(broker.getId());
             // Simon (140125) says tuples will be sent to FogDevices and executed under mService1
             // because source module is clientModule but dest module is mService1
@@ -146,8 +145,7 @@ public class MyExperiment {
             List<Application> appList = new ArrayList<>();
             appList.add(application);
 
-            int placementAlgo = PlacementLogicFactory.MULTI_OPT;
-            MyMicroservicesMobilityController microservicesController = new MyMicroservicesMobilityController("controller", fogDevices, sensors, appList, placementAlgo, locator);
+            MyMicroservicesMobilityController microservicesController = new MyMicroservicesMobilityController("controller", fogDevices, sensors, appList, placementLogicType, locator);
 
             // generate placement requests
             List<PlacementRequest> placementRequests = new ArrayList<>();
@@ -165,9 +163,9 @@ public class MyExperiment {
             Log.printLine("Simon app START!");
 
             CloudSim.startSimulation();
-            CloudSim.stopSimulation();
+//            CloudSim.stopSimulation();
 
-            Log.printLine("Simon app finished!");
+            System.out.println("Simon app finished!");
         } catch (Exception e) {
             e.printStackTrace();
             Log.printLine("Unwanted errors happen");
@@ -202,7 +200,6 @@ public class MyExperiment {
 //            }
 
             for (int i = 0; i < locator.getLevelWiseResources(locator.getLevelID("Gateway")).size(); i++) {
-
                 // TODO (NOT Simon says): Depending on the Placement Logic maybe these should be FON instead of FCN
                 // I kept the comment to reflect the creator's thought process about Placement Logic.
                 // But Simon says these should definitely be FCN. The cloud will sort everything out.
@@ -213,12 +210,10 @@ public class MyExperiment {
                 gateway.setLevel(1);
                 fogDevices.add(gateway);
             }
-
         }
     }
 
     private static void createImmobileUsers(int userId, Application app) throws IOException {
-
         // Just keep this empty, I'm too lazy to override the LocationHandler as well
         Map<Integer, Integer> userMobilityPattern = new HashMap<Integer, Integer>();
 
@@ -234,7 +229,6 @@ public class MyExperiment {
 
             fogDevices.add(mobile);
         }
-
     }
 
     /**
@@ -327,8 +321,65 @@ public class MyExperiment {
     }
 
 
-    @SuppressWarnings({"serial"})
-    private static MyApplication createApplication(String appId, int userId) {
+    private static MyApplication createApplication(String appId, int userId, int appLoopLength) {
+        switch (appLoopLength){
+            case 1:
+                return createApplicationLength1(appId, userId);
+            case 3:
+                return createApplicationLength3(appId, userId);
+            case 5:
+                return createApplicationLength5(appId, userId);
+            default:
+                return null;
+        }
+    }
+
+    private static MyApplication createApplicationLength1(String appId, int userId) {
+
+        MyApplication application = MyApplication.createMyApplication(appId, userId);
+
+        /*
+         * Adding modules (vertices) to the application model (directed graph)
+         */
+        application.addAppModule("clientModule", 128, 150, 100);
+        application.addAppModule("mService1", 128, 250, 200);
+
+        /*
+         * Connecting the application modules (vertices) in the application model (directed graph) with edges
+         */
+        application.addAppEdge("SENSOR", "clientModule", 1000, 500, "SENSOR", Tuple.UP, AppEdge.SENSOR);
+        application.addAppEdge("clientModule", "mService1", 2000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mService1", "clientModule", 28, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
+        application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
+
+        /*
+         * Defining the input-output relationships (represented by selectivity) of the application modules.
+         */
+        application.addTupleMapping("clientModule", "SENSOR", "RAW_DATA", new FractionalSelectivity(1.0));
+        application.addTupleMapping("mService1", "RAW_DATA", "FILTERED_DATA1", new FractionalSelectivity(1.0));
+        application.addTupleMapping("clientModule", "RESULT", "RESULT_DISPLAY", new FractionalSelectivity(1.0));
+
+
+        final AppLoop loop1 = new AppLoop(new ArrayList<String>() {{
+            add("SENSOR");
+            add("clientModule");
+            add("mService1");
+            add("clientModule");
+            add("DISPLAY");
+        }});
+
+        List<AppLoop> loops = new ArrayList<AppLoop>() {{
+            add(loop1);
+        }};
+        application.setLoops(loops);
+
+
+//        application.createDAG();
+
+        return application;
+    }
+
+    private static MyApplication createApplicationLength3 (String appId, int userId) {
 
         MyApplication application = MyApplication.createMyApplication(appId, userId);
 
@@ -343,13 +394,10 @@ public class MyExperiment {
         /*
          * Connecting the application modules (vertices) in the application model (directed graph) with edges
          */
-
         application.addAppEdge("SENSOR", "clientModule", 1000, 500, "SENSOR", Tuple.UP, AppEdge.SENSOR);
         application.addAppEdge("clientModule", "mService1", 2000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("mService1", "mService2", 2500, 500, "FILTERED_DATA1", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("mService2", "mService3", 4000, 500, "FILTERED_DATA2", Tuple.UP, AppEdge.MODULE);
-
-//        application.addAppEdge("mService2", "clientModule", 14, 500, "RESULT1", Tuple.DOWN, AppEdge.MODULE);
         application.addAppEdge("mService3", "clientModule", 28, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
         application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
 //        application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT2_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
@@ -370,7 +418,7 @@ public class MyExperiment {
 //            application.setSpecialPlacementInfo("mService2", "cloud");
 //        }
 
-        final AppLoop loop1 = new AppLoop(new ArrayList<String>() {{
+        final AppLoop loop3 = new AppLoop(new ArrayList<String>() {{
             add("SENSOR");
             add("clientModule");
             add("mService1");
@@ -381,16 +429,80 @@ public class MyExperiment {
         }});
 
         List<AppLoop> loops = new ArrayList<AppLoop>() {{
-            add(loop1);
+            add(loop3);
         }};
         application.setLoops(loops);
 
 
+        // TODO Simon says maybe we look into this?
 //        application.createDAG();
 
         return application;
     }
 
+    private static MyApplication createApplicationLength5 (String appId, int userId) {
+
+        MyApplication application = MyApplication.createMyApplication(appId, userId);
+
+        /*
+         * Adding modules (vertices) to the application model (directed graph)
+         */
+        application.addAppModule("clientModule", 128, 150, 100);
+        application.addAppModule("mService1", 128, 250, 200);
+        application.addAppModule("mService2", 128, 350, 500);
+        application.addAppModule("mService3", 128, 450, 1000);
+        application.addAppModule("mService4", 128, 550, 1000);
+        application.addAppModule("mService5", 128, 650, 1000);
+
+        /*
+         * Connecting the application modules (vertices) in the application model (directed graph) with edges
+         */
+
+        application.addAppEdge("SENSOR", "clientModule", 1000, 500, "SENSOR", Tuple.UP, AppEdge.SENSOR);
+        application.addAppEdge("clientModule", "mService1", 2000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mService1", "mService2", 2500, 500, "FILTERED_DATA1", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mService2", "mService3", 4000, 500, "FILTERED_DATA2", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mService3", "mService4", 4000, 500, "FILTERED_DATA3", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mService4", "mService5", 4000, 500, "FILTERED_DATA4", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mService5", "clientModule", 28, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
+        application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
+//        application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT2_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
+
+
+        /*
+         * Defining the input-output relationships (represented by selectivity) of the application modules.
+         */
+        application.addTupleMapping("clientModule", "SENSOR", "RAW_DATA", new FractionalSelectivity(1.0));
+        application.addTupleMapping("mService1", "RAW_DATA", "FILTERED_DATA1", new FractionalSelectivity(1.0));
+        application.addTupleMapping("mService2", "FILTERED_DATA1", "FILTERED_DATA2", new FractionalSelectivity(1.0));
+        application.addTupleMapping("mService3", "FILTERED_DATA2", "FILTERED_DATA3", new FractionalSelectivity(1.0));
+        application.addTupleMapping("mService4", "FILTERED_DATA3", "FILTERED_DATA4", new FractionalSelectivity(1.0));
+        application.addTupleMapping("mService5", "FILTERED_DATA4", "RESULT", new FractionalSelectivity(1.0));
+        application.addTupleMapping("clientModule", "RESULT", "RESULT_DISPLAY", new FractionalSelectivity(1.0));
+
+
+        final AppLoop loop5 = new AppLoop(new ArrayList<String>() {{
+            add("SENSOR");
+            add("clientModule");
+            add("mService1");
+            add("mService2");
+            add("mService3");
+            add("mService4");
+            add("mService5");
+            add("clientModule");
+            add("DISPLAY");
+        }});
+
+        List<AppLoop> loops = new ArrayList<AppLoop>() {{
+            add(loop5);
+        }};
+        application.setLoops(loops);
+
+        // TODO Simon says maybe we look into this?
+//        application.createDAG();
+
+        return application;
+    }
 }
 
 class SimulationConfig {
