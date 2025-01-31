@@ -517,6 +517,14 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             return deviceId;
         }
 
+        public double getCPU() {
+            return this.remainingResources.get("cpu");
+        }
+
+        public double getRAM() {
+            return this.remainingResources.get("ram");
+        }
+
         public double getCPUUtil() {
             double totalCPU = this.totalResources.get("cpu");
             double availableCPU = this.remainingResources.get("cpu");

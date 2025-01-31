@@ -20,6 +20,7 @@ public class PlacementLogicFactory {
     public static final int MULTI_OPT = 11;
     public static final int SIMULATED_ANNEALING = 12;
     public static final int ACO = 13;
+    public static final int ILP = 14;
 
 
     public MicroservicePlacementLogic getPlacementLogic(int logic, int fonId) {
@@ -50,6 +51,8 @@ public class PlacementLogicFactory {
                 return new MySimulatedAnnealingHeuristic(fonId);
             case ACO:
                 return new MyACO(fonId);
+            case ILP:
+                return new MyILPHeuristic(fonId);
         }
 
         Logger.error("Placement Logic Error", "Error initializing placement logic");

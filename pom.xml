@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Project coordinates -->
+    <groupId>org.ucam</groupId>
+    <artifactId>jFogSim</artifactId>
+    <version>1.0.0</version>
+
+    <build>
+        <sourceDirectory>src</sourceDirectory> <!-- Setting custom source directory -->
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>1.8</source> <!-- Set your JDK version here -->
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <!-- Repositories to fetch dependencies -->
+    <repositories>
+    </repositories>
+
+    <!-- Dependencies for the project -->
+    <dependencies>
+        <!-- Btrplace Scheduler Choco Dependency -->
+        <dependency>
+            <groupId>org.btrplace</groupId>
+            <artifactId>scheduler-choco</artifactId>
+            <version>1.11.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ucam</groupId>
+            <artifactId>cloudsim</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ucam</groupId>
+            <artifactId>cloudsim-sources</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ucam</groupId>
+            <artifactId>cloudsim-examples</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ucam</groupId>
+            <artifactId>cloudsim-examples-sources</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ucam</groupId>
+            <artifactId>guava</artifactId>
+            <version>18.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ucam</groupId>
+            <artifactId>json-simple</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ucam</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>3.5</version>
+        </dependency>
+    </dependencies>
+
+</project>
