@@ -143,13 +143,14 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
     @Override
     protected void connectWithLatencies() {
         for (String dataId : locator.getDataIdsLevelReferences().keySet()) {
-            for (int instenceId : locator.getInstanceDataIdReferences().keySet()) {
-                if (locator.getInstanceDataIdReferences().get(instenceId).equals(dataId)) {
-                    FogDevice fogDevice = getFogDeviceById(instenceId);
+            for (int instanceId : locator.getInstanceDataIdReferences().keySet()) {
+                if (locator.getInstanceDataIdReferences().get(instanceId).equals(dataId)) {
+                    FogDevice fogDevice = getFogDeviceById(instanceId);
                     if (locator.getDataIdsLevelReferences().get(dataId) == locator.getLevelID("User") && fogDevice.getParentId() == References.NOT_SET) {
                         int parentID = locator.determineParent(fogDevice.getId(), References.INIT_TIME);
                         parentReference.put(fogDevice.getId(), parentID);
                         fogDevice.setParentId(parentID);
+                        fogDevice.setUplinkLatency(locator.calculateLatencyUsingDistance(parentID, instanceId));
                     } else
                         parentReference.put(fogDevice.getId(), fogDevice.getParentId());
                 }

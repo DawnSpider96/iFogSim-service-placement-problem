@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.cloudbus.cloudsim.Consts;
+import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.mobilitydata.ExperimentDataParser;
 import org.fog.mobilitydata.Location;
 import org.fog.mobilitydata.DataParser;
@@ -15,6 +17,9 @@ public class LocationHandler {
 	
 	public DataParser dataObject;
 	public Map<Integer, String> instanceToDataId;
+	private final double baseServerLatency = 1 * Consts.MILLISECOND;
+	private final double baseWifiLatency = 5 * Consts.MILLISECOND;
+	private final double latencyPerKilometer = 10 * Consts.MICROSECOND;
 	
 
 	public LocationHandler(DataParser dataObject) {
@@ -49,6 +54,43 @@ public class LocationHandler {
 	    distance = Math.pow(distance, 2);
 
 	    return Math.sqrt(distance);
+	}
+
+	public double calculateDistance(int entity1, int entity2) {
+		Location loc1;
+		Location loc2;
+
+		// TODO Simon (020225) says check if the "time" parameter of getUserLocationInfo accepts this
+		double time = CloudSim.clock();
+
+		String dataId = getDataIdByInstanceID(entity1);
+		int resourceLevel = getDataObject().resourceAndUserToLevel.get(dataId);
+		if(resourceLevel != getDataObject().levelID.get("User"))
+			loc1 = getResourceLocationInfo(dataId);
+		else
+			loc1 = getUserLocationInfo(dataId,time);
+
+		String dataId2 = getDataIdByInstanceID(entity2);
+		int resourceLevel2 = getDataObject().resourceAndUserToLevel.get(dataId2);
+		if(resourceLevel2 != getDataObject().levelID.get("User"))
+			loc2 = getResourceLocationInfo(dataId2);
+		else
+			loc2 = getUserLocationInfo(dataId2,time);
+
+		return calculateDistance(loc1, loc2);
+	}
+
+	public double calculateLatencyUsingDistance(int entity1, int entity2) {
+		double latency;
+		if (getDataObject().resourceAndUserToLevel.get(getDataIdByInstanceID(entity1)) == getDataObject().levelID.get("User") ||
+				getDataObject().resourceAndUserToLevel.get(getDataIdByInstanceID(entity2)) == getDataObject().levelID.get("User")) {
+			latency = baseWifiLatency + (calculateDistance(entity1, entity2) * latencyPerKilometer);
+		}
+		else {
+			latency = baseServerLatency + (calculateDistance(entity1, entity2) * latencyPerKilometer);
+		}
+		System.out.println(entity1 + " " + entity2 + " " + latency);
+		return latency;
 	}
 	
 

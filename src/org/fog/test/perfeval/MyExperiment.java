@@ -63,7 +63,7 @@ public class MyExperiment {
 //    static boolean CLOUD = false;
 
     static double SENSOR_TRANSMISSION_TIME = 10;
-    static int numberOfUser = 5;
+    static int numberOfUser = 196;
 
     // TODO: 8/8/2021  not required for this scenario
     // if random mobility generator for users is True, new random dataset will be created for each user
@@ -73,8 +73,8 @@ public class MyExperiment {
 
     public static void main(String[] args) {
         List<SimulationConfig> configs = Arrays.asList(
-                new SimulationConfig(10, 1, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(50, 1, PlacementLogicFactory.CLOSEST_FIT)
+                new SimulationConfig(100, 1, PlacementLogicFactory.CLOSEST_FIT),
+                new SimulationConfig(200, 1, PlacementLogicFactory.CLOSEST_FIT)
 //                new SimulationConfig(100, 1, PlacementLogicFactory.MULTI_OPT),
 //                new SimulationConfig(10, 3, PlacementLogicFactory.MULTI_OPT),
 //                new SimulationConfig(50, 3, PlacementLogicFactory.MULTI_OPT),
@@ -99,11 +99,12 @@ public class MyExperiment {
         sensors.clear();
         actuators.clear();
         locator = null;
+        TimeKeeper.deleteInstance();
         FogBroker.getApplicationToFirstMicroserviceMap().clear();
         FogBroker.getApplicationToSecondMicroservicesMap().clear();
         try {
-            Log.disable();
-            Logger.ENABLED = false;
+            Log.enable();
+            Logger.ENABLED = true;
             int numberOfEdge = simulationConfig.numberOfEdge;
             int appLoopLength = simulationConfig.appLoopLength;
             int placementLogicType = simulationConfig.placementLogic;
@@ -206,7 +207,8 @@ public class MyExperiment {
                 FogDevice gateway = createFogDevice("gateway_" + i, 2800, 4000, 10000, 10000, 0.0, 107.339, 83.4333, MyFogDevice.FCN);
                 locator.linkDataWithInstance(gateway.getId(), locator.getLevelWiseResources(locator.getLevelID("Gateway")).get(i));
                 gateway.setParentId(cloud.getId());
-                gateway.setUplinkLatency(4);
+                // Simon (020225) says we will determine distance
+                gateway.setUplinkLatency(locator.calculateLatencyUsingDistance(cloud.getId(), gateway.getId()));
                 gateway.setLevel(1);
                 fogDevices.add(gateway);
             }
@@ -217,15 +219,16 @@ public class MyExperiment {
         // Just keep this empty, I'm too lazy to override the LocationHandler as well
         Map<Integer, Integer> userMobilityPattern = new HashMap<Integer, Integer>();
 
-        locator.parseUserInfo(userMobilityPattern, "./dataset/usersLocation-melbCBD_OnlinePOC.csv");
+        locator.parseUserInfo(userMobilityPattern, "./dataset/usersLocation-melbCBD_Experiments.csv");
 
         List<String> mobileUserDataIds = locator.getMobileUserDataId();
 
         for (int i = 0; i < numberOfUser; i++) {
             FogDevice mobile = addImmobile("immobile_" + i, userId, app, References.NOT_SET); // adding mobiles to the physical topology. Smartphones have been modeled as fog devices as well.
-            mobile.setUplinkLatency(2); // latency of connection between the smartphone and proxy server is 2 ms
+            // Simon (020225) says we set uplink latency of users in MyMicroservicesMobilityController.connectWithLatencies
+            mobile.setUplinkLatency(-1);
             locator.linkDataWithInstance(mobile.getId(), mobileUserDataIds.get(i));
-            mobile.setLevel(3);
+            mobile.setLevel(2);
 
             fogDevices.add(mobile);
         }
@@ -347,8 +350,8 @@ public class MyExperiment {
         /*
          * Connecting the application modules (vertices) in the application model (directed graph) with edges
          */
-        application.addAppEdge("SENSOR", "clientModule", 1000, 500, "SENSOR", Tuple.UP, AppEdge.SENSOR);
-        application.addAppEdge("clientModule", "mService1", 2000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("SENSOR", "clientModule", 100, 500, "SENSOR", Tuple.UP, AppEdge.SENSOR);
+        application.addAppEdge("clientModule", "mService1", 100, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("mService1", "clientModule", 28, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
         application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
 
@@ -356,7 +359,7 @@ public class MyExperiment {
          * Defining the input-output relationships (represented by selectivity) of the application modules.
          */
         application.addTupleMapping("clientModule", "SENSOR", "RAW_DATA", new FractionalSelectivity(1.0));
-        application.addTupleMapping("mService1", "RAW_DATA", "FILTERED_DATA1", new FractionalSelectivity(1.0));
+        application.addTupleMapping("mService1", "RAW_DATA", "RESULT", new FractionalSelectivity(1.0));
         application.addTupleMapping("clientModule", "RESULT", "RESULT_DISPLAY", new FractionalSelectivity(1.0));
 
 

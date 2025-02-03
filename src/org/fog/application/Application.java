@@ -80,7 +80,7 @@ public class Application {
 	 * @param size
 	 */
 	public void addAppModule(String moduleName, int ram, int mips, int size) {
-		long bw = 1000;
+		long bw = 0;
 		String vmm = "Xen";
 
 		AppModule module = new AppModule(FogUtils.generateEntityId(), moduleName, getAppId(), getUserId(),

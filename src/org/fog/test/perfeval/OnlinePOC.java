@@ -137,12 +137,8 @@ public class OnlinePOC {
             Log.printLine("Simon app START!");
 
             CloudSim.startSimulation();
+//            CloudSim.stopSimulation();
 
-            Log.printLine("Simon app ONGOING!");
-
-            CloudSim.stopSimulation();
-
-            Log.printLine("Simon app finished!");
         } catch (Exception e) {
             e.printStackTrace();
             Log.printLine("Unwanted errors happen");
@@ -166,16 +162,6 @@ public class OnlinePOC {
             cloud.setLevel(0);
             fogDevices.add(cloud);
 
-//            for (int i = 0; i < locator.getLevelWiseResources(locator.getLevelID("Proxy")).size(); i++) {
-//
-//                FogDevice proxy = createFogDevice("proxy-server_" + i, 2800, 4000, 10000, 10000, 0.0, 107.339, 83.4333, MyFogDevice.FON); // creates the fog device Proxy Server (level=1)
-//                locator.linkDataWithInstance(proxy.getId(), locator.getLevelWiseResources(locator.getLevelID("Proxy")).get(i));
-//                proxy.setParentId(cloud.getId()); // setting Cloud as parent of the Proxy Server
-//                proxy.setUplinkLatency(100); // latency of connection from Proxy Server to the Cloud is 100 ms
-//                proxy.setLevel(1);
-//                fogDevices.add(proxy);
-//
-//            }
 
             for (int i = 0; i < locator.getLevelWiseResources(locator.getLevelID("Gateway")).size(); i++) {
 
@@ -185,7 +171,8 @@ public class OnlinePOC {
                 FogDevice gateway = createFogDevice("gateway_" + i, 2800, 4000, 10000, 10000, 0.0, 107.339, 83.4333, MyFogDevice.FCN);
                 locator.linkDataWithInstance(gateway.getId(), locator.getLevelWiseResources(locator.getLevelID("Gateway")).get(i));
                 gateway.setParentId(cloud.getId());
-                gateway.setUplinkLatency(4);
+                // Simon (020225) says we will determine distance
+                gateway.setUplinkLatency(locator.calculateLatencyUsingDistance(cloud.getId(), gateway.getId()));
                 gateway.setLevel(1);
                 fogDevices.add(gateway);
             }
@@ -204,7 +191,8 @@ public class OnlinePOC {
 
         for (int i = 0; i < numberOfUser; i++) {
             FogDevice mobile = addImmobile("immobile_" + i, userId, app, References.NOT_SET); // adding mobiles to the physical topology. Smartphones have been modeled as fog devices as well.
-            mobile.setUplinkLatency(2); // latency of connection between the smartphone and proxy server is 2 ms
+            // Simon (020225) says we set uplink latency of users in MyMicroservicesMobilityController.connectWithLatencies
+            mobile.setUplinkLatency(-1);
             locator.linkDataWithInstance(mobile.getId(), mobileUserDataIds.get(i));
             mobile.setLevel(3);
 
@@ -346,7 +334,7 @@ public class OnlinePOC {
 //            application.setSpecialPlacementInfo("mService2", "cloud");
 //        }
 
-        final AppLoop loop1 = new AppLoop(new ArrayList<String>() {{
+        final AppLoop loop3 = new AppLoop(new ArrayList<String>() {{
             add("SENSOR");
             add("clientModule");
             add("mService1");
@@ -357,7 +345,7 @@ public class OnlinePOC {
         }});
 
         List<AppLoop> loops = new ArrayList<AppLoop>() {{
-            add(loop1);
+            add(loop3);
         }};
         application.setLoops(loops);
 
