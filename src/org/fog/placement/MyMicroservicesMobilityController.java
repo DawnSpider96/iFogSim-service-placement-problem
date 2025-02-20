@@ -93,6 +93,7 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
                 break;
             case FogEvents.STOP_SIMULATION:
                 printTimeDetails();
+                printResourceConsumptionDetails();
                 printPowerDetails();
                 printCostDetails();
                 printNetworkUsageDetails();

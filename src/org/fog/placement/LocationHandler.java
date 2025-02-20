@@ -18,7 +18,7 @@ public class LocationHandler {
 	public DataParser dataObject;
 	public Map<Integer, String> instanceToDataId;
 	private final double baseServerLatency = 1 * Consts.MILLISECOND;
-	private final double baseWifiLatency = 5 * Consts.MILLISECOND;
+	private final double baseWifiLatency = 2 * Consts.MILLISECOND;
 	private final double latencyPerKilometer = 10 * Consts.MICROSECOND;
 	
 
@@ -183,17 +183,18 @@ public class LocationHandler {
 	}
 
 	public void parseUserInfo(Map<Integer, Integer> userMobilityPattern, String datasetReference) throws IOException {
-		// TODO Auto-generated method stub
 		getDataObject().parseUserData(userMobilityPattern, datasetReference);
 	}
 
+	public void parseUserInfo(Map<Integer, Integer> userMobilityPattern, String datasetReference, int numberOfUser) throws NumberFormatException, IOException {
+		((ExperimentDataParser) getDataObject()).parseUserData(userMobilityPattern, datasetReference, numberOfUser);
+	}
+
 	public void parseResourceInfo() throws NumberFormatException, IOException {
-		// TODO Auto-generated method stub
 		getDataObject().parseResourceData();
 	}
 
 	public void parseResourceInfo(int numberOfEdge) throws NumberFormatException, IOException {
-		// TODO Auto-generated method stub
 		((ExperimentDataParser) getDataObject()).parseResourceData(numberOfEdge);
 	}
 

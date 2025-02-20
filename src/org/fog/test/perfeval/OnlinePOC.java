@@ -118,13 +118,13 @@ public class OnlinePOC {
             List<Application> appList = new ArrayList<>();
             appList.add(application);
 
-            int placementAlgo = PlacementLogicFactory.ILP;
+            int placementAlgo = PlacementLogicFactory.ACO;
             MyMicroservicesMobilityController microservicesController = new MyMicroservicesMobilityController("controller", fogDevices, sensors, appList, placementAlgo, locator);
 
             // generate placement requests
             List<PlacementRequest> placementRequests = new ArrayList<>();
             for (Sensor sensor : sensors) {
-                Map<String, Integer> placedMicroservicesMap = new HashMap<>();
+                Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();
                 placedMicroservicesMap.put("clientModule", sensor.getGatewayDeviceId());
                 PlacementRequest p = new PlacementRequest(sensor.getAppId(), sensor.getId(), sensor.getGatewayDeviceId(), placedMicroservicesMap);
                 placementRequests.add(p);
@@ -300,8 +300,8 @@ public class OnlinePOC {
          * Adding modules (vertices) to the application model (directed graph)
          */
         application.addAppModule("clientModule", 128, 150, 100);
-        application.addAppModule("mService1", 3000, 250, 200);
-        application.addAppModule("mService2", 3000, 350, 500);
+        application.addAppModule("mService1", 128, 250, 200);
+        application.addAppModule("mService2", 128, 350, 500);
         application.addAppModule("mService3", 128, 450, 1000);
 
         /*

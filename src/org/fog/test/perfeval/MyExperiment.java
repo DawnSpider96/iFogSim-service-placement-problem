@@ -23,10 +23,7 @@ import org.fog.placement.MyMicroservicesMobilityController;
 import org.fog.placement.PlacementLogicFactory;
 import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.scheduler.StreamOperatorScheduler;
-import org.fog.utils.FogLinearPowerModel;
-import org.fog.utils.FogUtils;
-import org.fog.utils.Logger;
-import org.fog.utils.TimeKeeper;
+import org.fog.utils.*;
 import org.fog.utils.distribution.DeterministicDistribution;
 
 import java.io.IOException;
@@ -63,7 +60,7 @@ public class MyExperiment {
 //    static boolean CLOUD = false;
 
     static double SENSOR_TRANSMISSION_TIME = 10;
-    static int numberOfUser = 196;
+//    static int numberOfUser = 196;
 
     // TODO: 8/8/2021  not required for this scenario
     // if random mobility generator for users is True, new random dataset will be created for each user
@@ -73,9 +70,16 @@ public class MyExperiment {
 
     public static void main(String[] args) {
         List<SimulationConfig> configs = Arrays.asList(
-                new SimulationConfig(100, 1, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(200, 1, PlacementLogicFactory.CLOSEST_FIT)
-//                new SimulationConfig(100, 1, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(100, 20, 1, PlacementLogicFactory.ACO), // Demonstrate Metrics collection first
+                new SimulationConfig(200, 50, 5, PlacementLogicFactory.CLOSEST_FIT),
+                new SimulationConfig(200, 50, 5, PlacementLogicFactory.BEST_FIT),
+                new SimulationConfig(200, 50, 5, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(200, 50, 5, PlacementLogicFactory.RANDOM),
+                new SimulationConfig(200, 50, 5, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(200, 50, 5, PlacementLogicFactory.SIMULATED_ANNEALING),
+                new SimulationConfig(200, 50, 5, PlacementLogicFactory.ACO),
+                new SimulationConfig(200, 50, 5, PlacementLogicFactory.ILP)
+//                new SimulationConfig(100, 1, PlacementLogicFactory.MULTI_OPT)
 //                new SimulationConfig(10, 3, PlacementLogicFactory.MULTI_OPT),
 //                new SimulationConfig(50, 3, PlacementLogicFactory.MULTI_OPT),
 //                new SimulationConfig(100, 3, PlacementLogicFactory.MULTI_OPT),
@@ -87,6 +91,9 @@ public class MyExperiment {
         for (SimulationConfig config : configs) {
             run(config);
         }
+
+        // (170225) For ease of debugging only
+        MyMonitor mm = MyMonitor.getInstance();
     }
 
 
@@ -95,6 +102,7 @@ public class MyExperiment {
         System.out.println("Starting Simon's Experiment...");
 
         // Reset THIS class's temporary state
+        // Simon (040225) says MyMonitor is NOT reset
         fogDevices.clear();
         sensors.clear();
         actuators.clear();
@@ -106,6 +114,7 @@ public class MyExperiment {
             Log.enable();
             Logger.ENABLED = true;
             int numberOfEdge = simulationConfig.numberOfEdge;
+            int numberOfUser = simulationConfig.numberOfUser;
             int appLoopLength = simulationConfig.appLoopLength;
             int placementLogicType = simulationConfig.placementLogic;
             int num_user = 1; // number of cloud users
@@ -136,7 +145,7 @@ public class MyExperiment {
 //                createRandomMobilityDatasets(References.random_walk_mobility_model, datasetReference, renewDataset);
 //            }
 
-            createImmobileUsers(broker.getId(), application);
+            createImmobileUsers(broker.getId(), application, numberOfUser);
             createFogDevices(broker.getId(), application, numberOfEdge);
 
 
@@ -151,7 +160,7 @@ public class MyExperiment {
             // generate placement requests
             List<PlacementRequest> placementRequests = new ArrayList<>();
             for (Sensor sensor : sensors) {
-                Map<String, Integer> placedMicroservicesMap = new HashMap<>();
+                Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();
                 placedMicroservicesMap.put("clientModule", sensor.getGatewayDeviceId());
                 PlacementRequest p = new PlacementRequest(sensor.getAppId(), sensor.getId(), sensor.getGatewayDeviceId(), placedMicroservicesMap);
                 placementRequests.add(p);
@@ -215,11 +224,11 @@ public class MyExperiment {
         }
     }
 
-    private static void createImmobileUsers(int userId, Application app) throws IOException {
+    private static void createImmobileUsers(int userId, Application app, int numberOfUser) throws IOException {
         // Just keep this empty, I'm too lazy to override the LocationHandler as well
         Map<Integer, Integer> userMobilityPattern = new HashMap<Integer, Integer>();
 
-        locator.parseUserInfo(userMobilityPattern, "./dataset/usersLocation-melbCBD_Experiments.csv");
+        locator.parseUserInfo(userMobilityPattern, "./dataset/usersLocation-melbCBD_Experiments.csv", numberOfUser);
 
         List<String> mobileUserDataIds = locator.getMobileUserDataId();
 
@@ -510,11 +519,16 @@ public class MyExperiment {
 
 class SimulationConfig {
     int numberOfEdge;
+    int numberOfUser;
     int appLoopLength;
     int placementLogic;
 
-    public SimulationConfig(int numberOfEdge, int appLoopLength, int placementLogic) {
+    public SimulationConfig(int numberOfEdge, int numberOfUser, int appLoopLength, int placementLogic) {
+        if (numberOfUser >= 196 || numberOfEdge > 300){
+            Logger.error("Simulation Parameter error", "Not enough user/edge device location information!");
+        }
         this.numberOfEdge = numberOfEdge;
+        this.numberOfUser = numberOfUser;
         this.appLoopLength = appLoopLength;
         this.placementLogic = placementLogic;
     }
@@ -542,4 +556,8 @@ class SimulationConfig {
     public void setNumberOfEdge(int numberOfEdge) {
         this.numberOfEdge = numberOfEdge;
     }
+
+    public int getNumberOfUser() {return numberOfUser;}
+
+    public void setNumberOfUser(int numberOfUser) {this.numberOfUser = numberOfUser;}
 }

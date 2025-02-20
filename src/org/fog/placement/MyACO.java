@@ -26,10 +26,6 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
         super(fonID);
     }
 
-    private int cloudIndex = -1;
-    private Map<Integer, Integer> indices;
-    private double [][] globalLatencies;
-
     private double tau0 = 1.0;
     private int antsNumber = 10;
 
@@ -71,18 +67,6 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
     protected Map<PlacementRequest, Integer> mapModules() {
         Map<PlacementRequest, List<String>> toPlace = new HashMap<>();
 
-        int length = fogDevices.size();
-        indices = new HashMap<>();
-        for (int i=0 ; i<fogDevices.size() ; i++) {
-            indices.put(fogDevices.get(i).getId(), i);
-            // While we're at it, determine cloud's index
-            if (fogDevices.get(i).getName() == "cloud") cloudIndex = i;
-        }
-        if(cloudIndex <0) {
-            Logger.error("Control Flow Error", "Cloud index should have value.");
-        }
-        globalLatencies = fillGlobalLatencies(length, indices);
-
         int placementCompleteCount = 0;
         if (toPlace.isEmpty()) {
             // Update toPlace and placementCompleteCount
@@ -111,25 +95,6 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
             prStatus.put(placementRequest, status);
         }
         return prStatus;
-    }
-
-    private double[][] fillGlobalLatencies(int length, Map<Integer, Integer> indices) {
-        double[][] latencies = new double[length][length];
-        for (int i = 0; i < length; i++) {
-            for (int j = 0; j < length; j++) {
-                if (i==j) latencies[i][j] = 0.0;
-                else latencies[i][j] = -1.0; // Initialize
-            }
-        }
-
-        // Centralised, flower-shaped topology
-        // Only latencies from cloud to edge are included
-        for (Map.Entry<Integer, Double> entry : fogDevices.get(cloudIndex).getChildToLatencyMap().entrySet()) {
-            latencies[cloudIndex][indices.get(entry.getKey())] = entry.getValue();
-            latencies[indices.get(entry.getKey())][cloudIndex] = entry.getValue();
-        }
-
-        return latencies;
     }
 
 
@@ -247,7 +212,7 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
             }
 
             if (!targeted) {
-                Logger.error("Deployment Error", "Cannot find target device for " + pr.getPlacementRequestId() + ". Check the placement of its first microservice.");
+                Logger.error("ACO Deployment Error", "Cannot find target device for " + pr.getPlacementRequestId() + ". Check the placement of its first microservice.");
             }
         }
         return targets;

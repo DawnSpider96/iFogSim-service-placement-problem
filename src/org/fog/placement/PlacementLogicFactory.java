@@ -13,6 +13,8 @@ public class PlacementLogicFactory {
     public static final int MY_MICROSERVICES_PLACEMENT = 4;
     public static final int MY_OFFLINE_POC_PLACEMENT = 5;
     public static final int MY_ONLINE_POC_PLACEMENT = 6;
+
+    // Simon
     public static final int BEST_FIT = 7;
     public static final int CLOSEST_FIT = 8;
     public static final int MAX_FIT = 9;

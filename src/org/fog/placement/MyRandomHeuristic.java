@@ -159,7 +159,7 @@ public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacem
             }
         }
         else {
-            Logger.error("Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
+            Logger.error("Random Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
         }
 //        placements.computeIfAbsent(entry.getKey(), k -> new HashMap<>());
 //        placements.get(entry.getKey()).put(service, deviceState.deviceId);
@@ -216,7 +216,7 @@ public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacem
             }
 
             if (!targeted) {
-                Logger.error("Deployment Error", "Cannot find target device for " + pr.getPlacementRequestId() + ". Check the placement of its first microservice.");
+                Logger.error("Random Deployment Error", "Cannot find target device for " + pr.getPlacementRequestId() + ". Check the placement of its first microservice.");
             }
         }
         return targets;

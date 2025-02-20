@@ -20,11 +20,6 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
         super(fonID);
     }
 
-    private int cloudIndex = -1;
-    // Maps DeviceId to index (on latencies and `fogDevices` state)
-    private Map<Integer, Integer> indices;
-    private double [][] globalLatencies;
-
     private List<DeviceState> DeviceStates = new ArrayList<>();
 
     // Simulated Annealing parameters
@@ -67,18 +62,6 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
     protected Map<PlacementRequest, Integer> mapModules() {
         Map<PlacementRequest, List<String>> toPlace = new HashMap<>();
 
-        int length = fogDevices.size();
-        indices = new HashMap<>();
-        for (int i=0 ; i<fogDevices.size() ; i++) {
-            indices.put(fogDevices.get(i).getId(), i);
-            // While we're at it, determine cloud's index
-            if (fogDevices.get(i).getName() == "cloud") cloudIndex = i;
-        }
-        if(cloudIndex <0) {
-            Logger.error("Control Flow Error", "Cloud index should have value.");
-        }
-        globalLatencies = fillGlobalLatencies(length, indices);
-
         int placementCompleteCount = 0;
         if (toPlace.isEmpty()) {
             // Update toPlace and placementCompleteCount
@@ -110,25 +93,6 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
         return prStatus;
     }
 
-    private double[][] fillGlobalLatencies(int length, Map<Integer, Integer> indices) {
-        double[][] latencies = new double[length][length];
-        for (int i = 0; i < length; i++) {
-            for (int j = 0; j < length; j++) {
-                if (i==j) latencies[i][j] = 0.0;
-                else latencies[i][j] = -1.0; // Initialize
-            }
-        }
-
-        // Centralised, flower-shaped topology
-        // Only latencies from cloud to edge are included
-        for (Map.Entry<Integer, Double> entry : fogDevices.get(cloudIndex).getChildToLatencyMap().entrySet()) {
-            latencies[cloudIndex][indices.get(entry.getKey())] = entry.getValue();
-            latencies[indices.get(entry.getKey())][cloudIndex] = entry.getValue();
-        }
-
-        return latencies;
-    }
-
     /**
      * Calculates cumulative latency of all placements to the users closest host
      *
@@ -145,7 +109,7 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
 
                 if (servers.get(i).getId() == placement[j]) {
 
-                    RelativeLatencyFogDevice relativeEdgeNode = new RelativeLatencyFogDevice(servers.get(i), closestNode, this.globalLatencies);
+                    RelativeLatencyDeviceState relativeEdgeNode = new RelativeLatencyDeviceState(servers.get(i), closestNode, this.globalLatencies);
 
                     totalLatency = totalLatency + relativeEdgeNode.latencyToClosestHost;
                     break;
@@ -259,7 +223,7 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
             }
         }
 
-        // End up bestPlacement is the final placement
+        // At the end, bestPlacement is the final placement
         int[] placed = bestPlacement.clone();
 
         boolean allPlaced = true;
@@ -350,137 +314,10 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
             }
 
             if (!targeted) {
-                Logger.error("Deployment Error", "Cannot find target device for " + pr.getPlacementRequestId() + ". Check the placement of its first microservice.");
+                Logger.error("SimulatedAnnealing Deployment Error", "Cannot find target device for " + pr.getPlacementRequestId() + ". Check the placement of its first microservice.");
             }
         }
         return targets;
-    }
-
-
-
-    class RelativeLatencyFogDevice implements Comparable<RelativeLatencyFogDevice> {
-
-        FogDevice fogDevice;
-        Double latencyToClosestHost;
-        FogDevice closestEdgeNode;
-        double[][] globalLatencies;
-
-        RelativeLatencyFogDevice(FogDevice fogDevice, FogDevice closestEdgeNode,
-                                 double[][] globalLatencies) {
-
-            this.fogDevice = fogDevice;
-            this.closestEdgeNode = closestEdgeNode;
-            this.globalLatencies = globalLatencies;
-
-            // Simon says this is just our FogDevices state
-            // TODO All references to this will use the state instead
-//            this.allEdgeServers = allEdgeServers;
-
-            // if the same node
-            if (fogDevice == closestEdgeNode) {
-                latencyToClosestHost = 0.0;
-            } else {
-                // calculate latency depending on topology
-                switch (MicroservicePlacementConfig.NETWORK_TOPOLOGY) {
-                    case MicroservicePlacementConfig.CENTRALISED:
-                        latencyToClosestHost = centralisedPlacementLatency();
-                        break;
-
-                    case MicroservicePlacementConfig.FEDERATED:
-                        latencyToClosestHost = federatedPlacementLatency();
-                        break;
-
-                    case MicroservicePlacementConfig.DECENTRALISED:
-                        latencyToClosestHost = decentralisedPlacementLatency();
-                        break;
-                }
-            }
-        }
-
-        private Double centralisedPlacementLatency() {
-            // Assuming a star network topology where every edge node is
-            // connected via cloud
-            int closestEdgeNodeIndex = indices.get(closestEdgeNode.getId());
-            int fogDeviceIndex = indices.get(fogDevice.getId());
-
-            if (closestEdgeNodeIndex<0 || fogDeviceIndex<0) {
-                Logger.error("Value Error", "Global Latencies not appropriately filled.");
-            }
-
-            Double closestEdgeNodeToCloudLatency = this.globalLatencies[cloudIndex][closestEdgeNodeIndex];
-            Double fogDeviceToCloudLatency = this.globalLatencies[cloudIndex][fogDeviceIndex];
-
-            return fogDeviceToCloudLatency + closestEdgeNodeToCloudLatency;
-        }
-
-        private Double federatedPlacementLatency() {
-            Logger.error("Control Flow Error", "Topology cannot possibly be Federated.");
-            return -1.0;
-            // TODO If I ever work on this topology, understand that this involves FONs. The Simonstrator equivalent is MecSystem class,
-            //  a data class used to encapsulate FON network information:
-            //  Leader id, member ids, latencies.
-            //  But here, only leader id is needed. iFogSim already has that information IN THE FOGDEVICES.
-
-//            int cloudIndex = 0;
-//            int closestEdgeNodeIndex = closestEdgeNode.getId();
-//            int fogDeviceIndex = fogDevice.getId();
-//
-//            Long closestEdgeNodeLeader = Util.getLeader(closestEdgeNode.getContact().getNodeID().value(),
-//                    this.mecSystem);
-//            Long fogDeviceLeader = Util.getLeader(fogDevice.getContact().getNodeID().value(), this.mecSystem);
-//
-//            int closestEdgeNodeLeaderIndex = this.allEdgeServers.get(closestEdgeNodeLeader).getId();
-//            int fogDeviceLeaderIndex = this.allEdgeServers.get(fogDeviceLeader).getId();
-//
-//            Double closestToLeaderLatency = this.globalLatencies[closestEdgeNodeLeaderIndex][closestEdgeNodeIndex];
-//            Double thisEdgeToLeaderLatency = this.globalLatencies[fogDeviceLeaderIndex][fogDeviceIndex];
-//
-//            // If under the same leader
-//            if (closestEdgeNodeLeader == fogDeviceLeader) {
-//
-//                return closestToLeaderLatency + thisEdgeToLeaderLatency;
-//
-//                // under different leader involves cloud
-//            } else {
-//
-//                Double closestLeaderToCloudLatency = this.globalLatencies[cloudIndex][closestEdgeNodeLeaderIndex];
-//                Double thisEdgeLeaderToCloudLatency = this.globalLatencies[cloudIndex][fogDeviceLeaderIndex];
-//
-//                return closestToLeaderLatency + thisEdgeToLeaderLatency + thisEdgeLeaderToCloudLatency
-//                        + closestLeaderToCloudLatency;
-//
-//            }
-        }
-
-        private Double decentralisedPlacementLatency() {
-            Logger.error("Control Flow Error", "Topology cannot possibly be Decentralised.");
-            return -1.0;
-            // Assuming that every edge node has a direct connection to each
-            // other
-
-//            int closestEdgeNodeIndex = this.allEdgeServers.get(closestEdgeNode.getContact().getNodeID().value()).getId();
-//            int fogDeviceIndex = this.allEdgeServers.get(fogDevice.getContact().getNodeID().value()).getId();
-//
-//            return this.globalLatencies[fogDeviceIndex][closestEdgeNodeIndex];
-
-        }
-
-        @Override
-        public int compareTo(RelativeLatencyFogDevice other) {
-            try {
-                if (this.latencyToClosestHost < other.latencyToClosestHost) {
-                    return -1;
-                } else if (this.latencyToClosestHost > other.latencyToClosestHost) {
-                    return 1;
-
-                } else {
-                    return 0;
-                }
-            } catch (Exception ex) {
-                Logger.error("An error occurred", ex.getMessage());
-                return 0;
-            }
-        }
     }
 }
 

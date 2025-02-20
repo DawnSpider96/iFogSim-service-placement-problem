@@ -21,27 +21,42 @@ public class ExperimentDataParser extends DataParser {
         levelID.put("User", 2);
     }
 
-    @Override
-    public void parseUserData(Map<Integer, Integer> userMobilityPattern, String fileName) throws IOException {
-        // Simon says all users are IMMOBILE. The file to parse is very much like the resources file
+    public void parseUserData(Map<Integer, Integer> userMobilityPattern, String fileName, int numberOfUser) throws IOException {
+        // Simon (160225) says we are parsing STARTING locations of users.
+        // The file to parse is very much like the resources file
+
+        // Simon (160225) says userMobilityPattern is a feature of statically determined mobility
+        //  and hence we will NOT use it.
+        int MAX_NUMBER_OF_USERS = 196;
+        // Math.floor is implicit
+        int stepsize = MAX_NUMBER_OF_USERS / numberOfUser;
         BufferedReader csvReader = new BufferedReader(new FileReader(fileName));
         System.out.println("The positions of immobile users is extracted from: " + fileName);
 
         ArrayList<String> resourcesOnLevel2 = new ArrayList<String>();
         String row;
         int i = 1;
-        while ((row = csvReader.readLine()) != null) {
-            String[] data = row.split(",");
-            //System.out.println(row);
-            Location rl = new Location(Double.parseDouble(data[0]), Double.parseDouble(data[1]), References.NOT_SET);
+        int rowToRead = stepsize;
+        int currentRow = 1;  // Track the current row number being read
 
-            resourcesOnLevel2.add("usr_" + i);
-            Map<Double, Location> singleLocationMap = new HashMap<>();
-            singleLocationMap.put(References.INIT_TIME, rl);
-            usersLocation.put("usr_" + i, singleLocationMap);
-            resourceAndUserToLevel.put("usr_" + i, levelID.get("User"));
-            i++;
+        while ((row = csvReader.readLine()) != null && i <= numberOfUser) {
+            if (currentRow == rowToRead) {
+                String[] data = row.split(",");
+                //System.out.println(row);
+                Location rl = new Location(Double.parseDouble(data[0]), Double.parseDouble(data[1]), References.NOT_SET);
+
+                resourcesOnLevel2.add("usr_" + i);
+                Map<Double, Location> startLocationMap = new HashMap<>();
+                startLocationMap.put(References.INIT_TIME, rl);
+                usersLocation.put("usr_" + i, startLocationMap);
+                resourceAndUserToLevel.put("usr_" + i, levelID.get("User"));
+
+                i++;
+                rowToRead += stepsize;
+            }
+            currentRow++;  // Increment the row counter regardless of whether the row was used
         }
+
 
         csvReader.close();
         levelwiseResources.put(2, resourcesOnLevel2);
@@ -63,7 +78,7 @@ public class ExperimentDataParser extends DataParser {
         // read the first numberOfEdge entries from the file (that have level==levelID.get("Gateway"))
         // Ensures that we only have numberOfEdge edge servers (gateway is edge server)
         int edgesPut = 0;
-        while ((row = csvReader.readLine()) != null) {
+        while ((row = csvReader.readLine()) != null && edgesPut < numberOfEdge) {
             String[] data = row.split(",");
             //System.out.println(row);
             if (data[6].equals("VIC")) {
@@ -77,10 +92,9 @@ public class ExperimentDataParser extends DataParser {
                     edgesPut++;
                 }
             }
-
-            if (edgesPut == numberOfEdge) {
-                break;
-            }
+//            if (edgesPut == numberOfEdge) {
+//                break;
+//            }
         }
 
         for (int i = 0; i < numOfLevels; i++) {

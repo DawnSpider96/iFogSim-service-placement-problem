@@ -270,7 +270,7 @@ public class MyILPHeuristic extends MyHeuristic implements MicroservicePlacement
             }
 
             if (!targeted) {
-                Logger.error("Deployment Error", "Cannot find target device for " + pr.getPlacementRequestId() + ". Check the placement of its first microservice.");
+                Logger.error("ILP Deployment Error", "Cannot find target device for " + pr.getPlacementRequestId() + ". Check the placement of its first microservice.");
             }
         }
         return targets;

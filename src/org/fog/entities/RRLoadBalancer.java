@@ -1,5 +1,7 @@
 package org.fog.entities;
 
+import org.fog.utils.Logger;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +30,7 @@ public class RRLoadBalancer implements LoadBalancer {
                 return deviceId;
             }
             System.out.println("Service Discovery Information Missing");
+            Logger.error("Load Balancer Error", "NO Service Discovery Info for argument microservice in host FogDevice.");
             return -1;
         }
     }

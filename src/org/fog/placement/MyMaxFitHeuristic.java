@@ -188,7 +188,7 @@ public class MyMaxFitHeuristic extends MyHeuristic implements MicroservicePlacem
             }
         }
         else {
-            Logger.error("Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
+            Logger.error("MaxFit Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
         }
 
         if (allPlaced) return -1;

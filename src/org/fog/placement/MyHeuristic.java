@@ -1,12 +1,15 @@
 package org.fog.placement;
 
 import org.apache.commons.math3.util.Pair;
+import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.application.AppEdge;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.entities.*;
 import org.fog.utils.Logger;
+import org.fog.utils.MicroservicePlacementConfig;
 import org.fog.utils.ModuleLaunchConfig;
+import org.fog.utils.MyMonitor;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -25,6 +28,11 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
 
     int fonID;
 
+    // Maps DeviceId to index (on latencies and `fogDevices` state)
+    protected Map<Integer, Integer> indices;
+    protected int cloudIndex = -1;
+    protected double [][] globalLatencies;
+
     // Temporary State
     protected Map<Integer, Double> currentCpuLoad;
     protected Map<Integer, Double> currentRamLoad;
@@ -32,7 +40,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
     protected Map<Integer, List<String>> currentModuleMap = new HashMap<>();
     protected Map<Integer, Map<String, Double>> currentModuleLoadMap = new HashMap<>();
     protected Map<Integer, Map<String, Integer>> currentModuleInstanceNum = new HashMap<>();
-    Map<Integer, Map<String, Integer>> mappedMicroservices = new HashMap<>();
+    Map<Integer, LinkedHashMap<String, Integer>> mappedMicroservices = new HashMap<>();
 
 
     public MyHeuristic(int fonID) {
@@ -68,7 +76,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             closestNodes.put(placementRequest, getDevice(placementRequest.getGatewayDeviceId()).getParentId());
 
             // already placed modules
-            mappedMicroservices.put(placementRequest.getPlacementRequestId(), new HashMap<>(placementRequest.getPlacedMicroservices()));
+            mappedMicroservices.put(placementRequest.getPlacementRequestId(), new LinkedHashMap<>(placementRequest.getPlacedMicroservices()));
 
             //special modules  - predefined cloud placements
             Application app =  applicationInfo.get(placementRequest.getApplicationId());
@@ -226,7 +234,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         this.placementRequests = prs;
         this.resourceAvailability = resourceAvailability;
         this.applicationInfo = applicationInfo;
-        mappedMicroservices = new HashMap<>();
+        this.mappedMicroservices = new LinkedHashMap<>();
         this.closestNodes = mapPlacedAndSpecialModules(placementRequests);
 
         setCurrentCpuLoad(new HashMap<Integer, Double>());
@@ -243,6 +251,32 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             currentModuleInstanceNum.put(id, new HashMap<String, Integer>());
         }
 
+        indices = new HashMap<>();
+        for (int i=0 ; i<fogDevices.size() ; i++) {
+            indices.put(fogDevices.get(i).getId(), i);
+            // While we're at it, determine cloud's index
+            if (fogDevices.get(i).getName() == "cloud") cloudIndex = i;
+        }
+        globalLatencies = fillGlobalLatencies(fogDevices.size(), indices);
+    }
+
+    protected double[][] fillGlobalLatencies(int length, Map<Integer, Integer> indices) {
+        double[][] latencies = new double[length][length];
+        for (int i = 0; i < length; i++) {
+            for (int j = 0; j < length; j++) {
+                if (i==j) latencies[i][j] = 0.0;
+                else latencies[i][j] = -1.0; // Initialize
+            }
+        }
+
+        // Centralised, flower-shaped topology
+        // Only latencies from cloud to edge are included
+        for (Map.Entry<Integer, Double> entry : fogDevices.get(cloudIndex).getChildToLatencyMap().entrySet()) {
+            latencies[cloudIndex][indices.get(entry.getKey())] = entry.getValue();
+            latencies[indices.get(entry.getKey())][cloudIndex] = entry.getValue();
+        }
+
+        return latencies;
     }
 
     @Override
@@ -260,6 +294,19 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
                 resourceAvailability.get(deviceId).put(ControllerComponent.STORAGE, storage);
             }
         }
+
+        // Update resource consumption metrics
+        //  currentModuleInstanceNum contains deviceID -> module name (String) -> instance count (int)
+        //  Total resources are found in PowerHost of FogDevice: fogDevice.getHost().getTotalMips()
+        List<DeviceState> snapshots = new ArrayList<>();
+        for (FogDevice fd : edgeFogDevices) {
+            int deviceId = fd.getId();
+            snapshots.add(new DeviceState(deviceId, resourceAvailability.get(deviceId),
+                    fd.getHost().getTotalMips(), fd.getHost().getRam(), fd.getHost().getStorage()));
+        }
+        MyMonitor.getSnapshots().put(CloudSim.clock(), snapshots);
+        // FogBroker.getBatchNumber()
+
     }
 
     /**
@@ -275,11 +322,15 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
      * @return A map reflecting the updated entries after cleaning.
      * PRid ->  Map(microservice name -> target deviceId)
      */
-    protected Map<Integer, Map<String, Integer>> cleanPlacementRequests(List <PlacementRequest> placementRequests, Map<Integer, Map<String, Integer>> mappedMicroservices) {
+    protected Map<Integer, Map<String, Integer>> cleanPlacementRequests(List <PlacementRequest> placementRequests, Map<Integer, LinkedHashMap<String, Integer>> mappedMicroservices) {
+        /*
+        Returns HashMap containing all the services placed IN THIS CYCLE to each device
+        */
         Map<Integer, Map<String, Integer>> placement = new HashMap<>();
+        Map<PlacementRequest, Double> latencies = new HashMap<>();
         for (PlacementRequest placementRequest : placementRequests) {
             List<String> toRemove = new ArrayList<>();
-            //placement should include newly placed ones
+            // placement should include newly placed ones
             for (String microservice : mappedMicroservices.get(placementRequest.getPlacementRequestId()).keySet()) {
                 if (placementRequest.getPlacedMicroservices().containsKey(microservice))
                     toRemove.add(microservice);
@@ -289,9 +340,17 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             for (String microservice : toRemove)
                 mappedMicroservices.get(placementRequest.getPlacementRequestId()).remove(microservice);
 
-            //update placed modules in placement request as well
+            // Simon (170225) says update PR to shift first module (always clientModule) to last place
+            // For metric collecting purposes
+            Map.Entry<String, Integer> clientModuleEntry = placementRequest.getPlacedMicroservices().entrySet().iterator().next();
+            placementRequest.getPlacedMicroservices().remove(clientModuleEntry.getKey());
+            placementRequest.getPlacedMicroservices().put(clientModuleEntry.getKey(), clientModuleEntry.getValue());
+            latencies.put(placementRequest,determineLatencyOfDecision(placementRequest));
+
+            // Update output
             placement.put(placementRequest.getPlacementRequestId(), mappedMicroservices.get(placementRequest.getPlacementRequestId()));
         }
+        MyMonitor.getLatencies().put(CloudSim.clock(), latencies);
         return placement;
     }
 
@@ -473,6 +532,53 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         return null;
     }
 
+    private double determineLatencyOfDecision(PlacementRequest pr) {
+        // Simon (170225) says we are currently NOT considering execution time
+        // Hence only placement targets are considered
+        // placedMicroservices are ordered
+        double latency = 0;
+        List<Integer> deviceIds = new ArrayList<>(pr.getPlacedMicroservices().values());
+
+        // Check if there are at least two devices to calculate latency
+        if (deviceIds.size() > 1) {
+            for (int i = 0; i < deviceIds.size() - 1; i++) {
+                int sourceDevice = deviceIds.get(i);
+                int destDevice = deviceIds.get(i + 1);
+                latency += getLatency(sourceDevice, destDevice);
+            }
+        }
+        return latency;
+    }
+
+    private double getLatency(int srcDevice, int destDevice) {
+        /*
+        Destination MyFogDevice may be a user. Source MyFogDevice is always edge server.
+         */
+        int srcIndex = indices.get(srcDevice);
+        int destIndex = indices.get(destDevice);
+
+        double l = globalLatencies[srcIndex][destIndex];
+        if (l >= 0) return l;
+
+        assert MicroservicePlacementConfig.NETWORK_TOPOLOGY == MicroservicePlacementConfig.CENTRALISED;
+        MyFogDevice src = (MyFogDevice) getDevice(srcDevice);
+        MyFogDevice dest = (MyFogDevice) getDevice(destDevice);
+
+
+        if (src.getDeviceType() == MyFogDevice.FCN && dest.getDeviceType() == MyFogDevice.FCN){
+            return globalLatencies[srcIndex][cloudIndex] + globalLatencies[cloudIndex][destIndex];
+        }
+        else { // dest is user device
+            assert dest.getDeviceType() == MyFogDevice.GENERIC_USER ||
+                    dest.getDeviceType() == MyFogDevice.AMBULANCE_USER ||
+                    dest.getDeviceType() == MyFogDevice.OPERA_USER:
+                    "Destination device must be Mobile User";
+            int parentIndex = indices.get(dest.getParentId());
+            // TODO check that uplinklatency in milliseconds
+            return globalLatencies[srcIndex][cloudIndex] + globalLatencies[cloudIndex][parentIndex] + dest.getUplinkLatency();
+        }
+    }
+
     // Class to track resource state during placement decisions
     public static class DeviceState implements Comparable<DeviceState>{
         private final Integer deviceId;
@@ -551,6 +657,131 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
                     this.getRAMUtil(), // Smallest first
                     other.getRAMUtil()
             );
+        }
+    }
+
+    class RelativeLatencyDeviceState implements Comparable<RelativeLatencyDeviceState> {
+
+        FogDevice fogDevice;
+        Double latencyToClosestHost;
+        FogDevice closestEdgeNode;
+        double[][] globalLatencies;
+
+        RelativeLatencyDeviceState(FogDevice fogDevice, FogDevice closestEdgeNode,
+                                   double[][] globalLatencies) {
+
+            this.fogDevice = fogDevice;
+            this.closestEdgeNode = closestEdgeNode;
+            this.globalLatencies = globalLatencies;
+
+            // Simon says this is just our FogDevices state
+            // TODO All references to this will use the state instead
+//            this.allEdgeServers = allEdgeServers;
+
+            // if the same node
+            if (fogDevice == closestEdgeNode) {
+                latencyToClosestHost = 0.0;
+            } else {
+                // calculate latency depending on topology
+                switch (MicroservicePlacementConfig.NETWORK_TOPOLOGY) {
+                    case MicroservicePlacementConfig.CENTRALISED:
+                        latencyToClosestHost = centralisedPlacementLatency();
+                        break;
+
+                    case MicroservicePlacementConfig.FEDERATED:
+                        latencyToClosestHost = federatedPlacementLatency();
+                        break;
+
+                    case MicroservicePlacementConfig.DECENTRALISED:
+                        latencyToClosestHost = decentralisedPlacementLatency();
+                        break;
+                }
+            }
+        }
+
+        private Double centralisedPlacementLatency() {
+            // Assuming a star network topology where every edge node is
+            // connected via cloud
+            int closestEdgeNodeIndex = indices.get(closestEdgeNode.getId());
+            int fogDeviceIndex = indices.get(fogDevice.getId());
+
+            if (closestEdgeNodeIndex<0 || fogDeviceIndex<0) {
+                Logger.error("Value Error", "Global Latencies not appropriately filled.");
+            }
+
+            Double closestEdgeNodeToCloudLatency = this.globalLatencies[cloudIndex][closestEdgeNodeIndex];
+            Double fogDeviceToCloudLatency = this.globalLatencies[cloudIndex][fogDeviceIndex];
+
+            return fogDeviceToCloudLatency + closestEdgeNodeToCloudLatency;
+        }
+
+        private Double federatedPlacementLatency() {
+            Logger.error("Control Flow Error", "Topology cannot possibly be Federated.");
+            return -1.0;
+            // TODO If I ever work on this topology, understand that this involves FONs. The Simonstrator equivalent is MecSystem class,
+            //  a data class used to encapsulate FON network information:
+            //  Leader id, member ids, latencies.
+            //  But here, only leader id is needed. iFogSim already has that information IN THE FOGDEVICES.
+
+//            int cloudIndex = 0;
+//            int closestEdgeNodeIndex = closestEdgeNode.getId();
+//            int fogDeviceIndex = fogDevice.getId();
+//
+//            Long closestEdgeNodeLeader = Util.getLeader(closestEdgeNode.getContact().getNodeID().value(),
+//                    this.mecSystem);
+//            Long fogDeviceLeader = Util.getLeader(fogDevice.getContact().getNodeID().value(), this.mecSystem);
+//
+//            int closestEdgeNodeLeaderIndex = this.allEdgeServers.get(closestEdgeNodeLeader).getId();
+//            int fogDeviceLeaderIndex = this.allEdgeServers.get(fogDeviceLeader).getId();
+//
+//            Double closestToLeaderLatency = this.globalLatencies[closestEdgeNodeLeaderIndex][closestEdgeNodeIndex];
+//            Double thisEdgeToLeaderLatency = this.globalLatencies[fogDeviceLeaderIndex][fogDeviceIndex];
+//
+//            // If under the same leader
+//            if (closestEdgeNodeLeader == fogDeviceLeader) {
+//
+//                return closestToLeaderLatency + thisEdgeToLeaderLatency;
+//
+//                // under different leader involves cloud
+//            } else {
+//
+//                Double closestLeaderToCloudLatency = this.globalLatencies[cloudIndex][closestEdgeNodeLeaderIndex];
+//                Double thisEdgeLeaderToCloudLatency = this.globalLatencies[cloudIndex][fogDeviceLeaderIndex];
+//
+//                return closestToLeaderLatency + thisEdgeToLeaderLatency + thisEdgeLeaderToCloudLatency
+//                        + closestLeaderToCloudLatency;
+//
+//            }
+        }
+
+        private Double decentralisedPlacementLatency() {
+            Logger.error("Control Flow Error", "Topology cannot possibly be Decentralised.");
+            return -1.0;
+            // Assuming that every edge node has a direct connection to each
+            // other
+
+//            int closestEdgeNodeIndex = this.allEdgeServers.get(closestEdgeNode.getContact().getNodeID().value()).getId();
+//            int fogDeviceIndex = this.allEdgeServers.get(fogDevice.getContact().getNodeID().value()).getId();
+//
+//            return this.globalLatencies[fogDeviceIndex][closestEdgeNodeIndex];
+
+        }
+
+        @Override
+        public int compareTo(RelativeLatencyDeviceState other) {
+            try {
+                if (this.latencyToClosestHost < other.latencyToClosestHost) {
+                    return -1;
+                } else if (this.latencyToClosestHost > other.latencyToClosestHost) {
+                    return 1;
+
+                } else {
+                    return 0;
+                }
+            } catch (Exception ex) {
+                Logger.error("An error occurred", ex.getMessage());
+                return 0;
+            }
         }
     }
 

@@ -47,7 +47,7 @@ public class DataParser {
         switch (mobilityPattern) {
             case References.DIRECTIONAL_MOBILITY:
                 seed = 20;
-                newEventTime = 1.00 + (double) ran.nextInt(seed) + eventTime;
+                newEventTime = 1.00 + (double) ran.nextInt(seed) + eventTime; // TODO Simon says why 1.00? Min time between events is 0.1
                 break;
             case References.RANDOM_MOBILITY:
                 seed = 2000;

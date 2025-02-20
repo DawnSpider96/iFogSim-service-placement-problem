@@ -187,7 +187,7 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
             }
         }
         else {
-            Logger.error("Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
+            Logger.error("BestFit Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
         }
 
         if (allPlaced) return -1;
@@ -226,7 +226,7 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
             }
 
             if (!targeted) {
-                Logger.error("Deployment Error", "Cannot find target device for " + pr.getPlacementRequestId() + ". Check the placement of its first microservice.");
+                Logger.error("BestFit Deployment Error", "Cannot find target device for " + pr.getPlacementRequestId() + ". Check the placement of its first microservice.");
             }
         }
         return targets;

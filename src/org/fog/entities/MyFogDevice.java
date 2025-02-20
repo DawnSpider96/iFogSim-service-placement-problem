@@ -87,7 +87,7 @@ public class MyFogDevice extends FogDevice {
 				PlacementRequest pr = (PlacementRequest) object.get("PR");
 				Application application = (Application) object.get("app");
 				/// Periodically resend the same placement request
-				PlacementRequest prNew = new PlacementRequest(pr.getApplicationId(), pr.getPlacementRequestId(), pr.getGatewayDeviceId(), new HashMap<String, Integer>(pr.getPlacedMicroservices()));
+				PlacementRequest prNew = new PlacementRequest(pr.getApplicationId(), pr.getPlacementRequestId(), pr.getGatewayDeviceId(), new LinkedHashMap<>(pr.getPlacedMicroservices()));
 				Map<String, Object> newObject = new HashMap<>();
 				newObject.put("PR", prNew);
 				newObject.put("app", application);
@@ -485,6 +485,16 @@ public class MyFogDevice extends FogDevice {
 
 		sendNow(CloudSim.getFogBrokerId(), FogEvents.RECEIVE_PLACEMENT_DECISION, forFogBroker);
 
+		for (int clientDevice : serviceDicovery.keySet()) {
+			for (Pair serviceData : serviceDicovery.get(clientDevice)) {
+				if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
+					transmitServiceDiscoveryData(clientDevice, serviceData);
+				} else if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC") {
+					Logger.error("Simulation static mode error", "Simulation should not be static.");
+				}
+			}
+		}
+
 		for (int deviceID : perDevice.keySet()) {
 			MyFogDevice f = (MyFogDevice) CloudSim.getEntity(deviceID);
 			if (!f.getDeviceType().equals(MyFogDevice.CLOUD))
@@ -503,15 +513,6 @@ public class MyFogDevice extends FogDevice {
 		FogBroker.setBatchNumber(FogBroker.getBatchNumber() + 1);
 
 		System.out.println(placementString.toString());
-		for (int clientDevice : serviceDicovery.keySet()) {
-			for (Pair serviceData : serviceDicovery.get(clientDevice)) {
-				if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
-					transmitServiceDiscoveryData(clientDevice, serviceData);
-				} else if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC") {
-					Logger.error("Simulation static mode error", "Simulation should not be static.");
-				}
-			}
-		}
 
 		for (PlacementRequest pr : placementRequestStatus.keySet()) {
 			if (placementRequestStatus.get(pr) != -1) {
@@ -825,7 +826,7 @@ public class MyFogDevice extends FogDevice {
 						send(getId(), MicroservicePlacementConfig.MODULE_DEPLOYMENT_TIME, FogEvents.LAUNCH_MODULE, new AppModule(app.getModuleByName(microserviceName)));
 					}
 				}
-				sendNow(getId(), FogEvents.LAUNCH_MODULE_INSTANCE, moduleLaunchConfig);
+				sendNow(getId(), FogEvents.LAUNCH_MODULE_INSTANCE, moduleLaunchConfig); // Updates local resource availability information
 			}
 		}
 		// Simon says (140125) FogDevice will send ack to FogBroker a bit AFTER LAUNCH_MODULE is processed

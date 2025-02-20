@@ -349,6 +349,16 @@ public class MyMicroservicesController extends SimEntity {
         System.out.println("=========================================");
     }
 
+    protected void printResourceConsumptionDetails() {
+        // TODO Simon (040225) says print something useful instead of the device IDs
+        //  Like utilisation? Standard deviation of utilisation? Ask Dr Cabrera
+        //  Also NOTE that the entries are not sorted in key (timestamp) order, annoying
+        //  Maybe need TreeMap
+        Map<Double, List<MyHeuristic.DeviceState>> ss = MyMonitor.getSnapshots();
+        ss.forEach((key, value) ->
+                value.forEach((deviceState) -> System.out.println(key + ": " + deviceState.getId())));
+    }
+
     protected Map<Integer, Map<String, Double>> getResourceInfo(List<FogDevice> fogDevices) {
         Map<Integer, Map<String, Double>> resources = new HashMap<>();
         for (FogDevice device : fogDevices) {

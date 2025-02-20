@@ -202,7 +202,7 @@ public class MyMultiOptHeuristic extends MyHeuristic implements MicroservicePlac
             }
         }
         else {
-            Logger.error("Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
+            Logger.error("MultiOpt Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
         }
 
         if (allPlaced) return -1;
@@ -241,7 +241,7 @@ public class MyMultiOptHeuristic extends MyHeuristic implements MicroservicePlac
             }
 
             if (!targeted) {
-                Logger.error("Deployment Error", "Cannot find target device for " + pr.getPlacementRequestId() + ". Check the placement of its first microservice.");
+                Logger.error("MultiOpt Deployment Error", "Cannot find target device for " + pr.getPlacementRequestId() + ". Check the placement of its first microservice.");
             }
         }
         return targets;
