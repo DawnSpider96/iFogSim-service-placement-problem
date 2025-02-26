@@ -13,6 +13,11 @@ import org.fog.utils.ModuleLaunchConfig;
 import java.util.*;
 
 public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
+    @Override
+    public String getName() {
+        return "ClosestFit";
+    }
+
     /**
      * Fog network related details
      */

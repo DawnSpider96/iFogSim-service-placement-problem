@@ -28,6 +28,7 @@ import org.fog.utils.distribution.DeterministicDistribution;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Platform to run the OnlinePOC simulation under variable parameters:
@@ -70,22 +71,79 @@ public class MyExperiment {
 
     public static void main(String[] args) {
         List<SimulationConfig> configs = Arrays.asList(
-                new SimulationConfig(100, 20, 1, PlacementLogicFactory.ACO), // Demonstrate Metrics collection first
-                new SimulationConfig(200, 50, 5, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(200, 50, 5, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(200, 50, 5, PlacementLogicFactory.MAX_FIT),
-//                new SimulationConfig(200, 50, 5, PlacementLogicFactory.RANDOM),
-                new SimulationConfig(200, 50, 5, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(200, 50, 5, PlacementLogicFactory.SIMULATED_ANNEALING),
-                new SimulationConfig(200, 50, 5, PlacementLogicFactory.ACO),
-                new SimulationConfig(200, 50, 5, PlacementLogicFactory.ILP)
-//                new SimulationConfig(100, 1, PlacementLogicFactory.MULTI_OPT)
-//                new SimulationConfig(10, 3, PlacementLogicFactory.MULTI_OPT),
-//                new SimulationConfig(50, 3, PlacementLogicFactory.MULTI_OPT),
-//                new SimulationConfig(100, 3, PlacementLogicFactory.MULTI_OPT),
-//                new SimulationConfig(10, 5, PlacementLogicFactory.MULTI_OPT),
-//                new SimulationConfig(50, 5, PlacementLogicFactory.MULTI_OPT),
-//                new SimulationConfig(100, 5, PlacementLogicFactory.MULTI_OPT)
+                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ACO),
+                new SimulationConfig(100, 196, 1, PlacementLogicFactory.BEST_FIT),
+                new SimulationConfig(100, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
+                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ILP),
+                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MAX_FIT),
+                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(100, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
+                //
+                new SimulationConfig(200, 196, 1, PlacementLogicFactory.ACO),
+                new SimulationConfig(200, 196, 1, PlacementLogicFactory.BEST_FIT),
+                new SimulationConfig(200, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
+                new SimulationConfig(200, 196, 1, PlacementLogicFactory.ILP),
+                new SimulationConfig(200, 196, 1, PlacementLogicFactory.MAX_FIT),
+                new SimulationConfig(200, 196, 1, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(200, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
+                //
+                new SimulationConfig(300, 196, 1, PlacementLogicFactory.ACO),
+                new SimulationConfig(300, 196, 1, PlacementLogicFactory.BEST_FIT),
+                new SimulationConfig(300, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
+                new SimulationConfig(300, 196, 1, PlacementLogicFactory.ILP),
+                new SimulationConfig(300, 196, 1, PlacementLogicFactory.MAX_FIT),
+                new SimulationConfig(300, 196, 1, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(300, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
+                //
+                //
+                new SimulationConfig(100, 196, 3, PlacementLogicFactory.ACO),
+                new SimulationConfig(100, 196, 3, PlacementLogicFactory.BEST_FIT),
+                new SimulationConfig(100, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
+                new SimulationConfig(100, 196, 3, PlacementLogicFactory.ILP),
+                new SimulationConfig(100, 196, 3, PlacementLogicFactory.MAX_FIT),
+                new SimulationConfig(100, 196, 3, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(100, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
+                //
+                new SimulationConfig(200, 196, 3, PlacementLogicFactory.ACO),
+                new SimulationConfig(200, 196, 3, PlacementLogicFactory.BEST_FIT),
+                new SimulationConfig(200, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
+                new SimulationConfig(200, 196, 3, PlacementLogicFactory.ILP),
+                new SimulationConfig(200, 196, 3, PlacementLogicFactory.MAX_FIT),
+                new SimulationConfig(200, 196, 3, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(200, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
+                //
+                new SimulationConfig(300, 196, 3, PlacementLogicFactory.ACO),
+                new SimulationConfig(300, 196, 3, PlacementLogicFactory.BEST_FIT),
+                new SimulationConfig(300, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
+                new SimulationConfig(300, 196, 3, PlacementLogicFactory.ILP),
+                new SimulationConfig(300, 196, 3, PlacementLogicFactory.MAX_FIT),
+                new SimulationConfig(300, 196, 3, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(300, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
+                //
+                //
+                new SimulationConfig(100, 196, 5, PlacementLogicFactory.ACO),
+                new SimulationConfig(100, 196, 5, PlacementLogicFactory.BEST_FIT),
+                new SimulationConfig(100, 196, 5, PlacementLogicFactory.CLOSEST_FIT),
+                new SimulationConfig(100, 196, 5, PlacementLogicFactory.ILP),
+                new SimulationConfig(100, 196, 5, PlacementLogicFactory.MAX_FIT),
+                new SimulationConfig(100, 196, 5, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(100, 196, 5, PlacementLogicFactory.SIMULATED_ANNEALING),
+                //
+                new SimulationConfig(200, 196, 5, PlacementLogicFactory.ACO),
+                new SimulationConfig(200, 196, 5, PlacementLogicFactory.BEST_FIT),
+                new SimulationConfig(200, 196, 5, PlacementLogicFactory.CLOSEST_FIT),
+                new SimulationConfig(200, 196, 5, PlacementLogicFactory.ILP),
+                new SimulationConfig(200, 196, 5, PlacementLogicFactory.MAX_FIT),
+                new SimulationConfig(200, 196, 5, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(200, 196, 5, PlacementLogicFactory.SIMULATED_ANNEALING),
+                //
+                new SimulationConfig(300, 196, 5, PlacementLogicFactory.ACO),
+                new SimulationConfig(300, 196, 5, PlacementLogicFactory.BEST_FIT),
+                new SimulationConfig(300, 196, 5, PlacementLogicFactory.CLOSEST_FIT),
+                new SimulationConfig(300, 196, 5, PlacementLogicFactory.ILP),
+                new SimulationConfig(300, 196, 5, PlacementLogicFactory.MAX_FIT),
+                new SimulationConfig(300, 196, 5, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(300, 196, 5, PlacementLogicFactory.SIMULATED_ANNEALING)
         );
 
         for (SimulationConfig config : configs) {
@@ -94,6 +152,22 @@ public class MyExperiment {
 
         // (170225) For ease of debugging only
         MyMonitor mm = MyMonitor.getInstance();
+
+        try {
+            List<Map<String, Map<Double, Double>>> resourceData =
+                    MyMonitor.getInstance().getAllSnapshots().stream()
+                    .map(MetricUtils::handleSimulationResource)
+                    .collect(Collectors.toList());
+            List<Map<Double, Double>> latencyData =
+                    MyMonitor.getInstance().getAllLatencies().stream()
+                            .map(MetricUtils::handleSimulationLatency)
+                            .collect(Collectors.toList());
+            MetricUtils.writeResourceDistributionToCSV(resourceData, latencyData, configs, "./output/resourceDistAlpha.csv");
+            System.out.println("CSV file has been created successfully.");
+        } catch (IOException e) {
+            System.err.println("An error occurred while writing to the CSV file.");
+            e.printStackTrace();
+        }
     }
 
 
@@ -175,6 +249,7 @@ public class MyExperiment {
             CloudSim.startSimulation();
 //            CloudSim.stopSimulation();
 
+            MyMonitor.getInstance().incrementSimulationRoundNumber();
             System.out.println("Simon app finished!");
         } catch (Exception e) {
             e.printStackTrace();
@@ -353,15 +428,15 @@ public class MyExperiment {
         /*
          * Adding modules (vertices) to the application model (directed graph)
          */
-        application.addAppModule("clientModule", 128, 150, 100);
-        application.addAppModule("mService1", 128, 250, 200);
+        application.addAppModule("clientModule", 400, 400, 100);
+        application.addAppModule("mService1", 400, 400, 200);
 
         /*
          * Connecting the application modules (vertices) in the application model (directed graph) with edges
          */
         application.addAppEdge("SENSOR", "clientModule", 100, 500, "SENSOR", Tuple.UP, AppEdge.SENSOR);
-        application.addAppEdge("clientModule", "mService1", 100, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService1", "clientModule", 28, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
+        application.addAppEdge("clientModule", "mService1", 2000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mService1", "clientModule", 2000, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
         application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
 
         /*
@@ -398,19 +473,19 @@ public class MyExperiment {
         /*
          * Adding modules (vertices) to the application model (directed graph)
          */
-        application.addAppModule("clientModule", 128, 150, 100);
-        application.addAppModule("mService1", 128, 250, 200);
-        application.addAppModule("mService2", 128, 350, 500);
-        application.addAppModule("mService3", 128, 450, 1000);
+        application.addAppModule("clientModule", 400, 400, 100);
+        application.addAppModule("mService1", 400, 400, 200);
+        application.addAppModule("mService2", 400, 400, 400);
+        application.addAppModule("mService3", 400, 400, 400);
 
         /*
          * Connecting the application modules (vertices) in the application model (directed graph) with edges
          */
         application.addAppEdge("SENSOR", "clientModule", 1000, 500, "SENSOR", Tuple.UP, AppEdge.SENSOR);
         application.addAppEdge("clientModule", "mService1", 2000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService1", "mService2", 2500, 500, "FILTERED_DATA1", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService2", "mService3", 4000, 500, "FILTERED_DATA2", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService3", "clientModule", 28, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
+        application.addAppEdge("mService1", "mService2", 2000, 500, "FILTERED_DATA1", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mService2", "mService3", 2000, 500, "FILTERED_DATA2", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mService3", "clientModule", 2000, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
         application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
 //        application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT2_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
 
@@ -459,23 +534,23 @@ public class MyExperiment {
         /*
          * Adding modules (vertices) to the application model (directed graph)
          */
-        application.addAppModule("clientModule", 128, 150, 100);
-        application.addAppModule("mService1", 128, 250, 200);
-        application.addAppModule("mService2", 128, 350, 500);
-        application.addAppModule("mService3", 128, 450, 1000);
-        application.addAppModule("mService4", 128, 550, 1000);
-        application.addAppModule("mService5", 128, 650, 1000);
+        application.addAppModule("clientModule", 400, 400, 500);
+        application.addAppModule("mService1", 400, 400, 500);
+        application.addAppModule("mService2", 400, 400, 500);
+        application.addAppModule("mService3", 400, 400, 500);
+        application.addAppModule("mService4", 400, 400, 500);
+        application.addAppModule("mService5", 400, 400, 500);
 
         /*
          * Connecting the application modules (vertices) in the application model (directed graph) with edges
          */
 
-        application.addAppEdge("SENSOR", "clientModule", 1000, 500, "SENSOR", Tuple.UP, AppEdge.SENSOR);
+        application.addAppEdge("SENSOR", "clientModule", 2000, 500, "SENSOR", Tuple.UP, AppEdge.SENSOR);
         application.addAppEdge("clientModule", "mService1", 2000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService1", "mService2", 2500, 500, "FILTERED_DATA1", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService2", "mService3", 4000, 500, "FILTERED_DATA2", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService3", "mService4", 4000, 500, "FILTERED_DATA3", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService4", "mService5", 4000, 500, "FILTERED_DATA4", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mService1", "mService2", 2000, 500, "FILTERED_DATA1", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mService2", "mService3", 2000, 500, "FILTERED_DATA2", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mService3", "mService4", 2000, 500, "FILTERED_DATA3", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mService4", "mService5", 2000, 500, "FILTERED_DATA4", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("mService5", "clientModule", 28, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
         application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
 //        application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT2_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
@@ -517,47 +592,3 @@ public class MyExperiment {
     }
 }
 
-class SimulationConfig {
-    int numberOfEdge;
-    int numberOfUser;
-    int appLoopLength;
-    int placementLogic;
-
-    public SimulationConfig(int numberOfEdge, int numberOfUser, int appLoopLength, int placementLogic) {
-        if (numberOfUser >= 196 || numberOfEdge > 300){
-            Logger.error("Simulation Parameter error", "Not enough user/edge device location information!");
-        }
-        this.numberOfEdge = numberOfEdge;
-        this.numberOfUser = numberOfUser;
-        this.appLoopLength = appLoopLength;
-        this.placementLogic = placementLogic;
-    }
-
-    public double getAppLoopLength() {
-        return appLoopLength;
-    }
-
-    public void setAppLoopLength(int appLoopLength) {
-        this.appLoopLength = appLoopLength;
-    }
-
-    public int getPlacementLogic() {
-        return placementLogic;
-    }
-
-    public void setPlacementLogic(int placementLogic) {
-        this.placementLogic = placementLogic;
-    }
-
-    public int getNumberOfEdge() {
-        return numberOfEdge;
-    }
-
-    public void setNumberOfEdge(int numberOfEdge) {
-        this.numberOfEdge = numberOfEdge;
-    }
-
-    public int getNumberOfUser() {return numberOfUser;}
-
-    public void setNumberOfUser(int numberOfUser) {this.numberOfUser = numberOfUser;}
-}

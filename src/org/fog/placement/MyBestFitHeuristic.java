@@ -12,6 +12,11 @@ import org.fog.utils.ModuleLaunchConfig;
 import java.util.*;
 
 public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
+    @Override
+    public String getName() {
+        return "BestFit";
+    }
+
     /**
      * Fog network related details
      */
@@ -87,22 +92,10 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
 
     @Override
     protected int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
-        // Initialize temporary state
-//        final double[] cpusum = new double[1];
-//        Consumer<Double> addToCpu = (value) -> cpusum[0] += value;
-//        final int[] ramsum = new int[1];
-//        Consumer<Integer> addToRam = (value) -> ramsum[0] += value;
-//        final long[] storagesum = new long[1];
-//        Consumer<Long> addToStorage = (value) -> storagesum[0] += value;
         int[] placed = new int[microservices.size()];
         for (int i = 0 ; i < microservices.size() ; i++) {
             placed[i] = -1;
         }
-//        Consumer<String> markAsPlaced = microservice -> {
-//            if (placed.containsKey(microservice)) {
-//                placed.put(microservice, 1);
-//            }
-//        };
 
         for (int j = 0 ; j < microservices.size() ; j++) {
             String s = microservices.get(j);

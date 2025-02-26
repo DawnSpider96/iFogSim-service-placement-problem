@@ -13,6 +13,11 @@ import org.fog.utils.ModuleLaunchConfig;
 import java.util.*;
 
 public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
+    @Override
+    public String getName() {
+        return "ACO";
+    }
+
     /**
      * Fog network related details
      */

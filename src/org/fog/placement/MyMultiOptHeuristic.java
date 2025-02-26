@@ -12,6 +12,11 @@ import org.fog.utils.ModuleLaunchConfig;
 import java.util.*;
 
 public class MyMultiOptHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
+    @Override
+    public String getName() {
+        return "MultiOpt";
+    }
+
     /**
      * Fog network related details
      */

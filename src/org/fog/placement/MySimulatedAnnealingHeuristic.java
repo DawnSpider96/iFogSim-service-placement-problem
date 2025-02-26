@@ -13,6 +13,11 @@ import org.fog.utils.ModuleLaunchConfig;
 import java.util.*;
 
 public class MySimulatedAnnealingHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
+    @Override
+    public String getName() {
+        return "SA";
+    }
+
     /**
      * Fog network related details
      */

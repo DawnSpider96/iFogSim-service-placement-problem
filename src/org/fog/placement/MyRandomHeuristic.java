@@ -14,6 +14,11 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
+    @Override
+    public String getName() {
+        return "Random";
+    }
+
     /**
      * Fog network related details
      */

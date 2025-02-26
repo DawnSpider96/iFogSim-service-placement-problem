@@ -34,7 +34,7 @@ public class MyMonitor {
         return MyMonitorHolder.INSTANCE;
     }
 
-    public static Map getCpuUsages() {
+    public Map getCpuUsages() {
         while (cpuUsages.size() <= getInstance().simulationRoundNumber) {
             cpuUsages.add(new HashMap<>()); // Simon (170225) says it should only add 1
         }
@@ -45,18 +45,30 @@ public class MyMonitor {
 //        MyMonitor.cpuUsages = cpuUsages;
 //    }
 
-    public static Map<Double, List<MyHeuristic.DeviceState>> getSnapshots() {
+    public Map<Double, List<MyHeuristic.DeviceState>> getSnapshots() {
         while (snapshots.size() <= getInstance().simulationRoundNumber) {
             snapshots.add(new HashMap<>()); // Simon (170225) says it should only add 1
         }
         return snapshots.get(getInstance().simulationRoundNumber);
     }
 
-    public static Map<Double, Map<PlacementRequest, Double>> getLatencies() {
+    public List<Map<Double, List<MyHeuristic.DeviceState>>> getAllSnapshots() {
+        return snapshots;
+    }
+
+    public Map<Double, Map<PlacementRequest, Double>> getLatencies() {
         while (latencies.size() <= getInstance().simulationRoundNumber) {
             latencies.add(new HashMap<>()); // Simon (170225) says it should only add 1
         }
         return latencies.get(getInstance().simulationRoundNumber);
+    }
+
+    public List<Map<Double, Map<PlacementRequest, Double>>> getAllLatencies() {
+        return latencies;
+    }
+
+    public void incrementSimulationRoundNumber() {
+        simulationRoundNumber++;
     }
 
 //    public static void setSnapshots(Map<Double, List<MyHeuristic.DeviceState>> snapshots) {

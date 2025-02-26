@@ -9,6 +9,11 @@ import org.fog.utils.ModuleLaunchConfig;
 import java.util.*;
 
 public class MyOnlinePOCPlacementLogicCopy extends MyHeuristic implements MicroservicePlacementLogic {
+    @Override
+    public String getName() {
+        return "Original iFogSim Placement Logic";
+    }
+
     /**
      * Fog network related details
      */

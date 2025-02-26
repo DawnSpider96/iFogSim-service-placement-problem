@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public abstract class MyHeuristic implements MicroservicePlacementLogic {
+    public abstract String getName();
     /**
      * Fog network related details
      */
@@ -304,7 +305,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             snapshots.add(new DeviceState(deviceId, resourceAvailability.get(deviceId),
                     fd.getHost().getTotalMips(), fd.getHost().getRam(), fd.getHost().getStorage()));
         }
-        MyMonitor.getSnapshots().put(CloudSim.clock(), snapshots);
+        MyMonitor.getInstance().getSnapshots().put(CloudSim.clock(), snapshots);
         // FogBroker.getBatchNumber()
 
     }
@@ -350,7 +351,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             // Update output
             placement.put(placementRequest.getPlacementRequestId(), mappedMicroservices.get(placementRequest.getPlacementRequestId()));
         }
-        MyMonitor.getLatencies().put(CloudSim.clock(), latencies);
+        MyMonitor.getInstance().getLatencies().put(CloudSim.clock(), latencies);
         return placement;
     }
 
@@ -641,6 +642,19 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             double totalRAM = this.totalResources.get("ram");
             double availableRAM = this.remainingResources.get("ram");
             return (totalRAM - availableRAM) / totalRAM;
+        }
+
+        // For standard deviation
+        public double getCPUUsage() {
+            double totalCPU = this.totalResources.get("cpu");
+            double availableCPU = this.remainingResources.get("cpu");
+            return (totalCPU - availableCPU);
+        }
+
+        public double getRAMUsage() {
+            double totalRAM = this.totalResources.get("ram");
+            double availableRAM = this.remainingResources.get("ram");
+            return (totalRAM - availableRAM);
         }
 
         @Override

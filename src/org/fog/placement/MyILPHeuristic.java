@@ -31,6 +31,11 @@ public class MyILPHeuristic extends MyHeuristic implements MicroservicePlacement
 
     private List<DeviceState> DeviceStates = new ArrayList<>();
 
+    @Override
+    public String getName() {
+        return "ILP";
+    }
+
     public MyILPHeuristic(int fonID) {
         super(fonID);
     }

@@ -354,7 +354,7 @@ public class MyMicroservicesController extends SimEntity {
         //  Like utilisation? Standard deviation of utilisation? Ask Dr Cabrera
         //  Also NOTE that the entries are not sorted in key (timestamp) order, annoying
         //  Maybe need TreeMap
-        Map<Double, List<MyHeuristic.DeviceState>> ss = MyMonitor.getSnapshots();
+        Map<Double, List<MyHeuristic.DeviceState>> ss = MyMonitor.getInstance().getSnapshots();
         ss.forEach((key, value) ->
                 value.forEach((deviceState) -> System.out.println(key + ": " + deviceState.getId())));
     }

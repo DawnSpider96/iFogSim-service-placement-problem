@@ -256,7 +256,7 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 		rcl.finalizeCloudlet();
 		getCloudletFinishedList().add(rcl);
 
-		Map<Integer, Map<Double, Tuple>> cpuUsages = MyMonitor.getCpuUsages();
+		Map<Integer, Map<Double, Tuple>> cpuUsages = MyMonitor.getInstance().getCpuUsages();
 
 		if (rcl.getCloudlet() == null || !(rcl.getCloudlet() instanceof Tuple)) {
 			throw new IllegalArgumentException("Cloudlet is null or not an instance of Tuple");
