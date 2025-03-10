@@ -4,11 +4,11 @@ import org.fog.entities.PlacementRequest;
 import org.fog.placement.MyHeuristic;
 import org.fog.placement.PlacementLogicFactory;
 import org.fog.test.perfeval.SimulationConfig;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class MetricUtils {
     // This class contains static functions for manipulation and plotting of simulation metric values
@@ -27,46 +27,74 @@ public class MetricUtils {
         put(PlacementLogicFactory.ILP, "ILP");
     }};
 
-    private static Double calculateStandardDeviation(List<MyHeuristic.DeviceState> snapshot, String resourceType){
-        /**
-         * Calculates the standard deviation
-         * of a specified resource's usage
-         * across all edge servers in simulation
-         * at a single timestamp.
-         * The calculation is based on the usage of either CPU or RAM as specified by the {@code resourceType}.
-         *
-         * @param snapshot List of {@code DeviceState} instances representing the state of each edge server,
-         *                 including identifiers and resource statistics.
-         * @param resourceType The type of resource for which the standard deviation is calculated. This parameter
-         *                     should be "cpu" or "ram".
-         * @return The standard deviation of the resource utilization across all edge servers for the specified resource type.
-         *         Returns 0.0 if the input list is empty or all values are the same.
-         * @throws IllegalArgumentException if {@code resourceType} is neither "cpu" nor "ram".
-         */
+    /**
+     * Returns the standard deviation of the resources utilisation for a given
+     * placement decision.
+     *
+     * @param edgeServers
+     *
+     * @return resource utilisation
+     */
+    private static double computeResourceUtilisation(List<MyHeuristic.DeviceState> edgeServers) {
+        double resourceUtilisation = 0.0;
+        double[] cpuUtil = new double[edgeServers.size()];
+        double[] ramUtil = new double[edgeServers.size()];
 
-        if (!resourceType.equals("cpu") && !resourceType.equals("ram")) {
-            throw new IllegalArgumentException("Resource type must be 'cpu' or 'ram'");
-        }
+        int[] j = { 0 };
+        edgeServers.forEach(server->{
+            cpuUtil[j[0]] = server.getCPUUtil();
+            ramUtil[j[0]] = server.getRAMUtil();
+            j[0]++;
+        });
 
-        List<Double> usagesForCycle = new ArrayList<>();
-        // Collect usages
-        for (MyHeuristic.DeviceState state : snapshot) {
-            double usage = 0;
-            if (resourceType.equals("cpu")) {
-                usage = state.getCPUUsage();
-            } else { //resourceType is ram
-                usage = state.getRAMUsage();
-            }
-            usagesForCycle.add(usage);
-        }
+        DescriptiveStatistics cpuStats = new DescriptiveStatistics(cpuUtil);
+        DescriptiveStatistics ramStats = new DescriptiveStatistics(ramUtil);
 
-        double mean = usagesForCycle.stream().mapToDouble(a -> a).average().orElse(0.0);
-        double variance = usagesForCycle.stream().mapToDouble(a -> Math.pow(a - mean, 2)).average().orElse(0.0);
-
-        return Math.sqrt(variance);
+        resourceUtilisation = Math.sqrt(0.5 * Math.pow(cpuStats.getStandardDeviation(), 2)
+                + 0.5 * Math.pow(ramStats.getStandardDeviation(), 2));
+        return resourceUtilisation;
     }
 
-    public static Map<String, Map<Double, Double>> handleSimulationResource (Map<Double, List<MyHeuristic.DeviceState>> snapshots){
+//    private static Double calculateStandardDeviation(List<MyHeuristic.DeviceState> snapshot, String resourceType){
+//        /**
+//         * Calculates the standard deviation
+//         * of a specified resource's usage
+//         * across all edge servers in simulation
+//         * at a single timestamp.
+//         * The calculation is based on the usage of either CPU or RAM as specified by the {@code resourceType}.
+//         *
+//         * @param snapshot List of {@code DeviceState} instances representing the state of each edge server,
+//         *                 including identifiers and resource statistics.
+//         * @param resourceType The type of resource for which the standard deviation is calculated. This parameter
+//         *                     should be "cpu" or "ram".
+//         * @return The standard deviation of the resource utilization across all edge servers for the specified resource type.
+//         *         Returns 0.0 if the input list is empty or all values are the same.
+//         * @throws IllegalArgumentException if {@code resourceType} is neither "cpu" nor "ram".
+//         */
+//
+//        if (!resourceType.equals("cpu") && !resourceType.equals("ram")) {
+//            throw new IllegalArgumentException("Resource type must be 'cpu' or 'ram'");
+//        }
+//
+//        List<Double> usagesForCycle = new ArrayList<>();
+//        // Collect usages
+//        for (MyHeuristic.DeviceState state : snapshot) {
+//            double usage = 0;
+//            if (resourceType.equals("cpu")) {
+//                usage = state.getCPUUsage();
+//            } else { //resourceType is ram
+//                usage = state.getRAMUsage();
+//            }
+//            usagesForCycle.add(usage);
+//        }
+//
+//        double mean = usagesForCycle.stream().mapToDouble(a -> a).average().orElse(0.0);
+//        double variance = usagesForCycle.stream().mapToDouble(a -> Math.pow(a - mean, 2)).average().orElse(0.0);
+//
+//        return Math.sqrt(variance);
+//    }
+
+    public static Map<Double, Double> handleSimulationResource (Map<Double, List<MyHeuristic.DeviceState>> snapshots){
         /**
          * For a SINGLE simulation,
          * calculates the standard deviation of resource usage (CPU, RAM, etc.) for each resource at each timestamp.
@@ -81,17 +109,23 @@ public class MetricUtils {
          *         (double) of the usage of that resource across all edge servers at that timestamp.
          *         This structure allows easy access to the variability data of each resource at each simulation timestamp.
          */
-        Map<String, Map<Double, Double>> standardDeviationsPerResource = new HashMap<>();
-        for (String resourceName : resources) {
-            Map<Double, Double> standardDeviations = new HashMap<>();
-            for (Map.Entry<Double, List<MyHeuristic.DeviceState>> entry : snapshots.entrySet()) {
-                Double timestamp = entry.getKey();
-                List<MyHeuristic.DeviceState> snapshot = entry.getValue();
-                standardDeviations.put(timestamp, calculateStandardDeviation(snapshot, resourceName));
-            }
-            standardDeviationsPerResource.put(resourceName, standardDeviations);
+//        Map<String, Map<Double, Double>> standardDeviationsPerResource = new HashMap<>();
+//        for (String resourceName : resources) {
+//            Map<Double, Double> standardDeviations = new HashMap<>();
+//            for (Map.Entry<Double, List<MyHeuristic.DeviceState>> entry : snapshots.entrySet()) {
+//                Double timestamp = entry.getKey();
+//                List<MyHeuristic.DeviceState> snapshot = entry.getValue();
+//                standardDeviations.put(timestamp, calculateStandardDeviation(snapshot, resourceName));
+//            }
+//            standardDeviationsPerResource.put(resourceName, standardDeviations);
+//        }
+        Map<Double, Double> standardDeviations = new HashMap<>();
+        for (Map.Entry<Double, List<MyHeuristic.DeviceState>> entry : snapshots.entrySet()) {
+            Double timestamp = entry.getKey();
+            List<MyHeuristic.DeviceState> snapshot = entry.getValue();
+            standardDeviations.put(timestamp, computeResourceUtilisation(snapshot));
         }
-        return standardDeviationsPerResource;
+        return standardDeviations;
     }
 
     private static double calculateMapMean(Map<Double, Double> timestampToValue) {
@@ -99,6 +133,16 @@ public class MetricUtils {
                 .mapToDouble(Double::doubleValue)
                 .average()
                 .orElse(0.0);
+    }
+
+    public static double calculateMapStandardDeviation(Map<Double, Double> data, Double mean) {
+        double variance = data.values()
+                .stream()
+                .mapToDouble(i -> i)
+                .map(i -> Math.pow(i - mean, 2))
+                .average()
+                .orElse(0.0); // Returns 0 if there are no values
+        return Math.sqrt(variance);
     }
 
     private static Double calculateLatencyOneCycle(Map<PlacementRequest, Double> latencyMap){
@@ -135,58 +179,69 @@ public class MetricUtils {
         return ls;
     }
 
-    public static void writeResourceDistributionToCSV(List<Map<String, Map<Double, Double>>> resourceData,
+    public static void writeResourceDistributionToCSV(List<Map<Double, Double>> resourceData,
                                                       List<Map<Double, Double>> latencyData,
                                                       List<SimulationConfig> simConfigs,
                                                       String filePath) throws IOException {
-        List<Map<String, Double>> averagedResourceData = new ArrayList<>();
-        List<Double> averagedLatencyData = new ArrayList<>();
+        List<Double> averagedResourceData = new ArrayList<>();
+        List<Double> stdDevResourceData = new ArrayList<>();
 
-        for (Map<String, Map<Double, Double>> resourceMap : resourceData) {
-            Map<String, Double> meanStdDevs = resourceMap.entrySet().stream()
-                    .collect(Collectors.toMap(
-                            Map.Entry::getKey,
-                            e -> calculateMapMean(e.getValue())
-                    ));
-            averagedResourceData.add(meanStdDevs);
+        List<Double> averagedLatencyData = new ArrayList<>();
+        List<Double> stdDevLatencyData = new ArrayList<>();
+
+
+        for (Map<Double, Double> resourceMap : resourceData) {
+            double resourceMean = calculateMapMean(resourceMap);
+            averagedResourceData.add(resourceMean);
+            stdDevResourceData.add(calculateMapStandardDeviation(resourceMap, resourceMean));
         }
 
         for (Map<Double, Double> latencyMap : latencyData) {
-            averagedLatencyData.add(calculateMapMean(latencyMap));
+            double latencyMean = calculateMapMean(latencyMap);
+            averagedLatencyData.add(latencyMean);
+            stdDevLatencyData.add(calculateMapStandardDeviation(latencyMap, latencyMean));
         }
 
         if (averagedResourceData.size() != simConfigs.size()
-                || averagedLatencyData.size() != simConfigs.size()) {
+                || stdDevResourceData.size() != simConfigs.size()
+                || averagedLatencyData.size() != simConfigs.size()
+                || stdDevLatencyData.size() != simConfigs.size()) {
             throw new IllegalArgumentException(String.format(
                     "averagedResourceData and averagedLatencyData size mismatch: both must have one element per simulation. %d %d %d",
                     averagedResourceData.size(),
+                    stdDevResourceData.size(),
                     averagedLatencyData.size(),
+                    stdDevLatencyData.size(),
                     simConfigs.size()));
         }
 
         try (FileWriter fileWriter = new FileWriter(filePath)) {
-            fileWriter.append("Edge Servers, Users, Services, Placement Logic , CPU stddev, RAM stddev, Avg Latency\n");
+            fileWriter.append("Edge Servers, Users, Services, Placement Logic , Avg Resource, Resource stddev, Avg Latency, Latency stddev\n");
 
-            Iterator<Map<String, Double>> resourceDataIterator = averagedResourceData.iterator();
+            Iterator<Double> resourceDataIterator = averagedResourceData.iterator();
+            Iterator<Double> resourceStdDevIterator = stdDevResourceData.iterator();
             Iterator<Double> latencyDataIterator = averagedLatencyData.iterator();
+            Iterator<Double> latencyStdDevIterator = stdDevLatencyData.iterator();
             Iterator<SimulationConfig> configIterator = simConfigs.iterator();
 
             while (resourceDataIterator.hasNext() && latencyDataIterator.hasNext()) {
-                Map<String, Double> data = resourceDataIterator.next();
-                double cpuStdDev = data.getOrDefault("cpu", 0.0);
-                double ramStdDev = data.getOrDefault("ram", 0.0);
+                double utilisation = resourceDataIterator.next();
+                double stdDevUtilisation = resourceStdDevIterator.next();
                 double latency = latencyDataIterator.next();
+                double stdDevLatency = latencyStdDevIterator.next();
+
                 SimulationConfig sc = configIterator.next();
 
                 fileWriter.append(String.format(
-                        "%d,%d,%d,%s,%f,%f,%f\n",
+                        "%d,%d,%d,%s,%f,%f,%f,%f\n",
                         sc.getNumberOfEdge(),
                         sc.getNumberOfUser(),
                         sc.getAppLoopLength(),
                         heuristics.get(sc.getPlacementLogic()),
-                        cpuStdDev,
-                        ramStdDev,
-                        latency
+                        utilisation,
+                        stdDevUtilisation,
+                        latency,
+                        stdDevLatency
                 ));
             }
         }

@@ -71,71 +71,71 @@ public class MyExperiment {
 
     public static void main(String[] args) {
         List<SimulationConfig> configs = Arrays.asList(
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ACO),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ILP),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ACO),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.BEST_FIT),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ILP),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
                 //
-                new SimulationConfig(200, 196, 1, PlacementLogicFactory.ACO),
-                new SimulationConfig(200, 196, 1, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(200, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(200, 196, 1, PlacementLogicFactory.ILP),
-                new SimulationConfig(200, 196, 1, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(200, 196, 1, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(200, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
+//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.ACO),
+//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.BEST_FIT),
+//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
+//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.ILP),
+//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
                 //
                 new SimulationConfig(300, 196, 1, PlacementLogicFactory.ACO),
-                new SimulationConfig(300, 196, 1, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(300, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(300, 196, 1, PlacementLogicFactory.ILP),
-                new SimulationConfig(300, 196, 1, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(300, 196, 1, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(300, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
+//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.BEST_FIT),
+//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
+//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.ILP),
+//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
                 //
                 //
-                new SimulationConfig(100, 196, 3, PlacementLogicFactory.ACO),
-                new SimulationConfig(100, 196, 3, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(100, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(100, 196, 3, PlacementLogicFactory.ILP),
-                new SimulationConfig(100, 196, 3, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(100, 196, 3, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(100, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
-                //
-                new SimulationConfig(200, 196, 3, PlacementLogicFactory.ACO),
-                new SimulationConfig(200, 196, 3, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(200, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(200, 196, 3, PlacementLogicFactory.ILP),
-                new SimulationConfig(200, 196, 3, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(200, 196, 3, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(200, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
+//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.ACO),
+//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.BEST_FIT),
+//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
+//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.ILP),
+//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
+//                //
+//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.ACO),
+//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.BEST_FIT),
+//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
+//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.ILP),
+//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
                 //
                 new SimulationConfig(300, 196, 3, PlacementLogicFactory.ACO),
-                new SimulationConfig(300, 196, 3, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(300, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(300, 196, 3, PlacementLogicFactory.ILP),
-                new SimulationConfig(300, 196, 3, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(300, 196, 3, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(300, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
-                //
-                //
-                new SimulationConfig(100, 196, 5, PlacementLogicFactory.ACO),
-                new SimulationConfig(100, 196, 5, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(100, 196, 5, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(100, 196, 5, PlacementLogicFactory.ILP),
-                new SimulationConfig(100, 196, 5, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(100, 196, 5, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(100, 196, 5, PlacementLogicFactory.SIMULATED_ANNEALING),
-                //
-                new SimulationConfig(200, 196, 5, PlacementLogicFactory.ACO),
-                new SimulationConfig(200, 196, 5, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(200, 196, 5, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(200, 196, 5, PlacementLogicFactory.ILP),
-                new SimulationConfig(200, 196, 5, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(200, 196, 5, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(200, 196, 5, PlacementLogicFactory.SIMULATED_ANNEALING),
+//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.BEST_FIT),
+//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
+//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.ILP),
+//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
+//                //
+//                //
+//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.ACO),
+//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.BEST_FIT),
+//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.CLOSEST_FIT),
+//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.ILP),
+//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.SIMULATED_ANNEALING),
+//                //
+//                new SimulationConfig(200, 196, 5, PlacementLogicFactory.ACO),
+//                new SimulationConfig(200, 196, 5, PlacementLogicFactory.BEST_FIT),
+//                new SimulationConfig(200, 196, 5, PlacementLogicFactory.CLOSEST_FIT),
+//                new SimulationConfig(200, 196, 5, PlacementLogicFactory.ILP),
+//                new SimulationConfig(200, 196, 5, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(200, 196, 5, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(200, 196, 5, PlacementLogicFactory.SIMULATED_ANNEALING),
                 //
                 new SimulationConfig(300, 196, 5, PlacementLogicFactory.ACO),
                 new SimulationConfig(300, 196, 5, PlacementLogicFactory.BEST_FIT),
@@ -154,15 +154,19 @@ public class MyExperiment {
         MyMonitor mm = MyMonitor.getInstance();
 
         try {
-            List<Map<String, Map<Double, Double>>> resourceData =
+//            List<Map<String, Map<Double, Double>>> resourceData =
+//                    MyMonitor.getInstance().getAllSnapshots().stream()
+//                    .map(MetricUtils::handleSimulationResource)
+//                    .collect(Collectors.toList());
+            List<Map<Double, Double>> resourceData =
                     MyMonitor.getInstance().getAllSnapshots().stream()
-                    .map(MetricUtils::handleSimulationResource)
-                    .collect(Collectors.toList());
+                            .map(MetricUtils::handleSimulationResource)
+                            .collect(Collectors.toList());
             List<Map<Double, Double>> latencyData =
                     MyMonitor.getInstance().getAllLatencies().stream()
                             .map(MetricUtils::handleSimulationLatency)
                             .collect(Collectors.toList());
-            MetricUtils.writeResourceDistributionToCSV(resourceData, latencyData, configs, "./output/resourceDistAlpha.csv");
+            MetricUtils.writeResourceDistributionToCSV(resourceData, latencyData, configs, "./output/resourceDistStdDevTest.csv");
             System.out.println("CSV file has been created successfully.");
         } catch (IOException e) {
             System.err.println("An error occurred while writing to the CSV file.");
