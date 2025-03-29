@@ -18,6 +18,13 @@ public class SimulationConfig {
         this.placementLogic = placementLogic;
     }
 
+    @Override
+    public String toString() {
+        return String.format("numberOfEdge: %d, numberOfUser: %d, appLoopLength: %d, placementLogic, %d",
+                numberOfEdge, numberOfUser, appLoopLength, placementLogic);
+    }
+
+
     public int getAppLoopLength() {return appLoopLength;}
 
     public void setAppLoopLength(int appLoopLength) {

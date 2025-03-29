@@ -129,7 +129,7 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
         for (PlacementRequest p : placementRequests) {
             placementRequestDelayMap.put(p, initialDelay);
 
-            int clientDeviceId = p.getGatewayDeviceId();
+            int clientDeviceId = p.getRequester();
             String app = p.getApplicationId();
             if (perClientDevicePrs.containsKey(clientDeviceId)) {
                 perClientDevicePrs.get(clientDeviceId).put(app, p);

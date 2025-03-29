@@ -1,5 +1,6 @@
 package org.fog.test.perfeval;
 
+import org.cloudbus.cloudsim.sdn.example.policies.VmSchedulerTimeSharedEnergy;
 import org.fog.application.MyApplication;
 import org.fog.mobilitydata.*;
 import org.fog.utils.Logger;
@@ -135,6 +136,7 @@ public class OnlinePOC {
 
             TimeKeeper.getInstance().setSimulationStartTime(Calendar.getInstance().getTimeInMillis());
             Log.printLine("Simon app START!");
+            Log.printLine(String.format("Placement Logic: %d", placementAlgo));
 
             CloudSim.startSimulation();
 //            CloudSim.stopSimulation();
@@ -232,7 +234,7 @@ public class OnlinePOC {
                 new BwProvisionerOverbooking(bw),
                 storage,
                 peList,
-                new StreamOperatorScheduler(peList),
+                new VmSchedulerTimeSharedEnergy(peList),
                 new FogLinearPowerModel(busyPower, idlePower)
         );
 

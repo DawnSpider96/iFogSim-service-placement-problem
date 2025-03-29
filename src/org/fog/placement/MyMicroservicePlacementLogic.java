@@ -7,7 +7,6 @@ import org.fog.application.Application;
 import org.fog.entities.FogDevice;
 import org.fog.entities.Tuple;
 import org.fog.entities.ControllerComponent;
-import org.fog.entities.MicroserviceFogDevice;
 import org.fog.entities.PlacementRequest;
 import org.fog.utils.Logger;
 import org.fog.utils.ModuleLaunchConfig;
@@ -210,7 +209,7 @@ public class MyMicroservicePlacementLogic implements MicroservicePlacementLogic 
         Map<PlacementRequest, Integer> deviceToPlace = new HashMap<>();
         //initiate with the  parent of the client device for this
         for (PlacementRequest placementRequest : placementRequests) {
-            deviceToPlace.put(placementRequest, getDevice(placementRequest.getGatewayDeviceId()).getParentId());
+            deviceToPlace.put(placementRequest, getDevice(placementRequest.getRequester()).getParentId());
 
             // already placed modules
             mappedMicroservices.put(placementRequest.getPlacementRequestId(), new HashMap<>(placementRequest.getPlacedMicroservices()));

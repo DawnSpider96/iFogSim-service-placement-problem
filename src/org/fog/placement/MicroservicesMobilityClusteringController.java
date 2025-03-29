@@ -119,7 +119,7 @@ public class MicroservicesMobilityClusteringController extends MicroservicesCont
         for (PlacementRequest p : placementRequests) {
             placementRequestDelayMap.put(p, delay);
 
-            int clientDeviceId = p.getGatewayDeviceId();
+            int clientDeviceId = p.getRequester();
             String app = p.getApplicationId();
             if (perClientDevicePrs.containsKey(clientDeviceId)) {
                 perClientDevicePrs.get(clientDeviceId).put(app, p);

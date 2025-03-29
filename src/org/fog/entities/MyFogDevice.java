@@ -87,7 +87,7 @@ public class MyFogDevice extends FogDevice {
 				PlacementRequest pr = (PlacementRequest) object.get("PR");
 				Application application = (Application) object.get("app");
 				/// Periodically resend the same placement request
-				PlacementRequest prNew = new PlacementRequest(pr.getApplicationId(), pr.getPlacementRequestId(), pr.getGatewayDeviceId(), new LinkedHashMap<>(pr.getPlacedMicroservices()));
+				PlacementRequest prNew = new PlacementRequest(pr.getApplicationId(), pr.getPlacementRequestId(), pr.getRequester(), new LinkedHashMap<>(pr.getPlacedMicroservices()));
 				Map<String, Object> newObject = new HashMap<>();
 				newObject.put("PR", prNew);
 				newObject.put("app", application);

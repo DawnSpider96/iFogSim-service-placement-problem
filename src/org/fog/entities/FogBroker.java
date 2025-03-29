@@ -10,7 +10,7 @@ import org.fog.application.AppEdge;
 import org.fog.application.AppLoop;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
-import org.fog.placement.MyHeuristic;
+import org.fog.scheduler.TupleScheduler;
 import org.fog.utils.*;
 import org.json.simple.JSONObject;
 
@@ -18,19 +18,32 @@ import java.util.*;
 
 public class FogBroker extends PowerDatacenterBroker{
 
-	// Simon says we'll just keep a record of every single PD for now
-	// Might be useful for metrics
+	// Simon says we'll just keep a record of every single PD for now, might be useful for metrics
+	// todo Simon (130325) says we will scrap the idea, because metrics are taken straight from Cloud and stored in MyMonitor
+	//  Instead we will clear FogBroker's state every time simulation start
 	// batch number -> perDevice, which is Device -> (Application -> List <ModuleLaunchConfig which contains unique module object and instance count>)
-	private Map<Integer, Map<Integer, Boolean>> checklist = new HashMap<>();
-	private Map<Integer, Map<PlacementRequest, Integer>> toSend = new HashMap<>();
+	private static final Map<Integer, Map<Integer, Boolean>> checklist = new HashMap<>();
+	private static final Map<Integer, Map<PlacementRequest, Integer>> toSend = new HashMap<>();
+	// DeviceId -> List(VmId)
+	private static final Map<Integer, Set<Integer>> activatedVMs = new HashMap<>();
+
 
 	private static int batchNumber = 1;
 
-	private static Map<Application, String> applicationToFirstMicroserviceMap = new HashMap<>();
-	private static Map<Application, List<String>> applicationToSecondMicroservicesMap = new HashMap<>();
+	private static final Map<Application, String> applicationToFirstMicroserviceMap = new HashMap<>();
+	private static final Map<Application, List<String>> applicationToSecondMicroservicesMap = new HashMap<>();
 
 	public FogBroker(String name) throws Exception {
 		super(name);
+	}
+
+	// Simon (130325) says clear FogBroker for Experiment purposes
+	public static void clear(){
+		getApplicationToFirstMicroserviceMap().clear();
+		getApplicationToSecondMicroservicesMap().clear();
+		setBatchNumber(1);
+		getChecklist().clear();
+		getToSend().clear();
 	}
 
 	// Simon (170125) says DatacenterBroker class has
@@ -156,6 +169,7 @@ public class FogBroker extends PowerDatacenterBroker{
 		tuple.setSrcModuleName(firstMicroservice);
 
 		// Retrieve the exact instance of the first microservice from the gateway device itself
+		// Queries and mutates activatedVMs
 		AppModule firstMicroserviceModule = getAppModule(pr, firstMicroservice);
 
 		// Simon (180125) says this is a bit hacky
@@ -167,9 +181,9 @@ public class FogBroker extends PowerDatacenterBroker{
 
 		tuple.setSourceModuleId(firstMicroserviceModule.getId());
 
-		tuple.setSourceDeviceId(pr.getGatewayDeviceId());
+		tuple.setSourceDeviceId(pr.getRequester());
 
-		tuple.addToTraversedMicroservices(pr.getGatewayDeviceId(), firstMicroservice);
+		tuple.addToTraversedMicroservices(pr.getRequester(), firstMicroservice);
 //		updateTimingsOnSending(resTuple);
 
 		Logger.debug(getName(), "Sending tuple with tupleId = " + tuple.getCloudletId());
@@ -182,18 +196,38 @@ public class FogBroker extends PowerDatacenterBroker{
 		sendNow(targetId, FogEvents.TUPLE_ARRIVAL, tuple);
 	}
 
-	private static AppModule getAppModule(PlacementRequest pr, String firstMicroservice) {
-		MyFogDevice device = (MyFogDevice) CloudSim.getEntity(pr.getGatewayDeviceId());
+	private static AppModule getAppModule(PlacementRequest pr, String targetService) {
+		int deviceId = pr.getRequester();
+		MyFogDevice device = (MyFogDevice) CloudSim.getEntity(deviceId);
+		if (!activatedVMs.containsKey(deviceId)) activatedVMs.put(deviceId, new HashSet<Integer>());
 
 		AppModule firstMicroserviceModule = null;
+		// TODO Simon says (130325) we need some FogBroker state that keeps track of what VMs have already been assigned to
 		for (Vm vm : device.getVmList()) {
 			AppModule am = (AppModule) vm;
-			if (am.getName() == firstMicroservice) {
-				firstMicroserviceModule = am;
-				break;
+			// Find the first VM in the edge device's VMList that has not been already transmitted to,
+			// ie the first VM with name equal to the client microservice (firstMicroservice)
+			// and with ID not in activatedVMs state.
+			if (Objects.equals(am.getName(), targetService) && !activatedVMs.get(deviceId).contains(am.getId())) {
+				// Error catching: Cloudlet Scheduler of the VM must be idle.
+				TupleScheduler ts = (TupleScheduler) am.getCloudletScheduler();
+				if (ts.runningCloudlets() == 0) {
+					firstMicroserviceModule = am;
+					break;
+				} else {
+					Logger.debug("FogBroker Control Flow Error", "This VM should not have Cloudlets!");
+				}
 			}
 		}
-		assert firstMicroserviceModule != null;
+		if (firstMicroserviceModule==null) {
+			MyFogDevice d = (MyFogDevice) CloudSim.getEntity(deviceId);
+			Logger.error("FogBroker Control Flow Error", String.format(
+					"Could not find a VM in device %s to transmit tuple to.\n%s",
+					d.getName(),
+					d.getVmList()
+			));
+		}
+        activatedVMs.get(deviceId).add(firstMicroserviceModule.getId());
 		return firstMicroserviceModule;
 	}
 
@@ -240,4 +274,11 @@ public class FogBroker extends PowerDatacenterBroker{
 		return applicationToSecondMicroservicesMap;
 	}
 
+	public static Map<Integer, Map<PlacementRequest, Integer>> getToSend() {
+		return toSend;
+	}
+
+	public static Map<Integer, Map<Integer, Boolean>> getChecklist() {
+		return checklist;
+	}
 }

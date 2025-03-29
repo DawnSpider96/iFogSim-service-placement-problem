@@ -173,7 +173,7 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
         Map<PlacementRequest, Integer> targets = new HashMap();
         // todo Simon says that ALL the parent edge servers of the users that made PRs must receive deployments. Otherwise error.
         for (PlacementRequest pr : placementRequests) {
-            int parentOfGateway = Objects.requireNonNull(getDevice(pr.getGatewayDeviceId())).getParentId();
+            int parentOfGateway = Objects.requireNonNull(getDevice(pr.getRequester())).getParentId();
             boolean targeted = false;
             for (int target : perDevice.keySet()) {
                 if (parentOfGateway == target) {
@@ -184,7 +184,7 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
             }
             if (!targeted) {
                 Logger.error("Deployment Error", "Deployment Request is not being sent to "
-                        + parentOfGateway + ", the parent of gateway device " + Objects.requireNonNull(getDevice(pr.getGatewayDeviceId())).getName());
+                        + parentOfGateway + ", the parent of gateway device " + Objects.requireNonNull(getDevice(pr.getRequester())).getName());
             }
         }
 
@@ -225,7 +225,7 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
         Map<PlacementRequest, Integer> currentTargets = new HashMap<>();
         //initiate with the  parent of the client device for this
         for (PlacementRequest placementRequest : placementRequests) {
-            currentTargets.put(placementRequest, getDevice(placementRequest.getGatewayDeviceId()).getParentId());
+            currentTargets.put(placementRequest, getDevice(placementRequest.getRequester()).getParentId());
 
             // already placed modules
             mappedMicroservices.put(placementRequest.getPlacementRequestId(), new HashMap<>(placementRequest.getPlacedMicroservices()));

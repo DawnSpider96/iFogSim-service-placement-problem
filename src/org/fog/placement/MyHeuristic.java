@@ -74,7 +74,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         Map<PlacementRequest, Integer> closestNodes = new HashMap<>();
 
         for (PlacementRequest placementRequest : prs) {
-            closestNodes.put(placementRequest, getDevice(placementRequest.getGatewayDeviceId()).getParentId());
+            closestNodes.put(placementRequest, getDevice(placementRequest.getRequester()).getParentId());
 
             // already placed modules
             mappedMicroservices.put(placementRequest.getPlacementRequestId(), new LinkedHashMap<>(placementRequest.getPlacedMicroservices()));

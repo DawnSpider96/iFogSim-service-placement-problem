@@ -1,11 +1,9 @@
 package org.fog.placement;
 
-import org.apache.commons.math3.util.Pair;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.fog.application.AppLoop;
-import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.entities.*;
 import org.fog.utils.*;
@@ -178,9 +176,9 @@ public class MyMicroservicesController extends SimEntity {
             jsonSend.put("PR", p);
             jsonSend.put("app", applications.get(p.getApplicationId()));
             if (placementRequestDelayMap.get(p) == 0) {
-                sendNow(p.getGatewayDeviceId(), FogEvents.TRANSMIT_PR, jsonSend);
+                sendNow(p.getRequester(), FogEvents.TRANSMIT_PR, jsonSend);
             } else
-                send(p.getGatewayDeviceId(), placementRequestDelayMap.get(p), FogEvents.TRANSMIT_PR, jsonSend);
+                send(p.getRequester(), placementRequestDelayMap.get(p), FogEvents.TRANSMIT_PR, jsonSend);
         }
         if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC) {
             for (FogDevice f : fogDevices) {

@@ -127,7 +127,7 @@ public class MyOnlinePOCPlacementLogicCopy extends MyHeuristic implements Micros
             }
             if (!targeted) {
                 Logger.error("Deployment Error", "Deployment Request is not being sent to "
-                        + parentOfGateway + ", the parent of gateway device " + Objects.requireNonNull(getDevice(pr.getGatewayDeviceId())).getName());
+                        + parentOfGateway + ", the parent of gateway device " + Objects.requireNonNull(getDevice(pr.getRequester())).getName());
             }
         }
         return targets;

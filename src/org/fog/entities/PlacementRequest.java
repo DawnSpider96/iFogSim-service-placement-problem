@@ -7,19 +7,19 @@ public class PlacementRequest {
     private String applicationId;
     private Map<String,Integer> placedMicroservices; // microservice name to placed device id
     private int placementRequestId; //sensor Id
-    private int gatewayDeviceId; //device generating the request
+    private int requester; //device generating the request
 
-    public PlacementRequest(String applicationId,int placementRequestId,int gatewayDeviceId,Map<String,Integer> placedMicroservicesMap){
+    public PlacementRequest(String applicationId, int placementRequestId, int requester, Map<String,Integer> placedMicroservicesMap){
         this.applicationId = applicationId;
         this.placementRequestId = placementRequestId;
-        this.gatewayDeviceId = gatewayDeviceId;
+        this.requester = requester;
         this.placedMicroservices = placedMicroservicesMap;
     }
 
-    public PlacementRequest(String applicationId,int placementRequestId,int gatewayDeviceId){
+    public PlacementRequest(String applicationId,int placementRequestId,int requester){
         this.applicationId = applicationId;
         this.placementRequestId = placementRequestId;
-        this.gatewayDeviceId = gatewayDeviceId;
+        this.requester = requester;
         this.placedMicroservices = new HashMap<>();
     }
 
@@ -31,8 +31,8 @@ public class PlacementRequest {
         return placementRequestId;
     }
 
-    public int getGatewayDeviceId() {
-        return gatewayDeviceId;
+    public int getRequester() {
+        return requester;
     }
 
     public Map<String, Integer> getPlacedMicroservices() {
