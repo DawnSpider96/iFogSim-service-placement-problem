@@ -277,18 +277,19 @@ public class MyFogDevice extends FogDevice {
 //						add((double) getHost().getTotalMips());
 //					}
 //				});
-				// Simon (310325) says since we now use VmSchedulerTimeShared (no overbooking),
+				// todo Simon (310325) says since we now use VmSchedulerTimeShared (no overbooking),
 				//  we must change the way we allocate/deallocate Pes to the VM
 				//  Previously we visited the VmScheduler TWICE: Once during installation and once during execution (here),
 				//  because of overbooking. Now we shouldn't,
 				//  because allocatePesForVm mutates the `availableMips` state of VmScheduler (for a wrongful second time here).
-				List<Double> mipsShare = new ArrayList<>();
-				mipsShare.add(operator.getMips());
-				boolean result = getHost().getVmScheduler().allocatePesForVm(operator, mipsShare);
-				if (!result) {
-					VmSchedulerTimeShared vmsch = (VmSchedulerTimeShared) getHost().getVmScheduler(); // For debugging
-					Logger.error("AllocatePesForVm error", "Failure to allocate Pes. Check VmScheduler's state, see it aligns with VmList.");
-				}
+
+//				List<Double> mipsShare = new ArrayList<>();
+//				mipsShare.add(operator.getMips());
+//				boolean result = getHost().getVmScheduler().allocatePesForVm(operator, mipsShare);
+//				if (!result) {
+//					VmSchedulerTimeShared vmsch = (VmSchedulerTimeShared) getHost().getVmScheduler(); // For debugging
+//					Logger.error("AllocatePesForVm error", "Failure to allocate Pes. Check VmScheduler's state, see it aligns with VmList.");
+//				}
 			}
 			// Simon (170125) says VmId will always have a value under OnlinePOC
 			// because operator cannot be null
@@ -352,6 +353,54 @@ public class MyFogDevice extends FogDevice {
 			}
 		}
 	}
+
+	@Override
+	protected void executeTuple(SimEvent ev, String moduleName) {
+		Logger.debug(getName(), "Executing tuple on module " + moduleName);
+		Tuple tuple = (Tuple) ev.getData();
+		AppModule module = getModuleByName(moduleName);
+
+		// Maintain instance tracking logic for UP tuples (unchanged from overbooking implementation)
+		if (tuple.getDirection() == Tuple.UP) {
+			String srcModule = tuple.getSrcModuleName();
+			if (!module.getDownInstanceIdsMaps().containsKey(srcModule))
+				module.getDownInstanceIdsMaps().put(srcModule, new ArrayList<Integer>());
+			if (!module.getDownInstanceIdsMaps().get(srcModule).contains(tuple.getSourceModuleId()))
+				module.getDownInstanceIdsMaps().get(srcModule).add(tuple.getSourceModuleId());
+
+			int instances = -1;
+			for (String _moduleName : module.getDownInstanceIdsMaps().keySet()) {
+				instances = Math.max(module.getDownInstanceIdsMaps().get(_moduleName).size(), instances);
+			}
+			module.setNumInstances(instances);
+		}
+
+		// Check that the module has an allocation in the mipsMap
+		Map<String, List<Double>> mipsMap = getHost().getVmScheduler().getMipsMap();
+		if (!mipsMap.containsKey(module.getUid()) || mipsMap.get(module.getUid()).isEmpty() ||
+				mipsMap.get(module.getUid()).get(0) <= 0) {
+			Logger.error("Vm potentially Null Error", "Module " + moduleName + " does not have MIPS allocated for execution in device "
+					+ getName() + ". Terminating tuple execution.");
+			return; // Cannot execute without allocation
+		}
+
+		// Start the tuple execution timer
+		TimeKeeper.getInstance().tupleStartedExecution(tuple);
+
+		// Process the cloudlet submission (don't change any allocations)
+		processCloudletSubmit(ev, false);
+
+		// Update energy consumption and cost calculations
+		updateEnergyConsumption();
+	}
+
+	@Override
+	protected void updateAllocatedMips(String incomingOperator) {
+		// Simon (310325) says since no overbooking, skip all the deallocation/reallocation logic
+		// and just update the energy consumption and VM processing states
+		updateEnergyConsumption();
+	}
+
 
 	// todo Simon says we call the uninstallation of modules here
 	//  It checks ALL the VMs on the PowerHost belonging to this FogDevice (datacenter) to see if their Cloudlet's execution is complete

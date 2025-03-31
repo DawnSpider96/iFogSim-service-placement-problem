@@ -356,7 +356,7 @@ public class FogDevice extends PowerDatacenter {
         System.out.println(getName() + " Creating " + config.getInstanceCount() + " instances of module " + config.getModule().getName());
     }
 
-    private AppModule getModuleByName(String moduleName) {
+    protected AppModule getModuleByName(String moduleName) {
         AppModule module = null;
         for (Vm vm : getHost().getVmList()) {
             if (((AppModule) vm).getName().equals(moduleName)) {
@@ -571,6 +571,10 @@ public class FogDevice extends PowerDatacenter {
         return -1;
     }
 
+    // Simon (310325) says this only works WITH OVERBOOKING
+    //  I will override this. It is used in:
+    //  - executeTuple
+    //  - checkCloudletCompletion
     protected void updateAllocatedMips(String incomingOperator) {
         getHost().getVmScheduler().deallocatePesForAllVms();
         for (final Vm vm : getHost().getVmList()) {
@@ -597,7 +601,7 @@ public class FogDevice extends PowerDatacenter {
 
     }
 
-    private void updateEnergyConsumption() {
+    protected void updateEnergyConsumption() {
         double totalMipsAllocated = 0;
         for (final Vm vm : getHost().getVmList()) {
             AppModule operator = (AppModule) vm;
@@ -804,6 +808,8 @@ public class FogDevice extends PowerDatacenter {
         send(ev.getSource(), CloudSim.getMinTimeBetweenEvents(), FogEvents.TUPLE_ACK);
     }
 
+    // Simon (310325) says this calls updateAllocatedMips which only works WITH OVERBOOKING
+    //  I will overwrite this.
     protected void executeTuple(SimEvent ev, String moduleName) {
         Logger.debug(getName(), "Executing tuple on module " + moduleName);
         Tuple tuple = (Tuple) ev.getData();
