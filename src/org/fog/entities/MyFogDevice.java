@@ -270,13 +270,25 @@ public class MyFogDevice extends FogDevice {
             assert operator != null;
             int vmId = operator.getId();
 			if (CloudSim.clock() > 0) {
-				getHost().getVmScheduler().deallocatePesForVm(operator);
-				getHost().getVmScheduler().allocatePesForVm(operator, new ArrayList<Double>() {
-					private static final long serialVersionUID = 1L;
-					{
-						add((double) getHost().getTotalMips());
-					}
-				});
+//				getHost().getVmScheduler().deallocatePesForVm(operator);
+//				getHost().getVmScheduler().allocatePesForVm(operator, new ArrayList<Double>() {
+//					private static final long serialVersionUID = 1L;
+//					{
+//						add((double) getHost().getTotalMips());
+//					}
+//				});
+				// Simon (310325) says since we now use VmSchedulerTimeShared (no overbooking),
+				//  we must change the way we allocate/deallocate Pes to the VM
+				//  Previously we visited the VmScheduler TWICE: Once during installation and once during execution (here),
+				//  because of overbooking. Now we shouldn't,
+				//  because allocatePesForVm mutates the `availableMips` state of VmScheduler (for a wrongful second time here).
+				List<Double> mipsShare = new ArrayList<>();
+				mipsShare.add(operator.getMips());
+				boolean result = getHost().getVmScheduler().allocatePesForVm(operator, mipsShare);
+				if (!result) {
+					VmSchedulerTimeShared vmsch = (VmSchedulerTimeShared) getHost().getVmScheduler(); // For debugging
+					Logger.error("AllocatePesForVm error", "Failure to allocate Pes. Check VmScheduler's state, see it aligns with VmList.");
+				}
 			}
 			// Simon (170125) says VmId will always have a value under OnlinePOC
 			// because operator cannot be null
@@ -569,7 +581,7 @@ public class MyFogDevice extends FogDevice {
 			this.controllerComponent.removeServiceDiscoveryInfo(placement.getFirst(), placement.getSecond());
 	}
 
-	// todo NOTE: Triggered by LAUNCH_MODULE event
+	// NOTE: Triggered by LAUNCH_MODULE event
 	protected void processModuleArrival(SimEvent ev) {
 		// assumed that a new object of AppModule is sent
 		//todo what if an existing module is sent again in another placement cycle -> vertical scaling instead of having two vms

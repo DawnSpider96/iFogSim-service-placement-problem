@@ -59,7 +59,7 @@ public class PeProvisionerOverbooking extends PeProvisioner {
 	 */
 	@Override
 	public boolean allocateMipsForVm(String vmUid, double mips) {
-		if (getAvailableMips() < mips) {
+		if (getAvailableMips() < mips) { // TODO add error logging.
 			return false;
 		}
 

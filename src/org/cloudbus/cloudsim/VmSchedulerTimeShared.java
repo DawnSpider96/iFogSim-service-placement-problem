@@ -126,9 +126,9 @@ public class VmSchedulerTimeShared extends VmScheduler {
 		}
 
 		Iterator<Pe> peIterator = getPeList().iterator();
-		Pe pe = peIterator.next();
+		Pe pe = peIterator.next(); // Simon (310325) says, does this not imply only one PE per VmScheduler?
 		PeProvisioner peProvisioner = pe.getPeProvisioner();
-		double availableMips = peProvisioner.getAvailableMips();
+		double availableMipsCopy = peProvisioner.getAvailableMips();
 
 		for (Map.Entry<String, List<Double>> entry : getMipsMap().entrySet()) {
 			String vmUid = entry.getKey();
@@ -136,15 +136,15 @@ public class VmSchedulerTimeShared extends VmScheduler {
 
 			for (double mips : entry.getValue()) {
 				while (mips >= 0.1) {
-					if (availableMips >= mips) {
-						peProvisioner.allocateMipsForVm(vmUid, mips);
+					if (availableMipsCopy >= mips) {
+						peProvisioner.allocateMipsForVm(vmUid, mips); // Update provisioner of assigned PE
 						getPeMap().get(vmUid).add(pe);
-						availableMips -= mips;
+						availableMipsCopy -= mips; // Update again because SEPARATE from peProvisioner's available mips
 						break;
 					} else {
-						peProvisioner.allocateMipsForVm(vmUid, availableMips);
+						peProvisioner.allocateMipsForVm(vmUid, availableMipsCopy);
 						getPeMap().get(vmUid).add(pe);
-						mips -= availableMips;
+						mips -= availableMipsCopy;
 						if (mips <= 0.1) {
 							break;
 						}
@@ -153,16 +153,30 @@ public class VmSchedulerTimeShared extends VmScheduler {
 						}
 						pe = peIterator.next();
 						peProvisioner = pe.getPeProvisioner();
-						availableMips = peProvisioner.getAvailableMips();
+						availableMipsCopy = peProvisioner.getAvailableMips();
 					}
 				}
 			}
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see cloudsim.VmScheduler#deallocatePesForVm(cloudsim.Vm)
+	/**
+	 * Deallocates all processing elements (PEs) allocated to the specified VM.
+	 * <p>
+	 * This method is called by the {@code VmScheduler} of the PowerHost in a {@code FogDevice}
+	 * to update the scheduler’s internal state by removing any association with the target VM.
+	 * Specifically, it:
+	 * <ul>
+	 *   <li>Removes the target VM from {@code mipsMap},</li>
+	 *   <li>Resets {@code pesInUse},</li>
+	 *   <li>Clears and resets available MIPS,</li>
+	 *   <li>Ensures each {@code Pe} oerbject no longer contains the target VM, and</li>
+	 *   <li>Reallocates PEs for any remaining VMs in {@code mipsMapRequested}.</li>
+	 * </ul>
+	 * This ensures the internal state of both the scheduler and its PEs reflect that the VM
+	 * is no longer present.
+	 *
+	 * @param vm the VM whose PEs are to be deallocated
 	 */
 	@Override
 	public void deallocatePesForVm(Vm vm) {
