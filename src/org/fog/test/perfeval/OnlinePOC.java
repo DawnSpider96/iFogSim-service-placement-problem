@@ -120,7 +120,20 @@ public class OnlinePOC {
             appList.add(application);
 
             int placementAlgo = PlacementLogicFactory.MAX_FIT;
-            MyMicroservicesMobilityController microservicesController = new MyMicroservicesMobilityController("controller", fogDevices, sensors, appList, placementAlgo, locator);
+            MyMicroservicesMobilityController microservicesController = new MyMicroservicesMobilityController(
+                    "controller",
+                    fogDevices,
+                    sensors,
+                    appList,
+                    placementAlgo,
+                    locator
+            );
+            for (FogDevice device : fogDevices) {
+                if (((MyFogDevice)device).getDeviceType().equals(MyFogDevice.GENERIC_USER)) {
+                    microservicesController.registerUserDevice((MyFogDevice)device);
+                    ((MyFogDevice)device).setMicroservicesControllerId(microservicesController.getId());
+                }
+            }
 
             // generate placement requests
             List<PlacementRequest> placementRequests = new ArrayList<>();

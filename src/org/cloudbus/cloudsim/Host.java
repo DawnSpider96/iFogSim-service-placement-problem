@@ -334,10 +334,10 @@ public class Host {
 
 	/**
 	 * Gets the total mips.
-	 * 
+	 *
 	 * @return the total mips
 	 */
-	public int getTotalMips() {
+	public double getTotalMips() {
 		return PeList.getTotalMips(getPeList());
 	}
 
@@ -418,7 +418,7 @@ public class Host {
 
 	/**
 	 * Gets the machine memory.
-	 * 
+	 *
 	 * @return the machine memory
 	 * @pre $none
 	 * @post $result > 0
@@ -429,7 +429,7 @@ public class Host {
 
 	/**
 	 * Gets the machine storage.
-	 * 
+	 *
 	 * @return the machine storage
 	 * @pre $none
 	 * @post $result >= 0

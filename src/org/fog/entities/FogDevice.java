@@ -632,6 +632,7 @@ public class FogDevice extends PowerDatacenter {
         if (lastUtilization > 0) {
             System.out.println("------------------------");
             System.out.println("Device ID: " + getId());
+            System.out.println("Device Name: " + getName());
             System.out.println("Utilization = " + lastUtilization);
             System.out.println("Power = " + getHost().getPowerModel().getPower(lastUtilization));
             System.out.println("Time passed: " + (timeNow - lastUtilizationUpdateTime));

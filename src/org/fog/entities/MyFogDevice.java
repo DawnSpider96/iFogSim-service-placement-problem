@@ -9,6 +9,7 @@ import org.fog.application.AppEdge;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.placement.MicroservicePlacementLogic;
+import org.fog.placement.MyMicroservicesController;
 import org.fog.placement.MyPlacementLogicOutput;
 import org.fog.placement.PlacementLogicOutput;
 import org.fog.scheduler.TupleScheduler;
@@ -43,6 +44,7 @@ public class MyFogDevice extends FogDevice {
 	 * closest FON id. If this device is a FON its own id is assigned
 	 */
 	protected int fonID = -1;
+	private int microservicesControllerId = -1;
 	protected int sensorID = -1;
 
 	/**
@@ -86,13 +88,13 @@ public class MyFogDevice extends FogDevice {
 				JSONObject object = (JSONObject) ev.getData();
 				PlacementRequest pr = (PlacementRequest) object.get("PR");
 				Application application = (Application) object.get("app");
-				/// Periodically resend the same placement request
-				PlacementRequest prNew = new PlacementRequest(pr.getApplicationId(), pr.getPlacementRequestId(), pr.getRequester(), new LinkedHashMap<>(pr.getPlacedMicroservices()));
-				Map<String, Object> newObject = new HashMap<>();
-				newObject.put("PR", prNew);
-				newObject.put("app", application);
-				JSONObject jsonObject = new JSONObject(newObject);
-				send(getId(), MicroservicePlacementConfig.PLACEMENT_GENERATE_INTERVAL, FogEvents.TRANSMIT_PR, jsonObject);
+				// todo Simon (310325) says MyMicroserviceController handles periodic generation now 
+				// PlacementRequest prNew = new PlacementRequest(pr.getApplicationId(), pr.getPlacementRequestId(), pr.getRequester(), new LinkedHashMap<>(pr.getPlacedMicroservices()));
+				// Map<String, Object> newObject = new HashMap<>();
+				// newObject.put("PR", prNew);
+				// newObject.put("app", application);
+				// JSONObject jsonObject = new JSONObject(newObject);
+				// send(getId(), MicroservicePlacementConfig.PLACEMENT_GENERATE_INTERVAL, FogEvents.TRANSMIT_PR, jsonObject);
 
 				installStartingModule(pr, application);
 				transmitPR(pr);
@@ -123,6 +125,22 @@ public class MyFogDevice extends FogDevice {
 		}
 	}
 
+
+	/**
+	 * Updates the resource information of a device based on an incoming event.
+	 * <p>
+	 * The event data is expected to contain a {@link Pair}, where:
+	 * <ul>
+	 *   <li>The first element is the {@code deviceId} of the reporting device.</li>
+	 *   <li>The second element is a {@code Map<String, Double>} representing the resource usage.</li>
+	 * </ul>
+	 * <p>
+	 * Note: The resource values in the map MUST BE <b>delta (incremental)</b> values, NOT absolute totals.
+	 * These values should be added to (or subtracted from) the current resource usage values rather
+	 * than replacing them outright.
+	 *
+	 * @param ev the simulation event containing the device ID and delta resource values
+	 */
 	private void updateResourceInfo(SimEvent ev) {
 		Pair<Integer, Map<String, Double>> pair = (Pair<Integer, Map<String, Double>>) ev.getData();
 		int deviceId = pair.getFirst();
@@ -445,7 +463,16 @@ public class MyFogDevice extends FogDevice {
 						JSONObject objj = new JSONObject();
 						objj.put("module", vm);
 						objj.put("id", getId());
-						if (deviceType == FCN) sendNow(getFonId(), FogEvents.NODE_EXECUTION_FINISHED, objj);
+						if (deviceType == FCN) {
+							// TODO (010425) Should we use management tuple for this?
+							//  In real life the edge node will communicate with cloud that it is done
+							sendNow(getFonId(), FogEvents.NODE_EXECUTION_FINISHED, objj);
+						} else if ((deviceType.equals(GENERIC_USER) || deviceType.equals(AMBULANCE_USER) || deviceType.equals(OPERA_USER))
+								&& microservicesControllerId != -1) {
+							objj.put("isDecrease", false);
+							sendNow(microservicesControllerId, FogEvents.USER_RESOURCE_UPDATE, objj);
+						}
+						else Logger.error("Control Flow error", "Invalid fog device type! Must be user or edge server.");
 
 						// Retrieve the map for CPU usages
 //						Map<Integer, Map<Double, Map<String, List<Double>>>> cpuUsages = MyMonitor.getCpuUsages();
@@ -467,6 +494,8 @@ public class MyFogDevice extends FogDevice {
 
 	public void finishNodeExecution(SimEvent ev) {
 		JSONObject objj = (JSONObject) ev.getData();
+		// todo Simon (010425) says, If the finishNodeExecution method updates resources,
+		//  ensure it sends INCREMENTAL values instead of TOTAL values
 		controllerComponent.finishNodeExecution(objj);
 	}
 
@@ -486,9 +515,14 @@ public class MyFogDevice extends FogDevice {
 	public void initializeController(LoadBalancer loadBalancer) {
 		if (getDeviceType() != MyFogDevice.CLOUD) {
 			controllerComponent = new ControllerComponent(getId(), loadBalancer);
-			controllerComponent.updateResources(getId(), ControllerComponent.CPU, getHost().getTotalMips());
-			controllerComponent.updateResources(getId(), ControllerComponent.RAM, getHost().getRam());
-			controllerComponent.updateResources(getId(), ControllerComponent.STORAGE, getHost().getStorage());
+
+			// Initialize resource map directly instead of updateResources calls
+			Map<String, Double> initialResources = new HashMap<>();
+			initialResources.put(ControllerComponent.CPU, (double) getHost().getTotalMips());
+			initialResources.put(ControllerComponent.RAM, (double) getHost().getRam());
+			initialResources.put(ControllerComponent.STORAGE, (double) getHost().getStorage());
+
+			controllerComponent.initializeResources(getId(), initialResources);
 		}
 	}
 
@@ -699,7 +733,7 @@ public class MyFogDevice extends FogDevice {
 		ModuleLaunchConfig moduleLaunchConfig = new ModuleLaunchConfig(appModule, 1);
 		sendNow(getId(), FogEvents.LAUNCH_MODULE_INSTANCE, moduleLaunchConfig);
 
-		NetworkUsageMonitor.sendingModule((double) object.get("delay"), appModule.getSize());
+		NetworkUsageMonitor.sendingModule((double) object.get("delay"), (long) appModule.getSize());
 		MigrationDelayMonitor.setMigrationDelay((double) object.get("delay"));
 	}
 
@@ -709,7 +743,7 @@ public class MyFogDevice extends FogDevice {
 		JSONObject object = (JSONObject) ev.getData();
 		AppModule appModule = (AppModule) object.get("module");
 		System.out.println(getName() + " is sending " + appModule.getName());
-		NetworkUsageMonitor.sendingModule((double) object.get("delay"), appModule.getSize());
+		NetworkUsageMonitor.sendingModule((double) object.get("delay"), (long) appModule.getSize());
 		MigrationDelayMonitor.setMigrationDelay((double) object.get("delay"));
 
 		if (moduleInstanceCount.containsKey(appModule.getAppId()) && moduleInstanceCount.get(appModule.getAppId()).containsKey(appModule.getName())) {
@@ -735,11 +769,23 @@ public class MyFogDevice extends FogDevice {
 			int moduleCount = moduleInstanceCount.get(appModule.getAppId()).get(appModule.getName());
 			if (moduleCount > 1)
 				moduleInstanceCount.get(appModule.getAppId()).put(appModule.getName(), moduleCount - 1);
-			else {
+			else if (moduleCount == 1){
 				moduleInstanceCount.get(appModule.getAppId()).remove(appModule.getName());
 				appToModulesMap.get(appModule.getAppId()).remove(appModule.getName());
 			}
+			else {
+				Logger.error("Value error", String.format("Module instance count invalid: %d", moduleCount));
+			}
 			sendNow(getId(), FogEvents.RELEASE_MODULE, appModule);
+
+			// Create incremental resource deltas (positive values to indicate resources being freed)
+			Map<String, Double> resourceDeltas = new HashMap<>();
+			resourceDeltas.put(ControllerComponent.CPU, (double) appModule.getMips());
+			resourceDeltas.put(ControllerComponent.RAM, (double) appModule.getRam());
+			resourceDeltas.put(ControllerComponent.STORAGE, (double) appModule.getSize());
+
+			Pair<Integer, Map<String, Double>> resourceInfo = new Pair<>(getId(), resourceDeltas);
+			sendNow(getId(), FogEvents.UPDATE_RESOURCE_INFO, resourceInfo); // TODO update service discovery also? Maybe?
 		} else {
 			Logger.error("Module uninstall error", "Module " + appModule.getName() + " not found on " + getName());
 			System.out.println("Module " + appModule.getName() + " not found on " + getName());
@@ -759,11 +805,10 @@ public class MyFogDevice extends FogDevice {
 	 * Cloud will not allocate the clientModule (starting module) because onus is on Users.
 	 * Hence, User will install it on self before transmitting PR to cloud.
 	 * PR will contain clientModule under "placedMicroservices" field.
-	 *
 	 */
-
 	private void installStartingModule(PlacementRequest pr, Application application) {
-		// Find the first module placed on the given device (there should only be one)
+		// Find the first module placed on the given device 
+		// (There should only be one because this is an unfulfilled Placement Request)
 		String placedModule = pr.getPlacedMicroservices()
 				.entrySet()
 				.stream()
@@ -780,8 +825,17 @@ public class MyFogDevice extends FogDevice {
 			sendNow(getId(), FogEvents.LAUNCH_MODULE, am);
 			ModuleLaunchConfig moduleLaunchConfig = new ModuleLaunchConfig(am, 1);
 			sendNow(getId(), FogEvents.LAUNCH_MODULE_INSTANCE, moduleLaunchConfig);
+
+			if (deviceType.equals(GENERIC_USER) && microservicesControllerId != -1) {
+				JSONObject resourceUpdate = new JSONObject();
+				resourceUpdate.put("module", am);
+				resourceUpdate.put("id", getId());
+				resourceUpdate.put("isDecrease", true);
+				sendNow(microservicesControllerId, FogEvents.USER_RESOURCE_UPDATE, resourceUpdate);
+			}
 		} else {
-			Logger.error("Module Placement", "Placement Request with target " + getId() + " for PlacementRequest " + pr.getPlacementRequestId() + "sent to this device instead.");
+			Logger.error("Module Placement", "Placement Request with target " + getId() +
+					" for PlacementRequest " + pr.getPlacementRequestId() + " sent to this device instead.");
 		}
 	}
 
@@ -800,11 +854,13 @@ public class MyFogDevice extends FogDevice {
 		ManagementTuple prTuple = new ManagementTuple(placementRequest.getApplicationId(), FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.PLACEMENT_REQUEST);
 		prTuple.setPlacementRequest(placementRequest);
 		prTuple.setDestinationDeviceId(fonID);
+		prTuple.setSourceDeviceId(getId());
 		sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, prTuple);
 	}
 
 	private void transmitServiceDiscoveryData(int clientDevice, Pair serviceData) {
 		ManagementTuple sdTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.SERVICE_DISCOVERY_INFO);
+		sdTuple.setSourceDeviceId(getId());
 		sdTuple.setServiceDiscoveryInfor(serviceData);
 		sdTuple.setDestinationDeviceId(clientDevice);
 		sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, sdTuple);
@@ -812,6 +868,7 @@ public class MyFogDevice extends FogDevice {
 
 	private void transmitModulesToDeploy(int deviceID, Map<Application, List<ModuleLaunchConfig>> applicationListMap, int batchNumber) {
 		ManagementTuple moduleTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.DEPLOYMENT_REQUEST);
+		moduleTuple.setSourceDeviceId(getId());
 		moduleTuple.setDeployementSet(applicationListMap);
 		moduleTuple.setDestinationDeviceId(deviceID);
 		moduleTuple.setBatchNumber(batchNumber);
@@ -926,8 +983,10 @@ public class MyFogDevice extends FogDevice {
 	 */
 	protected void updateModuleInstanceCount(SimEvent ev) {
 		ModuleLaunchConfig config = (ModuleLaunchConfig) ev.getData();
-		String appId = config.getModule().getAppId();
-		String moduleName = config.getModule().getName();
+		AppModule appModule = config.getModule();
+		int instanceCount = config.getInstanceCount();
+		String appId = appModule.getAppId();
+		String moduleName = appModule.getName();
 		if (!moduleInstanceCount.containsKey(appId)) {
 			Map<String, Integer> m = new HashMap<>();
 			m.put(moduleName, config.getInstanceCount());
@@ -944,18 +1003,20 @@ public class MyFogDevice extends FogDevice {
 		//  This function is triggered by RELEASE_MODULE, hence updates the FCN's resource availability. But is it necessary??
 		// in FONs resource availability is updated by placement algorithm
 		if (getDeviceType() != FON) {
-			double mips = getControllerComponent().getAvailableResource(getId(), ControllerComponent.CPU) - (config.getModule().getMips() * config.getInstanceCount());
-			getControllerComponent().updateResources(getId(), ControllerComponent.CPU, mips);
-			double ram = getControllerComponent().getAvailableResource(getId(), ControllerComponent.RAM) - (config.getModule().getRam() * config.getInstanceCount());
-			getControllerComponent().updateResources(getId(), ControllerComponent.RAM, ram);
-			double storage = getControllerComponent().getAvailableResource(getId(), ControllerComponent.STORAGE) - (config.getModule().getSize() * config.getInstanceCount());
-			getControllerComponent().updateResources(getId(), ControllerComponent.STORAGE, storage);
+			Map<String, Double> resourceDeltas = new HashMap<>();
+			resourceDeltas.put(ControllerComponent.CPU, (double) -(appModule.getMips() * instanceCount));
+			resourceDeltas.put(ControllerComponent.RAM, (double) -(appModule.getRam() * instanceCount));
+			resourceDeltas.put(ControllerComponent.STORAGE, (double) -(appModule.getSize() * instanceCount));
+
+			Pair<Integer, Map<String, Double>> resourceInfo = new Pair<>(getId(), resourceDeltas);
+			sendNow(getId(), FogEvents.UPDATE_RESOURCE_INFO, resourceInfo);
 		}
 
 		if (isInCluster && MicroservicePlacementConfig.ENABLE_RESOURCE_DATA_SHARING) {
 			for (Integer deviceId : getClusterMembers()) {
 				ManagementTuple managementTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.RESOURCE_UPDATE);
 				Pair<Integer, Map<String, Double>> data = new Pair<>(getId(), getControllerComponent().resourceAvailability.get(getId()));
+				managementTuple.setSourceDeviceId(getId());
 				managementTuple.setResourceData(data);
 				managementTuple.setDestinationDeviceId(deviceId);
 				sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, managementTuple);
@@ -1018,7 +1079,15 @@ public class MyFogDevice extends FogDevice {
 		this.sensorID = sensorID;
 	}
 
-//	public static final Comparator<MyFogDevice> BY_CPU_THEN_RAM = Comparator
+	public int getMicroservicesControllerId() {
+		return microservicesControllerId;
+	}
+
+	public void setMicroservicesControllerId(int microservicesControllerId) {
+		this.microservicesControllerId = microservicesControllerId;
+	}
+
+	//	public static final Comparator<MyFogDevice> BY_CPU_THEN_RAM = Comparator
 //			.comparingInt(MyFogDevice::getCpu)
 //			.thenComparingInt(MyFogDevice::getRam);
 }

@@ -208,7 +208,7 @@ public class Vm {
 	 */
 	public int getCurrentRequestedRam() {
 		if (isBeingInstantiated()) {
-			return getRam();
+			return (int) getRam();
 		}
 		return (int) (getCloudletScheduler().getCurrentRequestedUtilizationOfRam() * getRam());
 	}
@@ -338,7 +338,7 @@ public class Vm {
 
 	/**
 	 * Gets the amount of ram.
-	 * 
+	 *
 	 * @return amount of ram
 	 * @pre $none
 	 * @post $none
@@ -382,7 +382,7 @@ public class Vm {
 
 	/**
 	 * Gets the amount of storage.
-	 * 
+	 *
 	 * @return amount of storage
 	 * @pre $none
 	 * @post $none

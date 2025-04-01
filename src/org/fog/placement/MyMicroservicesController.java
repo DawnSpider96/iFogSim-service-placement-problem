@@ -4,6 +4,7 @@ import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.fog.application.AppLoop;
+import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.entities.*;
 import org.fog.utils.*;
@@ -18,10 +19,23 @@ public class MyMicroservicesController extends SimEntity {
     protected List<Sensor> sensors;
     protected Map<String, Application> applications = new HashMap<>();
     protected PlacementLogicFactory placementLogicFactory = new PlacementLogicFactory();
-    protected Map<PlacementRequest, Integer> placementRequestDelayMap = new HashMap<>();
     protected int placementLogic;
+    //    protected List<Integer> clustering_levels;
+    /**
+     * A permanent set of Placement Requests, initialized with one per user device.
+     * For PR generation, simulation will always make copies of these.
+     */
+    protected Map<PlacementRequest, Integer> placementRequestDelayMap = new HashMap<>();
 
-//    protected List<Integer> clustering_levels;
+    // For PR generation
+    private List<MyFogDevice> userDevices = new ArrayList<>();
+    private Map<Integer, Map<String, Double>> userResourceAvailability = new HashMap<>();
+    /**
+     * Interval (in simulation time units) at which periodic placement requests are generated.
+     * This value is static and shared across all instances.
+     */
+    private double prGenerationInterval = MicroservicePlacementConfig.PLACEMENT_GENERATE_INTERVAL;
+
 
     /**
      * @param name
@@ -119,12 +133,33 @@ public class MyMicroservicesController extends SimEntity {
         }
     }
 
-    protected FogDevice getFogDeviceById(int id) {
-        for (FogDevice f : fogDevices) {
-            if (f.getId() == id)
-                return f;
+    @Override
+    public void processEvent(SimEvent ev) {
+        switch (ev.getTag()) {
+//            case FogEvents.TRANSMIT_PR:
+//                transmitPr(ev);
+            case FogEvents.CONTROLLER_RESOURCE_MANAGE:
+                manageResources();
+                break;
+            case FogEvents.GENERATE_PERIODIC_PR:
+                generatePeriodicPlacementRequests();
+                break;
+            case FogEvents.USER_RESOURCE_UPDATE:
+                processUserResourceUpdate(ev);
+                break;
+            case FogEvents.STOP_SIMULATION:
+                CloudSim.stopSimulation();
+                System.out.println("=========================================");
+                System.out.println("============== METRICS ==================");
+                System.out.println("=========================================");
+                printTimeDetails();
+                printPowerDetails();
+                printCostDetails();
+                printNetworkUsageDetails();
+                printQoSDetails();
+                System.exit(0);
+                break;
         }
-        return null;
     }
 
     protected void generateRoutingTable() {
@@ -137,11 +172,14 @@ public class MyMicroservicesController extends SimEntity {
     }
 
     public void startEntity() {
+        // Keep track of user resources, then 
+        // schedule first periodic PR generation
+        initializeUserResources();
+        send(getId(), prGenerationInterval, FogEvents.GENERATE_PERIODIC_PR);
 
         // todo Simon says Placement Decisions will be made dynamically, but only by the Cloud!
         // todo Hence no need for an initialisation
         if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC")
-//            initiatePlacementRequestProcessing();
             Logger.error("Simulation not Dynamic error", "Simulation mode should be dynamic");
         if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC")
             initiatePlacementRequestProcessingDynamic();
@@ -151,7 +189,6 @@ public class MyMicroservicesController extends SimEntity {
 //        }
 
         send(getId(), Config.RESOURCE_MANAGE_INTERVAL, FogEvents.CONTROLLER_RESOURCE_MANAGE);
-
         send(getId(), Config.MAX_SIMULATION_TIME, FogEvents.STOP_SIMULATION);
     }
 
@@ -166,20 +203,170 @@ public class MyMicroservicesController extends SimEntity {
 //        }
 //    }
 
-    protected void initiatePlacementRequestProcessingDynamic() {
-        for (PlacementRequest p : placementRequestDelayMap.keySet()) {
-            // todo Install the starting modules of the PR
-            //  Simon says we can't do it here (because we're doing more than once).
-            //  We must do it before transmitting, in MyFogDevice.transmitPR
-//            processPlacedModules(p);
-            JSONObject jsonSend = new JSONObject();
-            jsonSend.put("PR", p);
-            jsonSend.put("app", applications.get(p.getApplicationId()));
-            if (placementRequestDelayMap.get(p) == 0) {
-                sendNow(p.getRequester(), FogEvents.TRANSMIT_PR, jsonSend);
-            } else
-                send(p.getRequester(), placementRequestDelayMap.get(p), FogEvents.TRANSMIT_PR, jsonSend);
+    public void initializeUserResources() {
+        for (MyFogDevice device : userDevices) {
+            if (device.getDeviceType().equals(MyFogDevice.GENERIC_USER)) {
+                Map<String, Double> resources = new HashMap<>();
+                resources.put(ControllerComponent.CPU, (double) device.getHost().getTotalMips());
+                resources.put(ControllerComponent.RAM, (double) device.getHost().getRam());
+                resources.put(ControllerComponent.STORAGE, (double) device.getHost().getStorage());
+                userResourceAvailability.put(device.getId(), resources);
+            }
         }
+    }
+
+    public void updateUserResourceUsage(int userId, String resourceType, double usage, boolean isIncrease) {
+        if (userResourceAvailability.containsKey(userId)) {
+            Map<String, Double> resources = userResourceAvailability.get(userId);
+            double currentValue = resources.get(resourceType);
+            if (isIncrease) {
+                resources.put(resourceType, currentValue + usage);
+            } else {
+                resources.put(resourceType, currentValue - usage);
+            }
+        }
+        else{
+            Logger.error("Control Flow Error", "Tried to update user resource usage of a non-user device");
+        }
+    }
+
+
+    /**
+     * Checks whether a user device has sufficient resources to host a service.
+     * <p>
+     * This method is intended for use with user devices only. It verifies whether the user device
+     * identified by {@code userId} has enough available CPU (MIPS), RAM, and storage to host
+     * the first service (service) in the application loop defined by the given
+     * {@link PlacementRequest}.
+     * <p>
+     * The specific microservice to check must already be specified in the {@code placedMicroservices}
+     * field of the {@code PlacementRequest}. If no microservice is placed on the user device in
+     * the request, the method assumes the device is not involved and returns {@code true}.
+     * <p>
+     * The method also validates that the {@link Application} instance corresponding to the request
+     * is present and that resource requirements are accurately matched against current availability.
+     *
+     * @param userId the ID of the user device
+     * @param pr the placement request containing the application and placement information
+     * @return {@code true} if the user device can host the microservice; {@code false} otherwise
+     */
+    public boolean userCanFit(int userId, PlacementRequest pr) {
+        if (!userResourceAvailability.containsKey(userId)) {
+            Logger.error("Control Flow Error", "Tried to check resources of a non-user device.");
+            return false;
+        }
+        
+        String moduleToCheck = null;
+        for (String module : pr.getPlacedMicroservices().keySet()) {
+            if (pr.getPlacedMicroservices().get(module) == userId) {
+                moduleToCheck = module;
+                break;
+            }
+        }
+        
+        if (moduleToCheck == null) {
+            return true; // No modules placed on this user
+        }
+        
+        Application app = null;
+        for (SimEntity entity : CloudSim.getEntityList()) {
+            if (entity instanceof MyMicroservicesController) {
+                app = ((MyMicroservicesController) entity).getApplicationById(pr.getApplicationId());
+                break;
+            }
+        }
+        
+        if (app == null) {
+            return false;
+        }
+        AppModule appModule = app.getModuleByName(moduleToCheck);
+        Map<String, Double> resources = userResourceAvailability.get(userId);
+        
+        return resources.get(ControllerComponent.CPU) >= appModule.getMips() &&
+            resources.get(ControllerComponent.RAM) >= appModule.getRam() &&
+            resources.get(ControllerComponent.STORAGE) >= appModule.getSize();
+    }
+
+    public Application getApplicationById(String appId) {
+        return applications.get(appId);
+    }
+
+    /**
+     * Registers a user device for periodic PR generation
+     */
+    public void registerUserDevice(MyFogDevice device) {
+        if (device.getDeviceType().equals(MyFogDevice.GENERIC_USER)) {
+            userDevices.add(device);
+        }
+    }
+
+    /**
+     * Periodically generates and sends placement requests from user devices based on a predefined set.
+     * <p>
+     * This method iterates over all user devices and attempts to generate new placement requests
+     * by creating deep copies of corresponding {@link PlacementRequest} objects stored in
+     * {@code placementRequestDelayMap}. These requests are permanent templates and remain unchanged;
+     * the newly generated copies are entirely independent, with no shared references (e.g., new
+     * {@code LinkedHashMap} is created for microservice placements).
+     * <p>
+     * Before sending a request, the method checks whether the user device has sufficient resources
+     * using {@code userCanFit(...)}, ensuring that CPU, RAM, and storage requirements are met.
+     * If the user device is eligible, the request is transmitted to it along with the corresponding
+     * {@link Application} object.
+     * <p>
+     * This function is periodically scheduled using the static {@code prGenerationInterval}, which
+     * defines the interval between consecutive invocations. In future versions, this interval may
+     * be varied per-request by using the delay values from {@code placementRequestDelayMap}.
+     */
+    public void generatePeriodicPlacementRequests() {
+        for (MyFogDevice userDevice : userDevices) {
+            // Find existing placement request for this user
+            PlacementRequest existingPR = null;
+            for (PlacementRequest pr : placementRequestDelayMap.keySet()) {
+                if (pr.getRequester() == userDevice.getId()) {
+                    existingPR = pr;
+                    break;
+                }
+            }
+            
+            if (existingPR != null) {
+                // Deep copy
+                PlacementRequest newPR = new PlacementRequest(
+                    existingPR.getApplicationId(),
+                    existingPR.getPlacementRequestId(),
+                    existingPR.getRequester(),
+                    new LinkedHashMap<>(existingPR.getPlacedMicroservices())
+                );
+
+                if (userCanFit(userDevice.getId(), newPR)) {
+                    JSONObject jsonSend = new JSONObject();
+                    jsonSend.put("PR", newPR);
+                    jsonSend.put("app", applications.get(newPR.getApplicationId()));
+                    // TODO Should we use the delay from placementRequestDelayMap instead?
+                    sendNow(userDevice.getId(), FogEvents.TRANSMIT_PR, jsonSend);
+                } else {
+                    String reason = "Insufficient resources on user device " + userDevice.getName();
+                    Logger.error("Resource Error", reason);
+                    MyMonitor.getInstance().recordFailedPR(newPR, reason);
+                }
+            }
+        }
+        
+        send(getId(), prGenerationInterval, FogEvents.GENERATE_PERIODIC_PR);
+    }
+
+
+    protected void initiatePlacementRequestProcessingDynamic() {
+//        for (PlacementRequest p : placementRequestDelayMap.keySet()) {
+////            processPlacedModules(p);
+//            JSONObject jsonSend = new JSONObject();
+//            jsonSend.put("PR", p);
+//            jsonSend.put("app", applications.get(p.getApplicationId()));
+//            if (placementRequestDelayMap.get(p) == 0) {
+//                sendNow(p.getRequester(), FogEvents.TRANSMIT_PR, jsonSend);
+//            } else
+//                send(p.getRequester(), placementRequestDelayMap.get(p), FogEvents.TRANSMIT_PR, jsonSend);
+//        }
         if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC) {
             for (FogDevice f : fogDevices) {
                 // todo Simon says for the Offline POC there are no proxy servers, so the cloud processes all PRs
@@ -188,6 +375,27 @@ public class MyMicroservicesController extends SimEntity {
                     sendNow(f.getId(), FogEvents.PROCESS_PRS);
                 }
             }
+        }
+    }
+
+    private void processUserResourceUpdate(SimEvent ev) {
+        JSONObject objj = (JSONObject) ev.getData();
+        int userId = (int) objj.get("id");
+        AppModule module = (AppModule) objj.get("module");
+        boolean isDecrease = (boolean) objj.get("isDecrease");
+
+        // Update resource availability for user device
+        if (userResourceAvailability.containsKey(userId)) {
+            updateUserResourceUsage(userId, ControllerComponent.CPU, module.getMips(), !isDecrease);
+            updateUserResourceUsage(userId, ControllerComponent.RAM, module.getRam(), !isDecrease);
+            updateUserResourceUsage(userId, ControllerComponent.STORAGE, module.getSize(), !isDecrease);
+
+            String action = isDecrease ? "Decreased" : "Restored";
+            Logger.debug("Resource Management",
+                    action + " resources for user " + CloudSim.getEntityName(userId) + " for module " + module.getName());
+        } else {
+            Logger.error("Resource Management Error",
+                    "Tried to update resources for non-user device " + CloudSim.getEntityName(userId));
         }
     }
 
@@ -224,29 +432,7 @@ public class MyMicroservicesController extends SimEntity {
 //        }
 //    }
 
-    @Override
-    public void processEvent(SimEvent ev) {
-        switch (ev.getTag()) {
-//            case FogEvents.TRANSMIT_PR:
-//                transmitPr(ev);
-            case FogEvents.CONTROLLER_RESOURCE_MANAGE:
-                manageResources();
-                break;
-            case FogEvents.STOP_SIMULATION:
-                CloudSim.stopSimulation();
-                System.out.println("=========================================");
-                System.out.println("============== METRICS ==================");
-                System.out.println("=========================================");
-                printTimeDetails();
-                printPowerDetails();
-                printCostDetails();
-                printNetworkUsageDetails();
-                printQoSDetails();
-                System.exit(0);
-                break;
-        }
 
-    }
 
 //    private void transmitPr(SimEvent ev) {
 //        PlacementRequest placementRequest = (PlacementRequest) ev.getData();
@@ -376,6 +562,14 @@ public class MyMicroservicesController extends SimEntity {
         }
     }
 
+    protected FogDevice getFogDeviceById(int id) {
+        for (FogDevice f : fogDevices) {
+            if (f.getId() == id)
+                return f;
+        }
+        return null;
+    }
+
     protected void connectWithLatencies() {
         for (FogDevice fogDevice : fogDevices) {
             if (fogDevice.getParentId() >= 0) {
@@ -435,6 +629,10 @@ public class MyMicroservicesController extends SimEntity {
         }
 
         return fogDevices;
+    }
+
+    public Map<Integer, Map<String, Double>> getUserResourceAvailability() {
+        return userResourceAvailability;
     }
 
 //    protected static void createClusterConnections(int levelIdentifier, List<FogDevice> fogDevices, Double clusterLatency) {

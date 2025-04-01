@@ -1,5 +1,6 @@
 package org.fog.entities;
 
+import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.placement.MicroservicePlacementLogic;
@@ -92,19 +93,28 @@ public class ControllerComponent {
     }
 
     public void finishNodeExecution(JSONObject objj) {
-        int id = (int) objj.get("id");
-        AppModule vm = (AppModule) objj.get("module");
-        double newMips =  resourceAvailability.get(id).get(ControllerComponent.CPU) + vm.getMips();
-        resourceAvailability.get(id).put(ControllerComponent.CPU, newMips);
-        double newRam =  resourceAvailability.get(id).get(ControllerComponent.RAM) + vm.getRam();
-        resourceAvailability.get(id).put(ControllerComponent.RAM, newRam);
-        double newStorage =  resourceAvailability.get(id).get(ControllerComponent.STORAGE) + vm.getSize();
-        resourceAvailability.get(id).put(ControllerComponent.STORAGE, newStorage);
+        // Instead of absolute resource calculations:
+        // resourceAvailability.get(deviceId).put(resourceType, newAbsoluteValue);
+
+        // Use incremental updates:
+        AppModule module = (AppModule) objj.get("module");
+        int deviceId = (int) objj.get("id");
+
+        // Calculate deltas
+        Map<String, Double> resourceDeltas = new HashMap<>();
+        resourceDeltas.put(ControllerComponent.CPU, (double) module.getMips());
+        resourceDeltas.put(ControllerComponent.RAM, (double) module.getRam());
+        resourceDeltas.put(ControllerComponent.STORAGE, (double) module.getSize());
+
+        updateResourceInfo(deviceId, resourceDeltas);
     }
 
     public void addServiceDiscoveryInfo(String microserviceName, Integer deviceID) {
         this.serviceDiscoveryInfo.addServiceDIscoveryInfo(microserviceName, deviceID);
-        System.out.println("Service Discovery Info ADDED (device:" + this.deviceId + ") for microservice :" + microserviceName + " , destDevice : " + deviceID);
+        System.out.println("Service Discovery Info ADDED (device:" +
+                CloudSim.getEntityName(this.deviceId) +
+                ") for microservice :" + microserviceName + " , destDevice : " +
+                CloudSim.getEntityName(deviceID));
     }
 
     public int getDestinationDeviceId(String destModuleName) {
@@ -122,18 +132,55 @@ public class ControllerComponent {
             return null;
     }
 
-    public void updateResources(int device, String resourceIdentifier, double remainingResourceAmount) {
-        if (resourceAvailability.containsKey(device))
-            resourceAvailability.get(device).put(resourceIdentifier, remainingResourceAmount);
-        else {
-            Map<String, Double> resources = new HashMap<>();
-            resources.put(resourceIdentifier, remainingResourceAmount);
-            resourceAvailability.put(device, resources);
+//    public void updateResources(int device, String resourceIdentifier, double remainingResourceAmount) {
+//        if (resourceAvailability.containsKey(device))
+//            resourceAvailability.get(device).put(resourceIdentifier, remainingResourceAmount);
+//        else {
+//            Map<String, Double> resources = new HashMap<>();
+//            resources.put(resourceIdentifier, remainingResourceAmount);
+//            resourceAvailability.put(device, resources);
+//        }
+//    }
+
+//    public void updateResourceInfo(int deviceId, Map<String, Double> resources) {
+//        resourceAvailability.put(deviceId, resources);
+//    }
+
+    public void initializeResources(int deviceId, Map<String, Double> initialResources) {
+        resourceAvailability.put(deviceId, new HashMap<>(initialResources));
+    }
+
+    // Simon (010425) says we will use incremental amounts and do the arithmetic here at ControllerComponent
+    // to prevent race conditions
+    public void updateResourceInfo(int deviceId, Map<String, Double> resourceDeltas) {
+        if (!resourceAvailability.containsKey(deviceId)) {
+            resourceAvailability.put(deviceId, new HashMap<>(resourceDeltas));
+        } else {
+            Map<String, Double> currentResources = resourceAvailability.get(deviceId);
+            for (String resourceType : resourceDeltas.keySet()) {
+                if (currentResources.containsKey(resourceType)) {
+                    currentResources.put(resourceType,
+                            currentResources.get(resourceType) + resourceDeltas.get(resourceType));
+                } else {
+                    currentResources.put(resourceType, resourceDeltas.get(resourceType));
+                }
+            }
         }
     }
 
-    public void updateResourceInfo(int deviceId, Map<String, Double> resources) {
-        resourceAvailability.put(deviceId, resources);
+    public void updateResources(int deviceId, String resourceType, double delta) {
+        if (!resourceAvailability.containsKey(deviceId)) {
+            Map<String, Double> initialMap = new HashMap<>();
+            initialMap.put(resourceType, delta);
+            resourceAvailability.put(deviceId, initialMap);
+        } else {
+            Map<String, Double> resources = resourceAvailability.get(deviceId);
+            if (resources.containsKey(resourceType)) {
+                resources.put(resourceType, resources.get(resourceType) + delta);
+            } else {
+                resources.put(resourceType, delta);
+            }
+        }
     }
 
     public void removeServiceDiscoveryInfo(String microserviceName, Integer deviceID) {

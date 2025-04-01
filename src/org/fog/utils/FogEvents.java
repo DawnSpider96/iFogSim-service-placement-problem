@@ -53,4 +53,7 @@ public class FogEvents {
     public static final int RECEIVE_PLACEMENT_DECISION = BASE + 50;
     public static final int RECEIVE_INSTALL_NOTIF = BASE + 51;
     public static final int EXECUTION_TIMEOUT = BASE + 52;
+    // MyMicroserviceController--------------------
+    public static final int GENERATE_PERIODIC_PR = BASE + 53;
+    public static final int USER_RESOURCE_UPDATE = BASE + 54;
 }

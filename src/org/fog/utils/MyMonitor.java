@@ -1,6 +1,7 @@
 package org.fog.utils;
 
 import org.cloudbus.cloudsim.Cloudlet;
+import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.entities.PlacementRequest;
 import org.fog.placement.MyHeuristic;
 
@@ -20,6 +21,8 @@ public class MyMonitor {
     private static List<Map<Double, List<MyHeuristic.DeviceState>>> snapshots = new ArrayList<>();
     // timestamp -> (PR -> latency of that PR)
     private static List<Map<Double, Map<PlacementRequest, Double>>> latencies = new ArrayList<>();
+    // timestamp -> (PR -> reason for failure)
+    private static List<Map<Double, Map<PlacementRequest, String>>> failedPRs = new ArrayList<>();
 
     //    private static Map<> ramUsages = new HashMap<>();
 
@@ -65,6 +68,68 @@ public class MyMonitor {
 
     public List<Map<Double, Map<PlacementRequest, Double>>> getAllLatencies() {
         return latencies;
+    }
+
+    public Map<Double, Map<PlacementRequest, String>> getFailedPRs() {
+        while (failedPRs.size() <= getInstance().simulationRoundNumber) {
+            failedPRs.add(new HashMap<>()); // Simon (310325) says it should only add 1
+        }
+        return failedPRs.get(getInstance().simulationRoundNumber);
+    }
+
+    public List<Map<Double, Map<PlacementRequest, String>>> getAllFailedPRs() {
+        return failedPRs;
+    }
+
+    /**
+     * Records a failed placement request with the current simulation time and failure reason
+     *
+     * @param pr The placement request that failed
+     * @param reason A string describing the reason for failure
+     */
+    public void recordFailedPR(PlacementRequest pr, String reason) {
+        Map<Double, Map<PlacementRequest, String>> currentFailedPRs = getFailedPRs();
+
+        double currentTime = CloudSim.clock();
+        if (!currentFailedPRs.containsKey(currentTime)) {
+            currentFailedPRs.put(currentTime, new HashMap<>());
+        }
+
+        currentFailedPRs.get(currentTime).put(pr, reason);
+    }
+
+    /**
+     * Provides statistics about failed placement requests
+     *
+     * @return A map containing various statistics about failed PRs
+     */
+    public Map<String, Object> getFailedPRStatistics() {
+        Map<String, Object> stats = new HashMap<>();
+        int totalFailures = 0;
+        Map<String, Integer> failuresByReason = new HashMap<>();
+        Map<Integer, Integer> failuresByDeviceId = new HashMap<>();
+
+        for (Map<Double, Map<PlacementRequest, String>> roundFailures : failedPRs) {
+            for (Map<PlacementRequest, String> timeFailures : roundFailures.values()) {
+                for (Map.Entry<PlacementRequest, String> entry : timeFailures.entrySet()) {
+                    totalFailures++;
+
+                    // Count failures by reason
+                    String reason = entry.getValue();
+                    failuresByReason.put(reason, failuresByReason.getOrDefault(reason, 0) + 1);
+
+                    // Count failures by device ID
+                    int deviceId = entry.getKey().getRequester();
+                    failuresByDeviceId.put(deviceId, failuresByDeviceId.getOrDefault(deviceId, 0) + 1);
+                }
+            }
+        }
+
+        stats.put("totalFailures", totalFailures);
+        stats.put("failuresByReason", failuresByReason);
+        stats.put("failuresByDeviceId", failuresByDeviceId);
+
+        return stats;
     }
 
     public void incrementSimulationRoundNumber() {
