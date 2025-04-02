@@ -22,7 +22,6 @@ import org.btrplace.scheduler.choco.ChocoScheduler;
 import org.btrplace.scheduler.choco.DefaultChocoScheduler;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class MyILPHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
     /**
@@ -59,7 +58,7 @@ public class MyILPHeuristic extends MyHeuristic implements MicroservicePlacement
         int f = placementCompleteCount;
         for (PlacementRequest placementRequest : placementRequests) {
             Application app = applicationInfo.get(placementRequest.getApplicationId());
-            Set<String> alreadyPlaced = mappedMicroservices.get(placementRequest.getPlacementRequestId()).keySet();
+            Set<String> alreadyPlaced = mappedMicroservices.get(placementRequest.getSensorId()).keySet();
             List<String> completeModuleList = getAllModulesToPlace(new HashSet<>(alreadyPlaced), app);
 
             if (completeModuleList.isEmpty()) {
@@ -169,8 +168,8 @@ public class MyILPHeuristic extends MyHeuristic implements MicroservicePlacement
                 if (placed[i] < 0) {
                     // todo Simon says what do we do when failure?
                     //  (160125) Nothing. Because (aggregated) failure will be determined outside the for loop
-                    System.out.println("Failed to place module " + s + " on PR " + placementRequest.getPlacementRequestId());
-                    System.out.println("Failed placement " + placementRequest.getPlacementRequestId());
+                    System.out.println("Failed to place module " + s + " on PR " + placementRequest.getSensorId());
+                    System.out.println("Failed placement " + placementRequest.getSensorId());
 
                     // Undo every "placement" recorded in placed. Only deviceStates was changed, so we change it back
                     // Simon (310125) says this part should never be reached because btrplace already deals with each PR as a whole
@@ -220,7 +219,7 @@ public class MyILPHeuristic extends MyHeuristic implements MicroservicePlacement
                 if (!currentModuleMap.get(deviceId).contains(s))
                     currentModuleMap.get(deviceId).add(s);
 
-                mappedMicroservices.get(placementRequest.getPlacementRequestId()).put(s, deviceId);
+                mappedMicroservices.get(placementRequest.getSensorId()).put(s, deviceId);
 
                 //currentModuleLoad
                 if (!currentModuleLoadMap.get(deviceId).containsKey(s))
@@ -236,7 +235,7 @@ public class MyILPHeuristic extends MyHeuristic implements MicroservicePlacement
             }
         }
         else {
-            System.out.println("Failed placement " + placementRequest.getPlacementRequestId());
+            System.out.println("Failed placement " + placementRequest.getSensorId());
         }
 
         if (allPlaced) return -1;
@@ -275,7 +274,7 @@ public class MyILPHeuristic extends MyHeuristic implements MicroservicePlacement
             }
 
             if (!targeted) {
-                Logger.error("ILP Deployment Error", "Cannot find target device for " + pr.getPlacementRequestId() + ". Check the placement of its first microservice.");
+                Logger.error("ILP Deployment Error", "Cannot find target device for " + pr.getSensorId() + ". Check the placement of its first microservice.");
             }
         }
         return targets;

@@ -84,7 +84,7 @@ public class DistributedMicroservicePlacementLogic implements MicroservicePlacem
     private PlacementLogicOutput generatePlacementMap() {
         Map<Integer, Map<String, Integer>> placement = new HashMap<>();
         for (PlacementRequest placementRequest : placementRequests) {
-            placement.put(placementRequest.getPlacementRequestId(), placementRequest.getPlacedMicroservices());
+            placement.put(placementRequest.getSensorId(), placementRequest.getPlacedMicroservices());
         }
 
         Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice = new HashMap<>();
@@ -94,7 +94,7 @@ public class DistributedMicroservicePlacementLogic implements MicroservicePlacem
                 //retrieve application
                 PlacementRequest placementRequest = null;
                 for (PlacementRequest pr : placementRequests) {
-                    if (pr.getPlacementRequestId() == prID)
+                    if (pr.getSensorId() == prID)
                         placementRequest = pr;
                 }
                 Application application = applicationInfo.get(placementRequest.getApplicationId());

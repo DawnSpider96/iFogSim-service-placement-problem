@@ -55,7 +55,7 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
         int f = placementCompleteCount;
         for (PlacementRequest placementRequest : placementRequests) {
             Application app = applicationInfo.get(placementRequest.getApplicationId());
-            Set<String> alreadyPlaced = mappedMicroservices.get(placementRequest.getPlacementRequestId()).keySet();
+            Set<String> alreadyPlaced = mappedMicroservices.get(placementRequest.getSensorId()).keySet();
             List<String> completeModuleList = getAllModulesToPlace(new HashSet<>(alreadyPlaced), app);
 
             if (completeModuleList.isEmpty()) {
@@ -143,7 +143,7 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
                 if (!currentModuleMap.get(deviceId).contains(s))
                     currentModuleMap.get(deviceId).add(s);
 
-                mappedMicroservices.get(placementRequest.getPlacementRequestId()).put(s, deviceId);
+                mappedMicroservices.get(placementRequest.getSensorId()).put(s, deviceId);
 
                 //currentModuleLoad
                 if (!currentModuleLoadMap.get(deviceId).containsKey(s))
@@ -217,7 +217,7 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
             }
 
             if (!targeted) {
-                Logger.error("ACO Deployment Error", "Cannot find target device for " + pr.getPlacementRequestId() + ". Check the placement of its first microservice.");
+                Logger.error("ACO Deployment Error", "Cannot find target device for " + pr.getSensorId() + ". Check the placement of its first microservice.");
             }
         }
         return targets;

@@ -136,11 +136,23 @@ public class OnlinePOC {
             }
 
             // generate placement requests
+//            List<PlacementRequest> placementRequests = new ArrayList<>();
+//            for (Sensor sensor : sensors) {
+//                Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();
+//                placedMicroservicesMap.put("clientModule", sensor.getGatewayDeviceId());
+//                PlacementRequest p = new PlacementRequest(sensor.getAppId(), sensor.getId(), sensor.getGatewayDeviceId(), placedMicroservicesMap);
+//                placementRequests.add(p);
+//            }
+
+            // Simon (010425) says we use the new PlacementRequest with prId field
             List<PlacementRequest> placementRequests = new ArrayList<>();
             for (Sensor sensor : sensors) {
                 Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();
                 placedMicroservicesMap.put("clientModule", sensor.getGatewayDeviceId());
-                PlacementRequest p = new PlacementRequest(sensor.getAppId(), sensor.getId(), sensor.getGatewayDeviceId(), placedMicroservicesMap);
+
+                // Use MyMicroservicesController to create placement request
+                PlacementRequest p = microservicesController.createPlacementRequest(
+                        sensor, placedMicroservicesMap);
                 placementRequests.add(p);
             }
 

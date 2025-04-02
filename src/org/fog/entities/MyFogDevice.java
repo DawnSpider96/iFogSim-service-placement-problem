@@ -9,9 +9,7 @@ import org.fog.application.AppEdge;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.placement.MicroservicePlacementLogic;
-import org.fog.placement.MyMicroservicesController;
 import org.fog.placement.MyPlacementLogicOutput;
-import org.fog.placement.PlacementLogicOutput;
 import org.fog.scheduler.TupleScheduler;
 import org.fog.utils.*;
 import org.json.simple.JSONObject;
@@ -654,6 +652,24 @@ public class MyFogDevice extends FogDevice {
 		return clientServices;
 	}
 
+	/**
+	 * Handles the {@code UPDATE_SERVICE_DISCOVERY} event by updating the service discovery
+	 * information for a Fog Node.
+	 * <p>
+	 * This method is strictly called by Fog Nodes in response to the
+	 * {@code UPDATE_SERVICE_DISCOVERY} event. It retrieves the associated service data
+	 * and action from the event payload and accordingly updates the controller's service
+	 * discovery information.
+	 * </p>
+	 *
+	 * @param ev the simulation event containing the update information.
+	 *           The event's data must be a {@code JSONObject} with the following structure:
+	 *           <ul>
+	 *             <li>{@code "service data"}: a {@code Pair<String, Integer>} representing
+	 *             the service name and the Fog Node ID.</li>
+	 *             <li>{@code "action"}: a {@code String}, either {@code "ADD"} or {@code "REMOVE"}.</li>
+	 *           </ul>
+	 */
 	protected void updateServiceDiscovery(SimEvent ev) {
 		JSONObject object = (JSONObject) ev.getData();
 		Pair<String, Integer> placement = (Pair<String, Integer>) object.get("service data");
@@ -835,7 +851,7 @@ public class MyFogDevice extends FogDevice {
 			}
 		} else {
 			Logger.error("Module Placement", "Placement Request with target " + getId() +
-					" for PlacementRequest " + pr.getPlacementRequestId() + " sent to this device instead.");
+					" for PlacementRequest " + pr.getSensorId() + " sent to this device instead.");
 		}
 	}
 

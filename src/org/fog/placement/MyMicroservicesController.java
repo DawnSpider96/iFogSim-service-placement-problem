@@ -17,6 +17,7 @@ public class MyMicroservicesController extends SimEntity {
 
     protected List<FogDevice> fogDevices;
     protected List<Sensor> sensors;
+    private Map<Integer, Integer> sensorToSequenceNumber = new HashMap<>();
     protected Map<String, Application> applications = new HashMap<>();
     protected PlacementLogicFactory placementLogicFactory = new PlacementLogicFactory();
     protected int placementLogic;
@@ -300,6 +301,60 @@ public class MyMicroservicesController extends SimEntity {
         }
     }
 
+    public int getNextSequenceNumber(int sensorId) {
+        int currentSeq = sensorToSequenceNumber.getOrDefault(sensorId, 0);
+        int nextSeq = currentSeq + 1;
+        sensorToSequenceNumber.put(sensorId, nextSeq);
+        return nextSeq;
+    }
+
+    public void resetSequenceCounters() {
+        sensorToSequenceNumber.clear();
+    }
+
+    public PlacementRequest createPlacementRequest(Sensor sensor, Map<String, Integer> placedMicroservices) {
+        int sequenceNumber = getNextSequenceNumber(sensor.getId());
+
+        // Create the placement request with the unique sequence number as the prId
+        return new PlacementRequest(
+                sensor.getAppId(),  // applicationId
+                sensor.getId(),
+                sequenceNumber,     // prId - now using a unique sequence per sensor
+                sensor.getGatewayDeviceId(), // parent fog device
+                placedMicroservices
+        );
+    }
+
+    /**
+     * Creates a new {@link PlacementRequest} with a unique, incremented placement request ID (prId)
+     * for the given sensor.
+     * <p>
+     * Placement requests are uniquely identified by a combination of sensor ID and placement request ID (prId).
+     * Each sensor maintains its own independent sequence of prIds. This method is part of a central component
+     * responsible for tracking the latest prId for each sensor.
+     * </p>
+     * <p>
+     * Given a {@code previousRequest}, this method generates the next prId for the same sensor and creates
+     * a new {@link PlacementRequest} using that updated prId. The newly created request retains all other
+     * details from the previous request (e.g., application ID, requester, placed microservices), ensuring
+     * continuity while assigning a unique prId.
+     * </p>
+     *
+     * @param previousRequest the previous {@link PlacementRequest} for the same sensor.
+     * @return a new {@link PlacementRequest} with the next prId for the sensor.
+     */
+    public PlacementRequest createSubsequentPlacementRequest(PlacementRequest previousRequest) {
+        int sequenceNumber = getNextSequenceNumber(previousRequest.getSensorId());
+
+        return new PlacementRequest(
+                previousRequest.getApplicationId(),
+                previousRequest.getSensorId(),
+                sequenceNumber,
+                previousRequest.getRequester(),
+                new LinkedHashMap<>(previousRequest.getPlacedMicroservices())
+        );
+    }
+
     /**
      * Periodically generates and sends placement requests from user devices based on a predefined set.
      * <p>
@@ -330,13 +385,7 @@ public class MyMicroservicesController extends SimEntity {
             }
             
             if (existingPR != null) {
-                // Deep copy
-                PlacementRequest newPR = new PlacementRequest(
-                    existingPR.getApplicationId(),
-                    existingPR.getPlacementRequestId(),
-                    existingPR.getRequester(),
-                    new LinkedHashMap<>(existingPR.getPlacedMicroservices())
-                );
+                PlacementRequest newPR = createSubsequentPlacementRequest(existingPR);
 
                 if (userCanFit(userDevice.getId(), newPR)) {
                     JSONObject jsonSend = new JSONObject();

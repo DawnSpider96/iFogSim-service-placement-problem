@@ -7,7 +7,6 @@ import org.fog.entities.FogBroker;
 import org.fog.entities.FogDevice;
 import org.fog.entities.PlacementRequest;
 import org.fog.utils.Logger;
-import org.fog.utils.MicroservicePlacementConfig;
 import org.fog.utils.ModuleLaunchConfig;
 
 import java.util.*;
@@ -50,7 +49,7 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
         int f = placementCompleteCount;
         for (PlacementRequest placementRequest : placementRequests) {
             Application app = applicationInfo.get(placementRequest.getApplicationId());
-            Set<String> alreadyPlaced = mappedMicroservices.get(placementRequest.getPlacementRequestId()).keySet();
+            Set<String> alreadyPlaced = mappedMicroservices.get(placementRequest.getSensorId()).keySet();
             List<String> completeModuleList = getAllModulesToPlace(new HashSet<>(alreadyPlaced), app);
 
             if (completeModuleList.isEmpty()) {
@@ -258,7 +257,7 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
                 if (!currentModuleMap.get(deviceId).contains(s))
                     currentModuleMap.get(deviceId).add(s);
 
-                mappedMicroservices.get(placementRequest.getPlacementRequestId()).put(s, deviceId);
+                mappedMicroservices.get(placementRequest.getSensorId()).put(s, deviceId);
 
                 //currentModuleLoad
                 if (!currentModuleLoadMap.get(deviceId).containsKey(s))
@@ -319,7 +318,7 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
             }
 
             if (!targeted) {
-                Logger.error("SimulatedAnnealing Deployment Error", "Cannot find target device for " + pr.getPlacementRequestId() + ". Check the placement of its first microservice.");
+                Logger.error("SimulatedAnnealing Deployment Error", "Cannot find target device for " + pr.getSensorId() + ". Check the placement of its first microservice.");
             }
         }
         return targets;

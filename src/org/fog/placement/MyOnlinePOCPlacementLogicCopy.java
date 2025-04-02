@@ -50,7 +50,7 @@ public class MyOnlinePOCPlacementLogicCopy extends MyHeuristic implements Micros
             // NOTE: Every PR (primary key placementRequestId) has its own set of placed modules (stored in mappedMicroservices).
             // Meaning each module in all PRs has a separate set of dependent modules, which are from the same PR
             // As argument we pass the list of set modules FOR THAT PR that have been placed. But in the function we are iterating through ALL modules in the app
-            List<String> modulesToPlace = getNextLayerOfModulesToPlace(mappedMicroservices.get(placementRequest.getPlacementRequestId()).keySet(), app);
+            List<String> modulesToPlace = getNextLayerOfModulesToPlace(mappedMicroservices.get(placementRequest.getSensorId()).keySet(), app);
             if (modulesToPlace.isEmpty())
                 f++;
             else
@@ -86,7 +86,7 @@ public class MyOnlinePOCPlacementLogicCopy extends MyHeuristic implements Micros
 
                     if (toPlace.containsKey(placementRequest)) {
                         for (String microservice : toPlace.get(placementRequest)) {
-                            tryPlacingMicroserviceNoAggregate(microservice, device, app, placed::add, placementRequest.getPlacementRequestId());
+                            tryPlacingMicroserviceNoAggregate(microservice, device, app, placed::add, placementRequest.getSensorId());
                         }
                         for (String m : placed) {
                             toPlace.get(placementRequest).remove(m);

@@ -3,14 +3,14 @@ package org.fog.entities;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PlacementRequest {
+public class MyPlacementRequest {
     private String applicationId;
     private Map<String,Integer> placedMicroservices; // microservice name to placed device id
     private int sensorId; // sensor Id
     private int prId; //
     private int requester; //device generating the request
 
-    public PlacementRequest(String applicationId, int sensorId, int prId, int requester, Map<String,Integer> placedMicroservicesMap){
+    public MyPlacementRequest(String applicationId, int sensorId, int prId, int requester, Map<String,Integer> placedMicroservicesMap){
         this.applicationId = applicationId;
         this.sensorId = sensorId;
         this.prId = prId;
@@ -18,7 +18,7 @@ public class PlacementRequest {
         this.placedMicroservices = placedMicroservicesMap;
     }
 
-    public PlacementRequest(String applicationId, int sensorId, int prId, int requester){
+    public MyPlacementRequest(String applicationId, int sensorId, int prId, int requester){
         this.applicationId = applicationId;
         this.sensorId = sensorId;
         this.prId = prId;

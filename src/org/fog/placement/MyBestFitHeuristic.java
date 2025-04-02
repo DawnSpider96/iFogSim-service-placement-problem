@@ -45,7 +45,7 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
         int f = placementCompleteCount;
         for (PlacementRequest placementRequest : placementRequests) {
             Application app = applicationInfo.get(placementRequest.getApplicationId());
-            Set<String> alreadyPlaced = mappedMicroservices.get(placementRequest.getPlacementRequestId()).keySet();
+            Set<String> alreadyPlaced = mappedMicroservices.get(placementRequest.getSensorId()).keySet();
             List<String> completeModuleList = getAllModulesToPlace(new HashSet<>(alreadyPlaced), app);
 
             if (completeModuleList.isEmpty()) {
@@ -121,8 +121,8 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
             if (placed[j] < 0) {
                 // todo Simon says what do we do when failure?
                 //  (160125) Nothing. Because (aggregated) failure will be determined outside the for loop
-                System.out.println("Failed to place module " + s + "on PR " + placementRequest.getPlacementRequestId());
-                System.out.println("Failed placement " + placementRequest.getPlacementRequestId());
+                System.out.println("Failed to place module " + s + "on PR " + placementRequest.getSensorId());
+                System.out.println("Failed placement " + placementRequest.getSensorId());
 
                 // Undo every "placement" recorded in placed. Only deviceStates was changed, so we change it back
                 for (int i = 0 ; i < placed.length ; i++) {
@@ -164,7 +164,7 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
                 if (!currentModuleMap.get(deviceId).contains(s))
                     currentModuleMap.get(deviceId).add(s);
 
-                mappedMicroservices.get(placementRequest.getPlacementRequestId()).put(s, deviceId);
+                mappedMicroservices.get(placementRequest.getSensorId()).put(s, deviceId);
 
                 //currentModuleLoad
                 if (!currentModuleLoadMap.get(deviceId).containsKey(s))
@@ -219,7 +219,7 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
             }
 
             if (!targeted) {
-                Logger.error("BestFit Deployment Error", "Cannot find target device for " + pr.getPlacementRequestId() + ". Check the placement of its first microservice.");
+                Logger.error("BestFit Deployment Error", "Cannot find target device for " + pr.getSensorId() + ". Check the placement of its first microservice.");
             }
         }
         return targets;
