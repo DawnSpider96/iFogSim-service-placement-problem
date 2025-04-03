@@ -128,6 +128,7 @@ public class OnlinePOC {
                     placementAlgo,
                     locator
             );
+            // Register user devices
             for (FogDevice device : fogDevices) {
                 if (((MyFogDevice)device).getDeviceType().equals(MyFogDevice.GENERIC_USER)) {
                     microservicesController.registerUserDevice((MyFogDevice)device);
@@ -144,7 +145,7 @@ public class OnlinePOC {
 //                placementRequests.add(p);
 //            }
 
-            // Simon (010425) says we use the new PlacementRequest with prId field
+            // Simon (010425) says we use the new PlacementRequest with prIndex field
             List<PlacementRequest> placementRequests = new ArrayList<>();
             for (Sensor sensor : sensors) {
                 Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();

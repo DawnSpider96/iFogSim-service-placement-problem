@@ -39,11 +39,12 @@ public class FogBroker extends PowerDatacenterBroker{
 
 	// Simon (130325) says clear FogBroker for Experiment purposes
 	public static void clear(){
-		getApplicationToFirstMicroserviceMap().clear();
-		getApplicationToSecondMicroservicesMap().clear();
+		applicationToFirstMicroserviceMap.clear();
+		applicationToSecondMicroservicesMap.clear();
 		setCycleNumber(1);
-		getChecklist().clear();
-		getToSend().clear();
+		checklist.clear();
+		toSend.clear();
+		activatedVMs.clear();
 	}
 
 	// Simon (170125) says DatacenterBroker class has
@@ -207,7 +208,7 @@ public class FogBroker extends PowerDatacenterBroker{
 		if (!activatedVMs.containsKey(deviceId)) activatedVMs.put(deviceId, new HashSet<Integer>());
 
 		AppModule firstMicroserviceModule = null;
-		// TODO Simon says (130325) we need some FogBroker state that keeps track of what VMs have already been assigned to
+		// Simon (130325) says the activatedVms state in FogBroker keeps track of what VMs have already been assigned to
 		for (Vm vm : device.getVmList()) {
 			AppModule am = (AppModule) vm;
 			// Find the first VM in the edge device's VMList that has not been already transmitted to,

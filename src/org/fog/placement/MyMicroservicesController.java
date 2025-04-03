@@ -296,9 +296,7 @@ public class MyMicroservicesController extends SimEntity {
      * Registers a user device for periodic PR generation
      */
     public void registerUserDevice(MyFogDevice device) {
-        if (device.getDeviceType().equals(MyFogDevice.GENERIC_USER)) {
-            userDevices.add(device);
-        }
+        userDevices.add(device);
     }
 
     public int getNextSequenceNumber(int sensorId) {
@@ -400,7 +398,7 @@ public class MyMicroservicesController extends SimEntity {
                     sendNow(userDevice.getId(), FogEvents.TRANSMIT_PR, jsonSend);
                 } else {
                     String reason = "Insufficient resources on user device " + userDevice.getName();
-                    Logger.error("Resource Error", reason);
+                    Logger.error("Resource Problem", reason);
                     MyMonitor.getInstance().recordFailedPR(newPR, reason);
                 }
             }

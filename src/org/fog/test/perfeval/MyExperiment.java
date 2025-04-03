@@ -7,6 +7,7 @@ import org.cloudbus.cloudsim.Storage;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.power.PowerHost;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
+import org.cloudbus.cloudsim.sdn.example.policies.VmSchedulerTimeSharedEnergy;
 import org.cloudbus.cloudsim.sdn.overbooking.BwProvisionerOverbooking;
 import org.cloudbus.cloudsim.sdn.overbooking.PeProvisionerOverbooking;
 import org.fog.application.AppEdge;
@@ -22,7 +23,6 @@ import org.fog.placement.LocationHandler;
 import org.fog.placement.MyMicroservicesMobilityController;
 import org.fog.placement.PlacementLogicFactory;
 import org.fog.policy.AppModuleAllocationPolicy;
-import org.fog.scheduler.StreamOperatorScheduler;
 import org.fog.utils.*;
 import org.fog.utils.distribution.DeterministicDistribution;
 
@@ -71,7 +71,7 @@ public class MyExperiment {
 
     public static void main(String[] args) {
         List<SimulationConfig> configs = Arrays.asList(
-//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ACO),
+                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ACO),
                 new SimulationConfig(100, 196, 1, PlacementLogicFactory.BEST_FIT),
                 new SimulationConfig(100, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
                 new SimulationConfig(100, 196, 1, PlacementLogicFactory.ILP),
@@ -94,8 +94,8 @@ public class MyExperiment {
                 new SimulationConfig(300, 196, 1, PlacementLogicFactory.MAX_FIT),
                 new SimulationConfig(300, 196, 1, PlacementLogicFactory.MULTI_OPT),
                 new SimulationConfig(300, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
-
-
+                //
+                //
                 new SimulationConfig(100, 196, 3, PlacementLogicFactory.ACO),
                 new SimulationConfig(100, 196, 3, PlacementLogicFactory.BEST_FIT),
                 new SimulationConfig(100, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
@@ -103,7 +103,7 @@ public class MyExperiment {
                 new SimulationConfig(100, 196, 3, PlacementLogicFactory.MAX_FIT),
                 new SimulationConfig(100, 196, 3, PlacementLogicFactory.MULTI_OPT),
                 new SimulationConfig(100, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
-                //
+
                 new SimulationConfig(200, 196, 3, PlacementLogicFactory.ACO),
                 new SimulationConfig(200, 196, 3, PlacementLogicFactory.BEST_FIT),
                 new SimulationConfig(200, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
@@ -128,7 +128,7 @@ public class MyExperiment {
                 new SimulationConfig(100, 196, 5, PlacementLogicFactory.MAX_FIT),
                 new SimulationConfig(100, 196, 5, PlacementLogicFactory.MULTI_OPT),
                 new SimulationConfig(100, 196, 5, PlacementLogicFactory.SIMULATED_ANNEALING),
-                //
+
                 new SimulationConfig(200, 196, 5, PlacementLogicFactory.ACO),
                 new SimulationConfig(200, 196, 5, PlacementLogicFactory.BEST_FIT),
                 new SimulationConfig(200, 196, 5, PlacementLogicFactory.CLOSEST_FIT),
@@ -166,7 +166,7 @@ public class MyExperiment {
                     MyMonitor.getInstance().getAllLatencies().stream()
                             .map(MetricUtils::handleSimulationLatency)
                             .collect(Collectors.toList());
-            MetricUtils.writeResourceDistributionToCSV(resourceData, latencyData, configs, "./output/resourceDistGamma.csv");
+            MetricUtils.writeResourceDistributionToCSV(resourceData, latencyData, configs, "./output/resourceDistCrowdedScenario.csv");
             System.out.println("CSV file has been created successfully.");
         } catch (IOException e) {
             System.err.println("An error occurred while writing to the CSV file.");
@@ -235,13 +235,27 @@ public class MyExperiment {
 
             MyMicroservicesMobilityController microservicesController = new MyMicroservicesMobilityController("controller", fogDevices, sensors, appList, placementLogicType, locator);
 
+            // Register user devices
+            for (FogDevice device : fogDevices) {
+                if (((MyFogDevice)device).getDeviceType().equals(MyFogDevice.GENERIC_USER) ||
+                        ((MyFogDevice)device).getDeviceType().equals(MyFogDevice.AMBULANCE_USER) ||
+                        ((MyFogDevice)device).getDeviceType().equals(MyFogDevice.OPERA_USER)) {
+                    microservicesController.registerUserDevice((MyFogDevice)device);
+                    ((MyFogDevice)device).setMicroservicesControllerId(microservicesController.getId());
+                }
+            }
+
             // generate placement requests
             List<PlacementRequest> placementRequests = new ArrayList<>();
             for (Sensor sensor : sensors) {
                 Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();
                 placedMicroservicesMap.put("clientModule", sensor.getGatewayDeviceId());
-                PlacementRequest p = new PlacementRequest(sensor.getAppId(), sensor.getId(), sensor.getGatewayDeviceId(), placedMicroservicesMap);
-                placementRequests.add(p);
+
+                // Use MyMicroservicesController to create PROTOTYPE placement request
+                //  They will not be processed, but used as template for periodic generation.
+                PlacementRequest prototypePR = microservicesController.createPlacementRequest(
+                        sensor, placedMicroservicesMap);
+                placementRequests.add(prototypePR);
             }
 
             // TODO Simon says now we need to give them time intervals to send periodically across the Simulation
@@ -249,6 +263,7 @@ public class MyExperiment {
 
             TimeKeeper.getInstance().setSimulationStartTime(Calendar.getInstance().getTimeInMillis());
             Log.printLine("Simon app START!");
+            Log.printLine(String.format("Placement Logic: %d", placementLogicType));
 
             CloudSim.startSimulation();
 //            CloudSim.stopSimulation();
@@ -353,7 +368,7 @@ public class MyExperiment {
                 new BwProvisionerOverbooking(bw),
                 storage,
                 peList,
-                new StreamOperatorScheduler(peList),
+                new VmSchedulerTimeSharedEnergy(peList),
                 new FogLinearPowerModel(busyPower, idlePower)
         );
 
