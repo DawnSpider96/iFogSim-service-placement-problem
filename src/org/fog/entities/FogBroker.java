@@ -28,7 +28,7 @@ public class FogBroker extends PowerDatacenterBroker{
 	private static final Map<Integer, Set<Integer>> activatedVMs = new HashMap<>();
 
 
-	private static int batchNumber = 1;
+	private static int cycleNumber = 1;
 
 	private static final Map<Application, String> applicationToFirstMicroserviceMap = new HashMap<>();
 	private static final Map<Application, List<String>> applicationToSecondMicroservicesMap = new HashMap<>();
@@ -41,7 +41,7 @@ public class FogBroker extends PowerDatacenterBroker{
 	public static void clear(){
 		getApplicationToFirstMicroserviceMap().clear();
 		getApplicationToSecondMicroservicesMap().clear();
-		setBatchNumber(1);
+		setCycleNumber(1);
 		getChecklist().clear();
 		getToSend().clear();
 	}
@@ -77,58 +77,58 @@ public class FogBroker extends PowerDatacenterBroker{
 
 	private void processPlacementDecision(SimEvent ev) {
 		JSONObject object = (JSONObject) ev.getData();
-		Integer batchNumber = (Integer) object.get("batchNumber");
-//		if (batchNumber != this.batchNumber) {
+		Integer cycleNumber = (Integer) object.get("cycleNumber");
+//		if (cycleNumber != this.cycleNumber) {
 //			Logger.error("Batch Number Error", "Batch numbers don't match.");
 //		}
 
 		Map<PlacementRequest, Integer> targets = (Map<PlacementRequest, Integer>) object.get("targets");
 		Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice =
 				(Map<Integer, Map<Application, List<ModuleLaunchConfig>>>) object.get("perDevice");
-		createChecklist(perDevice, batchNumber);
-		setToSend(targets, batchNumber);
-		send(getId(), MicroservicePlacementConfig.EXECUTION_TIMEOUT_TIME, FogEvents.EXECUTION_TIMEOUT, batchNumber);
+		createChecklist(perDevice, cycleNumber);
+		setToSend(targets, cycleNumber);
+		send(getId(), MicroservicePlacementConfig.EXECUTION_TIMEOUT_TIME, FogEvents.EXECUTION_TIMEOUT, cycleNumber);
 		Logger.debug("Notification", "FogBroker sent out execution Timeout");
 //		setBatchNumber(getBatchNumber() + 1);
 	}
 
 	// perDevice: deviceId -> (Application -> List (Module, instanceCount))
-	public void createChecklist(Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice, int batchNumber) {
-        checklist.computeIfAbsent(batchNumber, k -> new HashMap<>());
+	public void createChecklist(Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice, int cycleNumber) {
+        checklist.computeIfAbsent(cycleNumber, k -> new HashMap<>());
 		for (Integer deviceId : perDevice.keySet()) {
-			checklist.get(batchNumber).put(deviceId, false);
+			checklist.get(cycleNumber).put(deviceId, false);
 		}
 	}
 
-	private void setToSend(Map<PlacementRequest, Integer> targets, int batchNumber) {
-		toSend.computeIfAbsent(batchNumber, k -> new HashMap<>());
-		toSend.put(batchNumber, targets);
+	private void setToSend(Map<PlacementRequest, Integer> targets, int cycleNumber) {
+		toSend.computeIfAbsent(cycleNumber, k -> new HashMap<>());
+		toSend.put(cycleNumber, targets);
 	}
 
-	public void handleInstallationNotification(int deviceId, int batchNumber) {
-		if (checklist.get(batchNumber).containsKey(deviceId)) {
-			checklist.get(batchNumber).put(deviceId, true); // Mark as acknowledged
-			if (allAcknowledged(batchNumber)) {
+	public void handleInstallationNotification(int deviceId, int cycleNumber) {
+		if (checklist.get(cycleNumber).containsKey(deviceId)) {
+			checklist.get(cycleNumber).put(deviceId, true); // Mark as acknowledged
+			if (allAcknowledged(cycleNumber)) {
 //				cancelTimeout(); // Cancel the execution timeout
-				triggerExecution(batchNumber); // Start tuple execution
+				triggerExecution(cycleNumber); // Start tuple execution
 			}
 		}
 	}
 
-	private boolean allAcknowledged(int batchNumber) {
-		return checklist.get(batchNumber).values().stream().allMatch(Boolean::booleanValue);
+	private boolean allAcknowledged(int cycleNumber) {
+		return checklist.get(cycleNumber).values().stream().allMatch(Boolean::booleanValue);
 	}
 
-	public void handleExecutionTimeout(int batchNumber) {
-		if (!allAcknowledged(batchNumber)) {
-			Logger.error("Execution timeout Error", "Not all devices acknowledged installation on batch " + batchNumber);
+	public void handleExecutionTimeout(int cycleNumber) {
+		if (!allAcknowledged(cycleNumber)) {
+			Logger.error("Execution timeout Error", "Not all devices acknowledged installation on batch " + cycleNumber);
 		}
 	}
 
-	public void triggerExecution(int batchNumber) {
-		Map<PlacementRequest, Integer> ts = toSend.get(batchNumber);
+	public void triggerExecution(int cycleNumber) {
+		Map<PlacementRequest, Integer> ts = toSend.get(cycleNumber);
 		for (Map.Entry<PlacementRequest, Integer> entry : ts.entrySet()) {
-			PlacementRequest pr = entry.getKey();
+			MyPlacementRequest pr = (MyPlacementRequest) entry.getKey();
 			Integer deviceId = entry.getValue();
 			if (deviceId == null) {
 				Logger.error("Missing Key Error", "toSend state was not updated properly.");
@@ -136,6 +136,7 @@ public class FogBroker extends PowerDatacenterBroker{
 			boolean transmitted = false;
 			for (Application a : applicationToFirstMicroserviceMap.keySet()) {
 				if (a.getAppId() == pr.getApplicationId()) {
+					// Simon (020425) says pr conveniently contains (sensorId, prIndex) to populate Tuple with
 					transmit(deviceId, a, pr);
 					transmitted = true;
 					break;
@@ -147,7 +148,7 @@ public class FogBroker extends PowerDatacenterBroker{
 		}
 	}
 
-	public void transmit(int targetId, Application app, PlacementRequest pr){
+	public void transmit(int targetId, Application app, MyPlacementRequest pr){
 		String firstMicroservice = applicationToFirstMicroserviceMap.get(app);
 		AppEdge _edge = null;
 		for(AppEdge edge : app.getEdges()){
@@ -164,6 +165,10 @@ public class FogBroker extends PowerDatacenterBroker{
 				new UtilizationModelFull(), new UtilizationModelFull(), new UtilizationModelFull());
 		tuple.setUserId(getId());
 		tuple.setTupleType(tupleType);
+
+		// Simon (020245) says this necessary for Service Discovery identification
+		tuple.setSensorId(pr.getSensorId());
+		tuple.setPrIndex(pr.getPrIndex());
 
 		tuple.setDestModuleName(_edge.getDestination());
 		tuple.setSrcModuleName(firstMicroservice);
@@ -258,12 +263,12 @@ public class FogBroker extends PowerDatacenterBroker{
 
 	}
 
-	public static int getBatchNumber(){
-		return batchNumber;
+	public static int getCycleNumber(){
+		return cycleNumber;
 	}
 
-	public static void setBatchNumber(int batchNumber) {
-		FogBroker.batchNumber = batchNumber;
+	public static void setCycleNumber(int cycleNumber) {
+		FogBroker.cycleNumber = cycleNumber;
 	}
 
 	public static Map<Application, String> getApplicationToFirstMicroserviceMap() {

@@ -1,15 +1,18 @@
 package org.fog.entities;
 
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.apache.commons.math3.util.Pair;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.placement.MicroservicePlacementLogic;
+import org.fog.placement.MyHeuristic;
 import org.fog.placement.PlacementLogicOutput;
+import org.fog.utils.Logger;
 import org.json.simple.JSONObject;
 
-import javax.naming.ldap.Control;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +23,7 @@ public class ControllerComponent {
 
     protected LoadBalancer loadBalancer;
     protected MicroservicePlacementLogic microservicePlacementLogic = null;
-    protected ServiceDiscovery serviceDiscoveryInfo;
+    protected PRAwareServiceDiscovery serviceDiscoveryInfo;
 
     protected int deviceId;
 
@@ -64,7 +67,7 @@ public class ControllerComponent {
         this.microservicePlacementLogic = mPlacement;
         this.resourceAvailability = resourceAvailability;
         setDeviceId(deviceId);
-        serviceDiscoveryInfo = new ServiceDiscovery(deviceId);
+        serviceDiscoveryInfo = new PRAwareServiceDiscovery(deviceId);
     }
 
     /**
@@ -75,7 +78,38 @@ public class ControllerComponent {
     public ControllerComponent(Integer deviceId, LoadBalancer loadBalancer) {
         this.loadBalancer = loadBalancer;
         setDeviceId(deviceId);
-        serviceDiscoveryInfo = new ServiceDiscovery(deviceId);
+        serviceDiscoveryInfo = new PRAwareServiceDiscovery(deviceId);
+    }
+
+    public void addServiceDiscoveryInfo(String microserviceName, Integer deviceID, Integer sensorId, Integer prIndex) {
+        ((PRAwareServiceDiscovery)this.serviceDiscoveryInfo).addServiceDiscoveryInfo(
+                microserviceName, deviceID, sensorId, prIndex);
+        System.out.println("Service Discovery Info ADDED (device:" +
+                CloudSim.getEntityName(this.deviceId) +
+                ") for microservice: " + microserviceName +
+                " , destDevice: " + CloudSim.getEntityName(deviceID) +
+                " , sensorId: " + sensorId +
+                " , prIndex: " + prIndex);
+    }
+
+    public int getDestinationDeviceIdWithContext(String destModuleName, Integer sensorId, Integer prIndex) {
+        Integer deviceId = ((PRAwareServiceDiscovery)serviceDiscoveryInfo).getDeviceIdByContext(destModuleName, sensorId, prIndex);
+
+        if (deviceId != null) {
+            return deviceId;
+        }
+
+        // CANNOT fall back to regular load balancing if no match found.
+        // Will cause problems downstream 100%
+        Logger.error("Control Flow Error", "PR-specific service discovery entry could not be found for module: " + destModuleName +
+                " with sensorId " + sensorId + " and PR index: " + prIndex);
+        throw new NullPointerException("CRITICAL ERROR: PR-specific service discovery entry not found for module: " + destModuleName +
+                " with sensorId " + sensorId + " and PR index: " + prIndex);
+    }
+
+    public void removeServiceDiscoveryInfo(String microserviceName, Integer deviceID, Integer sensorId, Integer prIndex) {
+        ((PRAwareServiceDiscovery)this.serviceDiscoveryInfo).removeServiceDiscoveryInfo(
+                microserviceName, deviceID, sensorId, prIndex);
     }
 
     /**
@@ -109,9 +143,14 @@ public class ControllerComponent {
         updateResourceInfo(deviceId, resourceDeltas);
     }
 
+    // Simon (02045) says deprecated.
+    /**
+     * @deprecated This method uses the standard service discovery mechanism without PR awareness.
+     * Use addServiceDiscoveryInfo(String microserviceName, Integer deviceID, Integer sensorId, Integer prIndex) instead.
+     */
     public void addServiceDiscoveryInfo(String microserviceName, Integer deviceID) {
         this.serviceDiscoveryInfo.addServiceDIscoveryInfo(microserviceName, deviceID);
-        System.out.println("Service Discovery Info ADDED (device:" +
+        System.out.println("Service Discovery Info ADDED (on device:" +
                 CloudSim.getEntityName(this.deviceId) +
                 ") for microservice :" + microserviceName + " , destDevice : " +
                 CloudSim.getEntityName(deviceID));
@@ -232,8 +271,102 @@ class ServiceDiscovery {
     }
 }
 
+// Simon (020425) says this supports identifying placement decision-specific Service Discovery entries
+class PRAwareServiceDiscovery extends ServiceDiscovery {
+    // List of all service discovery entries
+    protected List<MyHeuristic.PRContextAwareEntry> entries;
+    // Index for faster lookups by microservice name
+    protected Map<String, List<MyHeuristic.PRContextAwareEntry>> microserviceIndex;
 
+    public PRAwareServiceDiscovery(Integer deviceId) {
+        super(deviceId);
+        this.entries = new ArrayList<>();
+        this.microserviceIndex = new HashMap<>();
+    }
 
+    // Enhanced method with both sensorId and prIndex
+    public void addServiceDiscoveryInfo(String microservice, Integer deviceId, Integer sensorId, Integer prIndex) {
+        MyHeuristic.PRContextAwareEntry entry = new MyHeuristic.PRContextAwareEntry(
+            microservice, deviceId, sensorId, prIndex);
+            
+        // Add to main list
+        entries.add(entry);
+        
+        // Add to microservice index for faster lookups
+        if (!microserviceIndex.containsKey(microservice)) {
+            microserviceIndex.put(microservice, new ArrayList<>());
+        }
+        microserviceIndex.get(microservice).add(entry);
+    }
+
+    // Enhanced removal method using the composite key
+    public void removeServiceDiscoveryInfo(String microservice, Integer deviceId, Integer sensorId, Integer prIndex) {
+        boolean found = false;
+        
+        // First check if we have entries for this microservice
+        if (microserviceIndex.containsKey(microservice)) {
+            List<MyHeuristic.PRContextAwareEntry> microserviceEntries = microserviceIndex.get(microservice);
+            Iterator<MyHeuristic.PRContextAwareEntry> iterator = microserviceEntries.iterator();
+            
+            // Find and remove the matching entry
+            while (iterator.hasNext()) {
+                MyHeuristic.PRContextAwareEntry entry = iterator.next();
+                if (entry.getDeviceId().equals(deviceId) && 
+                    entry.getSensorId().equals(sensorId) && 
+                    entry.getPrIndex().equals(prIndex)) {
+                    
+                    // Remove from the index
+                    iterator.remove();
+                    
+                    // Remove from the main list
+                    entries.remove(entry);
+                    
+                    found = true;
+                    break;
+                }
+            }
+            
+            // Clean up empty lists in the index
+            if (microserviceEntries.isEmpty()) {
+                microserviceIndex.remove(microservice);
+            }
+        }
+        
+        // Throw an exception if the entry wasn't found
+        if (!found) {
+            throw new NullPointerException(String.format("CRITICAL ERROR: PR-specific service discovery entry not found! " +
+                    "\nMicroservice name: %s,\nDevice ID: %d,\nSensor ID: %d,\nPR Index: %d",
+                microservice,
+                deviceId,
+                sensorId,
+                prIndex
+            ));
+        }
+    }
+
+    public Integer getDeviceIdByContext(String microservice, Integer sensorId, Integer prIndex) {
+        if (microserviceIndex.containsKey(microservice)) {
+            for (MyHeuristic.PRContextAwareEntry entry : microserviceIndex.get(microservice)) {
+                // Check if the context matches
+                if (entry.getSensorId().equals(sensorId) && entry.getPrIndex().equals(prIndex)) {
+                    return entry.getDeviceId();
+                }
+            }
+        }
+        return null;
+    }
+    
+    public List<MyHeuristic.PRContextAwareEntry> getAllEntries() {
+        return new ArrayList<>(entries);
+    }
+    
+    public List<MyHeuristic.PRContextAwareEntry> getEntriesByMicroservice(String microservice) {
+        if (microserviceIndex.containsKey(microservice)) {
+            return new ArrayList<>(microserviceIndex.get(microservice));
+        }
+        return new ArrayList<>();
+    }
+}
 
 
 

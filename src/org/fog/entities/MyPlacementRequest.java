@@ -1,48 +1,25 @@
 package org.fog.entities;
 
-import java.util.HashMap;
 import java.util.Map;
 
-public class MyPlacementRequest {
-    private String applicationId;
-    private Map<String,Integer> placedMicroservices; // microservice name to placed device id
-    private int sensorId; // sensor Id
-    private int prId; //
-    private int requester; //device generating the request
+public class MyPlacementRequest extends PlacementRequest{
 
-    public MyPlacementRequest(String applicationId, int sensorId, int prId, int requester, Map<String,Integer> placedMicroservicesMap){
-        this.applicationId = applicationId;
-        this.sensorId = sensorId;
-        this.prId = prId;
-        this.requester = requester;
-        this.placedMicroservices = placedMicroservicesMap;
+    // Simon (010425) says handling for generation of new PR with unique ID
+    //  is handled in MyMicroservicesController
+
+    private int prIndex; //
+
+    public MyPlacementRequest(String applicationId, int sensorId, int prIndex, int requester, Map<String,Integer> placedMicroservicesMap){
+        super(applicationId, sensorId, requester, placedMicroservicesMap);
+        this.prIndex = prIndex;
     }
 
-    public MyPlacementRequest(String applicationId, int sensorId, int prId, int requester){
-        this.applicationId = applicationId;
-        this.sensorId = sensorId;
-        this.prId = prId;
-        this.requester = requester;
-        this.placedMicroservices = new HashMap<>();
+    public MyPlacementRequest(String applicationId, int sensorId, int prIndex, int requester){
+        super(applicationId, sensorId, requester);
+        this.prIndex = prIndex;
     }
 
-    public String getApplicationId(){
-        return applicationId;
-    }
-
-    public int getSensorId() {
-        return sensorId;
-    }
-
-    public int getRequester() {
-        return requester;
-    }
-
-    public Map<String, Integer> getPlacedMicroservices() {
-        return placedMicroservices;
-    }
-
-    public int getPrId() {
-        return prId;
+    public int getPrIndex() {
+        return prIndex;
     }
 }

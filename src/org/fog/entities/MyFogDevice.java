@@ -9,6 +9,7 @@ import org.fog.application.AppEdge;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.placement.MicroservicePlacementLogic;
+import org.fog.placement.MyHeuristic;
 import org.fog.placement.MyPlacementLogicOutput;
 import org.fog.scheduler.TupleScheduler;
 import org.fog.utils.*;
@@ -245,9 +246,16 @@ public class MyFogDevice extends FogDevice {
 		if (tuple.getDestinationDeviceId() == -1) {
 			// ACTUATOR tuples already handled above. Only UP and DOWN left
 			if (tuple.getDirection() == Tuple.UP) {
-				int destination = controllerComponent.getDestinationDeviceId(tuple.getDestModuleName());
+				int destination = -1;
+				if (tuple.getSensorId() != null && tuple.getPrIndex() != null) {
+					destination = controllerComponent.getDestinationDeviceIdWithContext(
+							tuple.getDestModuleName(), tuple.getSensorId(), tuple.getPrIndex());
+				} else {
+					throw new NullPointerException("CRITICAL ERROR: Tuple has no prIndex or sensorId.");
+				}
+//				int destination = controllerComponent.getDestinationDeviceId(tuple.getDestModuleName());
 				if (destination == -1) {
-					System.out.println("Service DiscoveryInfo missing. Tuple routing stopped for : " + tuple.getDestModuleName());
+					System.out.println("Service DiscoveryInfo missing, failed. Tuple routing stopped for : " + tuple.getDestModuleName());
 					return;
 				}
 				tuple.setDestinationDeviceId(destination);
@@ -449,6 +457,12 @@ public class MyFogDevice extends FogDevice {
 						for (Tuple resTuple : resultantTuples) {
 							resTuple.setModuleCopyMap(new HashMap<String, Integer>(tuple.getModuleCopyMap()));
 							resTuple.getModuleCopyMap().put(((AppModule) vm).getName(), vm.getId());
+
+							// Simon (020425) says this is necessary for service discovery identification
+							// Sanity check: Same sensorId and prIndex because the 2 services are from the same PR
+							resTuple.setSensorId(tuple.getSensorId());
+							resTuple.setPrIndex(tuple.getPrIndex());
+
 							updateTimingsOnSending(resTuple);
 							sendToSelf(resTuple);
 						}
@@ -456,12 +470,13 @@ public class MyFogDevice extends FogDevice {
 
 						JSONObject obj = new JSONObject();
 						obj.put("module", vm);
+						obj.put("tuple", tuple);
 						sendNow(getId(), FogEvents.MODULE_UNINSTALL, obj);
 
 						JSONObject objj = new JSONObject();
 						objj.put("module", vm);
 						objj.put("id", getId());
-						if (deviceType == FCN) {
+						if (deviceType.equals(FCN)) {
 							// TODO (010425) Should we use management tuple for this?
 							//  In real life the edge node will communicate with cloud that it is done
 							sendNow(getFonId(), FogEvents.NODE_EXECUTION_FINISHED, objj);
@@ -563,7 +578,7 @@ public class MyFogDevice extends FogDevice {
 		System.out.println("Placement Algorithm Completed. Time : " + (endTime - startTime) / 1e6);
 
 		Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice = placementLogicOutput.getPerDevice();
-		Map<Integer, List<Pair<String, Integer>>> serviceDicovery = placementLogicOutput.getServiceDiscoveryInfo();
+		Map<Integer, List<MyHeuristic.PRContextAwareEntry>> serviceDiscovery = placementLogicOutput.getServiceDiscoveryInfoV2();
 		Map<PlacementRequest, Integer> placementRequestStatus = placementLogicOutput.getPrStatus();
 		Map<PlacementRequest, Integer> targets = placementLogicOutput.getTargets();
 		int fogDeviceCount = 0; // todo Simon says I still don't know what this variable does. Currently unused (050125).
@@ -571,22 +586,43 @@ public class MyFogDevice extends FogDevice {
 
 		// Simon says (140125) we send perDevice and all updated PRs to FogBroker
 		// before sending deployment requests to devices specified in perDevice
+		// PRs from targets.keySet()
 		JSONObject forFogBroker = new JSONObject();
 		forFogBroker.put("targets", targets);
 		forFogBroker.put("perDevice", perDevice);
-		forFogBroker.put("batchNumber", FogBroker.getBatchNumber());
+		forFogBroker.put("cycleNumber", FogBroker.getCycleNumber());
 
 		sendNow(CloudSim.getFogBrokerId(), FogEvents.RECEIVE_PLACEMENT_DECISION, forFogBroker);
 
-		for (int clientDevice : serviceDicovery.keySet()) {
-			for (Pair serviceData : serviceDicovery.get(clientDevice)) {
-				if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
-					transmitServiceDiscoveryData(clientDevice, serviceData);
-				} else if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC") {
-					Logger.error("Simulation static mode error", "Simulation should not be static.");
+		for (int clientDevice : serviceDiscovery.keySet()) {
+			if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
+				for (MyHeuristic.PRContextAwareEntry entry : serviceDiscovery.get(clientDevice)) {
+					transmitServiceDiscoveryData(clientDevice, entry);
 				}
 			}
+			else if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC") {
+				Logger.error("Simulation static mode error", "Simulation should not be static.");
+			}
 		}
+
+//		for (int clientDevice : serviceDiscovery.keySet()) {
+//			for (Pair serviceData : serviceDiscovery.get(clientDevice)) {
+//				if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
+//					// You need to get sensorId and prIndex here
+//					PlacementRequest pr = findPlacementRequestForServiceData(serviceData, targets);
+//					if (pr != null && pr instanceof MyPlacementRequest) {
+//						MyPlacementRequest myPr = (MyPlacementRequest)pr;
+//						transmitServiceDiscoveryData(clientDevice, serviceData, myPr.getSensorId(), myPr.getPrIndex());
+//					} else {
+//						// Handle error or log if PR not found
+//						Logger.error("Service Discovery Error", "Could not find placement request for service data");
+//					}
+//				}
+//				else if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC") {
+//					Logger.error("Simulation static mode error", "Simulation should not be static.");
+//				}
+//			}
+//		}
 
 		for (int deviceID : perDevice.keySet()) {
 			MyFogDevice f = (MyFogDevice) CloudSim.getEntity(deviceID);
@@ -599,11 +635,11 @@ public class MyFogDevice extends FogDevice {
 				}
 			}
 			if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
-				transmitModulesToDeploy(deviceID, perDevice.get(deviceID), FogBroker.getBatchNumber());
+				transmitModulesToDeploy(deviceID, perDevice.get(deviceID), FogBroker.getCycleNumber());
 			}
 			placementString.append("\n");
 		}
-		FogBroker.setBatchNumber(FogBroker.getBatchNumber() + 1);
+		FogBroker.setCycleNumber(FogBroker.getCycleNumber() + 1);
 
 		System.out.println(placementString.toString());
 
@@ -665,19 +701,23 @@ public class MyFogDevice extends FogDevice {
 	 * @param ev the simulation event containing the update information.
 	 *           The event's data must be a {@code JSONObject} with the following structure:
 	 *           <ul>
-	 *             <li>{@code "service data"}: a {@code Pair<String, Integer>} representing
-	 *             the service name and the Fog Node ID.</li>
+	 *             <li>{@code "service data"}: a {@code MyHeuristic.PRContextAwareEntry} containing
+	 *             all necessary service discovery information.</li>
 	 *             <li>{@code "action"}: a {@code String}, either {@code "ADD"} or {@code "REMOVE"}.</li>
 	 *           </ul>
 	 */
 	protected void updateServiceDiscovery(SimEvent ev) {
 		JSONObject object = (JSONObject) ev.getData();
-		Pair<String, Integer> placement = (Pair<String, Integer>) object.get("service data");
+		MyHeuristic.PRContextAwareEntry entry = (MyHeuristic.PRContextAwareEntry) object.get("service data");
 		String action = (String) object.get("action");
-		if (action.equals("ADD"))
-			this.controllerComponent.addServiceDiscoveryInfo(placement.getFirst(), placement.getSecond());
-		else if (action.equals("REMOVE"))
-			this.controllerComponent.removeServiceDiscoveryInfo(placement.getFirst(), placement.getSecond());
+
+		if (action.equals("ADD")) { // Upon installation
+			this.controllerComponent.addServiceDiscoveryInfo(
+					entry.getMicroserviceName(), entry.getDeviceId(), entry.getSensorId(), entry.getPrIndex());
+		} else if (action.equals("REMOVE")) { // After execution finish
+			this.controllerComponent.removeServiceDiscoveryInfo(
+					entry.getMicroserviceName(), entry.getDeviceId(), entry.getSensorId(), entry.getPrIndex());
+		}
 	}
 
 	// NOTE: Triggered by LAUNCH_MODULE event
@@ -777,7 +817,15 @@ public class MyFogDevice extends FogDevice {
 	protected void moduleUninstall(SimEvent ev) {
 		JSONObject object = (JSONObject) ev.getData();
 		AppModule appModule = (AppModule) object.get("module");
-		System.out.println(getName() + " is uninstalling " + appModule.getName());
+		Tuple tuple = (Tuple) object.get("tuple");
+		int prIndex = tuple.getPrIndex();
+		int sensorId = tuple.getSensorId();
+		System.out.printf("%s is uninstalling %s. Tuple sensorId %d and prIndex %d%n",
+				getName(),
+				appModule.getName(),
+				sensorId,
+				prIndex
+				);
 //		NetworkUsageMonitor.sendingModule((double) object.get("delay"), appModule.getSize());
 //		MigrationDelayMonitor.setMigrationDelay((double) object.get("delay"));
 
@@ -801,7 +849,7 @@ public class MyFogDevice extends FogDevice {
 			resourceDeltas.put(ControllerComponent.STORAGE, (double) appModule.getSize());
 
 			Pair<Integer, Map<String, Double>> resourceInfo = new Pair<>(getId(), resourceDeltas);
-			sendNow(getId(), FogEvents.UPDATE_RESOURCE_INFO, resourceInfo); // TODO update service discovery also? Maybe?
+			sendNow(getId(), FogEvents.UPDATE_RESOURCE_INFO, resourceInfo);
 		} else {
 			Logger.error("Module uninstall error", "Module " + appModule.getName() + " not found on " + getName());
 			System.out.println("Module " + appModule.getName() + " not found on " + getName());
@@ -874,20 +922,20 @@ public class MyFogDevice extends FogDevice {
 		sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, prTuple);
 	}
 
-	private void transmitServiceDiscoveryData(int clientDevice, Pair serviceData) {
+	private void transmitServiceDiscoveryData(int clientDevice, MyHeuristic.PRContextAwareEntry entry) {
 		ManagementTuple sdTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.SERVICE_DISCOVERY_INFO);
 		sdTuple.setSourceDeviceId(getId());
-		sdTuple.setServiceDiscoveryInfor(serviceData);
+		sdTuple.setServiceDiscoveryInfo(entry);
 		sdTuple.setDestinationDeviceId(clientDevice);
 		sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, sdTuple);
 	}
 
-	private void transmitModulesToDeploy(int deviceID, Map<Application, List<ModuleLaunchConfig>> applicationListMap, int batchNumber) {
+	private void transmitModulesToDeploy(int deviceID, Map<Application, List<ModuleLaunchConfig>> applicationListMap, int cycleNumber) {
 		ManagementTuple moduleTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.DEPLOYMENT_REQUEST);
 		moduleTuple.setSourceDeviceId(getId());
 		moduleTuple.setDeployementSet(applicationListMap);
 		moduleTuple.setDestinationDeviceId(deviceID);
-		moduleTuple.setBatchNumber(batchNumber);
+		moduleTuple.setCycleNumber(cycleNumber);
 		sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, moduleTuple);
 	}
 
@@ -912,13 +960,13 @@ public class MyFogDevice extends FogDevice {
 
 				case ManagementTuple.SERVICE_DISCOVERY_INFO:
 					JSONObject serviceDiscoveryAdd = new JSONObject();
-					serviceDiscoveryAdd.put("service data", tuple.getServiceDiscoveryInfor());
+					serviceDiscoveryAdd.put("service data", tuple.getServiceDiscoveryInfo());
 					serviceDiscoveryAdd.put("action", "ADD");
 					sendNow(getId(), FogEvents.UPDATE_SERVICE_DISCOVERY, serviceDiscoveryAdd);
 					break;
 
 				case ManagementTuple.DEPLOYMENT_REQUEST:
-					deployModulesAndExecute(tuple.getDeployementSet(), tuple.getBatchNumber());
+					deployModulesAndExecute(tuple.getDeployementSet(), tuple.getCycleNumber());
 					break;
 
 				case ManagementTuple.RESOURCE_UPDATE:
@@ -943,7 +991,7 @@ public class MyFogDevice extends FogDevice {
 			Logger.error("Routing error", "Management tuple destination id is -1");
 	}
 
-	private void deployModulesAndExecute(Map<Application, List<ModuleLaunchConfig>> deploymentSet, int batchNumber) {
+	private void deployModulesAndExecute(Map<Application, List<ModuleLaunchConfig>> deploymentSet, int cycleNumber) {
 		for (Application app : deploymentSet.keySet()) {
 			//ACTIVE_APP_UPDATE
 			sendNow(getId(), FogEvents.ACTIVE_APP_UPDATE, app);
@@ -964,7 +1012,7 @@ public class MyFogDevice extends FogDevice {
 			}
 		}
 		// Simon says (140125) FogDevice will send ack to FogBroker a bit AFTER LAUNCH_MODULE is processed
-		send(CloudSim.getFogBrokerId(), MicroservicePlacementConfig.MODULE_DEPLOYMENT_TIME + CloudSim.getMinTimeBetweenEvents(), FogEvents.RECEIVE_INSTALL_NOTIF, batchNumber);
+		send(CloudSim.getFogBrokerId(), MicroservicePlacementConfig.MODULE_DEPLOYMENT_TIME + CloudSim.getMinTimeBetweenEvents(), FogEvents.RECEIVE_INSTALL_NOTIF, cycleNumber);
 
 		// Simon says (140125) that we are shelving this functionality for a while
 		// Instead, fog broker will send the tuples

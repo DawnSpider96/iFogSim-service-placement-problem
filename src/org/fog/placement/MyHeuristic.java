@@ -56,7 +56,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         return fonID;
     }
 
-    @Override
+    @Override/**/
     public PlacementLogicOutput run(List<FogDevice> fogDevices, Map<String, Application> applicationInfo, Map<Integer, Map<String, Double>> resourceAvailability, List<PlacementRequest> prs) {
         resetTemporaryState(fogDevices, applicationInfo, resourceAvailability, prs);
         Map<PlacementRequest, Integer> prStatus = mapModules();
@@ -226,6 +226,12 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             }
         }
         edgeFogDevices = new ArrayList<>();
+        // Simon (020425) says this filtering feels slightly redundant because
+        //  there is another instance of filtering in MyMicroservicesController.getResourceInfo.
+        // TODO consider making additional functionality here to query AVAILABLE FCNs,
+        //  instead of all FCNs.
+        //  I believe these can be safely stored into edgeFogDevices because it is used in
+        //  mapModules as the full pool of Fog Nodes in consideration for placement.
         for (FogDevice fogDevice : this.fogDevices) {
             if (deviceIdsToInclude.contains(fogDevice.getId())) {
                 edgeFogDevices.add(fogDevice);
@@ -366,35 +372,52 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
      *  - prStatus
      *  - Targets
      */
-    protected PlacementLogicOutput generatePlacementDecision(Map<PlacementRequest, Integer> prStatus) {
+    protected MyPlacementLogicOutput generatePlacementDecision(Map<PlacementRequest, Integer> prStatus) {
         // placements: PRid ->  Map(microservice name -> target deviceId)
         Map<Integer, Map<String, Integer>> placements = cleanPlacementRequests(placementRequests, mappedMicroservices);
 
         //todo it assumed that modules are not shared among applications.
         // <deviceid, < app, list of modules to deploy > this is to remove deploying same module more than once on a certain device.
         Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice = new HashMap<>();
-        Map<Integer, List<Pair<String, Integer>>> serviceDiscoveryInfo = new HashMap<>();
+        Map<Integer, List<PRContextAwareEntry>> serviceDiscoveryInfo = new HashMap<>();
         if (placements != null) {
-            for (int prID : placements.keySet()) {
-                //retrieve application
-                PlacementRequest placementRequest = null;
+            for (int sensorId : placements.keySet()) {
+                MyPlacementRequest placementRequest = null;
                 for (PlacementRequest pr : placementRequests) {
-                    if (pr.getSensorId() == prID)
-                        placementRequest = pr;
+                    if (pr.getSensorId() == sensorId) {
+                        placementRequest = (MyPlacementRequest) pr;
+                        break;
+                    }
+                }
+
+                if (placementRequest == null) {
+                    Logger.error("PlacementRequest query Error", "Could not find placement request for sensorId: " + sensorId);
+                    continue;
                 }
                 Application application = applicationInfo.get(placementRequest.getApplicationId());
-                for (String microserviceName : placements.get(prID).keySet()) {
-                    int deviceID = placements.get(prID).get(microserviceName);
 
-                    //service discovery info propagation
-                    List<Integer> clientDevices = getClientServiceNodeIds(application, microserviceName, placementRequest.getPlacedMicroservices(), placements.get(prID));
+                for (String microserviceName : placements.get(sensorId).keySet()) {
+                    int deviceID = placements.get(sensorId).get(microserviceName);
+
+                    // Get client devices that need this service discovery info
+                    List<Integer> clientDevices = getClientServiceNodeIds(application,
+                            microserviceName,
+                            placementRequest.getPlacedMicroservices(),
+                            placements.get(sensorId));
+
                     for (int clientDevice : clientDevices) {
-                        if (serviceDiscoveryInfo.containsKey(clientDevice))
-                            serviceDiscoveryInfo.get(clientDevice).add(new Pair<>(microserviceName, deviceID));
-                        else {
-                            List<Pair<String, Integer>> s = new ArrayList<>();
-                            s.add(new Pair<>(microserviceName, deviceID));
-                            serviceDiscoveryInfo.put(clientDevice, s);
+                        PRContextAwareEntry entry = new PRContextAwareEntry(
+                                microserviceName,
+                                deviceID,
+                                placementRequest.getSensorId(),
+                                placementRequest.getPrIndex()
+                        );
+                        if (serviceDiscoveryInfo.containsKey(clientDevice)) {
+                            serviceDiscoveryInfo.get(clientDevice).add(entry);
+                        } else {
+                            List<PRContextAwareEntry> entries = new ArrayList<>();
+                            entries.add(entry);
+                            serviceDiscoveryInfo.put(clientDevice, entries);
                         }
                     }
                 }
@@ -441,6 +464,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
     * @return Map of each PR to the deviceId that the FogBroker will inform to begin execution
     * */
     protected abstract Map<PlacementRequest, Integer> determineTargets(Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice);
+
 
     protected List<Integer> getClientServiceNodeIds(Application application, String
             microservice, Map<String, Integer> placed, Map<String, Integer> placementPerPr) {
@@ -797,6 +821,26 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
                 return 0;
             }
         }
+    }
+
+    public static class PRContextAwareEntry {
+        private String microserviceName;
+        private Integer deviceId;
+        private Integer sensorId;
+        private Integer prIndex;
+
+        public PRContextAwareEntry(String microserviceName, Integer deviceId,
+                                   Integer sensorId, Integer prIndex) {
+            this.microserviceName = microserviceName;
+            this.deviceId = deviceId;
+            this.sensorId = sensorId;
+            this.prIndex = prIndex;
+        }
+
+        public String getMicroserviceName() { return microserviceName; }
+        public Integer getDeviceId() { return deviceId; }
+        public Integer getSensorId() { return sensorId; }
+        public Integer getPrIndex() { return prIndex; }
     }
 
 }

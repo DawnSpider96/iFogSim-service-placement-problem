@@ -10,6 +10,7 @@ import org.fog.application.AppEdge;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.placement.MicroservicePlacementLogic;
+import org.fog.placement.MyHeuristic;
 import org.fog.placement.PlacementLogicOutput;
 import org.fog.utils.*;
 import org.json.simple.JSONObject;
@@ -332,7 +333,7 @@ public class MicroserviceFogDevice extends FogDevice {
         System.out.println("Placement Algorithm Completed. Time : " + (endTime - startTime) / 1e6);
 
         Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice = placementLogicOutput.getPerDevice();
-        Map<Integer, List<Pair<String, Integer>>> serviceDiscoveryInfo = placementLogicOutput.getServiceDiscoveryInfo();
+        Map<Integer, List<MyHeuristic.PRContextAwareEntry>> serviceDiscoveryInfo = placementLogicOutput.getServiceDiscoveryInfoV2();
         Map<PlacementRequest, Integer> placementRequestStatus = placementLogicOutput.getPrStatus();
 
         int fogDeviceCount = 0;
@@ -365,7 +366,7 @@ public class MicroserviceFogDevice extends FogDevice {
         }
         System.out.println(placementString.toString());
         for (int clientDevice : serviceDiscoveryInfo.keySet()) {
-            for (Pair serviceData : serviceDiscoveryInfo.get(clientDevice)) {
+            for (MyHeuristic.PRContextAwareEntry serviceData : serviceDiscoveryInfo.get(clientDevice)) {
                 if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
                     transmitServiceDiscoveryData(clientDevice, serviceData);
                 } else if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC") {
@@ -425,6 +426,9 @@ public class MicroserviceFogDevice extends FogDevice {
         JSONObject object = (JSONObject) ev.getData();
         Pair<String, Integer> placement = (Pair<String, Integer>) object.get("service data");
         String action = (String) object.get("action");
+        
+        // WARNING: Using deprecated service discovery mechanism - this should eventually be 
+        // replaced with PR-aware service discovery that includes sensorId and prIndex
         if (action.equals("ADD"))
             this.controllerComponent.addServiceDiscoveryInfo(placement.getFirst(), placement.getSecond());
         else if (action.equals("REMOVE"))
@@ -525,9 +529,9 @@ public class MicroserviceFogDevice extends FogDevice {
         sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, prTuple);
     }
 
-    private void transmitServiceDiscoveryData(int clientDevice, Pair serviceData) {
+    private void transmitServiceDiscoveryData(int clientDevice, MyHeuristic.PRContextAwareEntry serviceData) {
         ManagementTuple sdTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.SERVICE_DISCOVERY_INFO);
-        sdTuple.setServiceDiscoveryInfor(serviceData);
+        sdTuple.setServiceDiscoveryInfo(serviceData);
         sdTuple.setDestinationDeviceId(clientDevice);
         sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, sdTuple);
     }
@@ -546,7 +550,7 @@ public class MicroserviceFogDevice extends FogDevice {
                 sendNow(getId(), FogEvents.RECEIVE_PR, tuple.getPlacementRequest());
             } else if (tuple.managementTupleType == ManagementTuple.SERVICE_DISCOVERY_INFO) {
                 JSONObject serviceDiscoveryAdd = new JSONObject();
-                serviceDiscoveryAdd.put("service data", tuple.getServiceDiscoveryInfor());
+                serviceDiscoveryAdd.put("service data", tuple.getServiceDiscoveryInfo());
                 serviceDiscoveryAdd.put("action", "ADD");
                 sendNow(getId(), FogEvents.UPDATE_SERVICE_DISCOVERY, serviceDiscoveryAdd);
             } else if (tuple.managementTupleType == ManagementTuple.DEPLOYMENT_REQUEST) {

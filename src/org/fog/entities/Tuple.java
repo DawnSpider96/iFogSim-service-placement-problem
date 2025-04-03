@@ -22,6 +22,10 @@ public class Tuple extends Cloudlet{
 	private int actuatorId;
 	private int sourceDeviceId;
 	private int sourceModuleId;
+
+	// Simon (020425) says for unique service discovery entry
+	private Integer prIndex;
+	private Integer sensorId;
 	/**
 	 * Map to keep track of which module instances has a tuple traversed.
 	 * 
@@ -167,11 +171,7 @@ public class Tuple extends Cloudlet{
 	}
 
 	public int getDeviceForMicroservice(String microserviceName) {
-		if (!traversedMicroservices.containsKey(microserviceName))
-			return -1;
-		else {
-			return traversedMicroservices.get(microserviceName);
-		}
+        return traversedMicroservices.getOrDefault(microserviceName, -1);
 	}
 
 	public Map<String, Integer> getTraversed() {
@@ -180,6 +180,22 @@ public class Tuple extends Cloudlet{
 
 	public void setTraversedMicroservices(Map<String, Integer> traversed) {
 		traversedMicroservices = traversed;
+	}
+
+	public Integer getPrIndex() {
+		return prIndex;
+	}
+
+	public void setPrIndex(Integer prIndex) {
+		this.prIndex = prIndex;
+	}
+
+	public Integer getSensorId() {
+		return sensorId;
+	}
+
+	public void setSensorId(Integer sensorId) {
+		this.sensorId = sensorId;
 	}
 
 }

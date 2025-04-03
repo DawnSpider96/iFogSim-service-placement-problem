@@ -302,7 +302,12 @@ public class MyMicroservicesController extends SimEntity {
     }
 
     public int getNextSequenceNumber(int sensorId) {
-        int currentSeq = sensorToSequenceNumber.getOrDefault(sensorId, 0);
+        // Simon (020425) says the -1 initialization is because main sim file
+        //  should initializes PRs once as PROTOTYPES for periodic generation.
+        //  Those PRs are not processed, hence index should be -1.
+        // TODO Potential problems with the -1 initialization if
+        //  for eg sensors get added mid-simulation, their PRs will start at -1
+        int currentSeq = sensorToSequenceNumber.getOrDefault(sensorId, -1);
         int nextSeq = currentSeq + 1;
         sensorToSequenceNumber.put(sensorId, nextSeq);
         return nextSeq;
@@ -312,11 +317,11 @@ public class MyMicroservicesController extends SimEntity {
         sensorToSequenceNumber.clear();
     }
 
-    public PlacementRequest createPlacementRequest(Sensor sensor, Map<String, Integer> placedMicroservices) {
+    public MyPlacementRequest createPlacementRequest(Sensor sensor, Map<String, Integer> placedMicroservices) {
         int sequenceNumber = getNextSequenceNumber(sensor.getId());
 
         // Create the placement request with the unique sequence number as the prId
-        return new PlacementRequest(
+        return new MyPlacementRequest(
                 sensor.getAppId(),  // applicationId
                 sensor.getId(),
                 sequenceNumber,     // prId - now using a unique sequence per sensor
@@ -343,10 +348,10 @@ public class MyMicroservicesController extends SimEntity {
      * @param previousRequest the previous {@link PlacementRequest} for the same sensor.
      * @return a new {@link PlacementRequest} with the next prId for the sensor.
      */
-    public PlacementRequest createSubsequentPlacementRequest(PlacementRequest previousRequest) {
+    public MyPlacementRequest createSubsequentPlacementRequest(MyPlacementRequest previousRequest) {
         int sequenceNumber = getNextSequenceNumber(previousRequest.getSensorId());
 
-        return new PlacementRequest(
+        return new MyPlacementRequest(
                 previousRequest.getApplicationId(),
                 previousRequest.getSensorId(),
                 sequenceNumber,
@@ -376,10 +381,10 @@ public class MyMicroservicesController extends SimEntity {
     public void generatePeriodicPlacementRequests() {
         for (MyFogDevice userDevice : userDevices) {
             // Find existing placement request for this user
-            PlacementRequest existingPR = null;
+            MyPlacementRequest existingPR = null;
             for (PlacementRequest pr : placementRequestDelayMap.keySet()) {
                 if (pr.getRequester() == userDevice.getId()) {
-                    existingPR = pr;
+                    existingPR = (MyPlacementRequest) pr;
                     break;
                 }
             }
@@ -592,14 +597,27 @@ public class MyMicroservicesController extends SimEntity {
                 value.forEach((deviceState) -> System.out.println(key + ": " + deviceState.getId())));
     }
 
+    /**
+     * Extracts and returns resource availability information (CPU, RAM, Storage)
+     * for a filtered list of {@link FogDevice} instances.
+     * <p>
+     * This method is typically called after selecting devices to be monitored
+     * for resource availability, such as those managed by a FON or the cloud.
+     * </p>
+     *
+     * @param fogDevices the list of {@link FogDevice} instances to include.
+     * @return a map from device ID to a map of resource types and their capacities.
+     */
     protected Map<Integer, Map<String, Double>> getResourceInfo(List<FogDevice> fogDevices) {
         Map<Integer, Map<String, Double>> resources = new HashMap<>();
         for (FogDevice device : fogDevices) {
-            Map<String, Double> perDevice = new HashMap<>();
-            perDevice.put(ControllerComponent.CPU, (double) device.getHost().getTotalMips());
-            perDevice.put(ControllerComponent.RAM, (double) device.getHost().getRam());
-            perDevice.put(ControllerComponent.STORAGE, (double) device.getHost().getStorage());
-            resources.put(device.getId(), perDevice);
+            if (Objects.equals(((MyFogDevice) device).getDeviceType(), MyFogDevice.FCN)) {
+                Map<String, Double> perDevice = new HashMap<>();
+                perDevice.put(ControllerComponent.CPU, (double) device.getHost().getTotalMips());
+                perDevice.put(ControllerComponent.RAM, (double) device.getHost().getRam());
+                perDevice.put(ControllerComponent.STORAGE, (double) device.getHost().getStorage());
+                resources.put(device.getId(), perDevice);
+            }
         }
         return resources;
     }
@@ -632,6 +650,22 @@ public class MyMicroservicesController extends SimEntity {
         }
     }
 
+    /**
+     * Returns the list of {@link FogDevice} instances managed by the given root device
+     * This implementation uses Cloud, but can be adjusted for FON.
+     * <p>
+     * Collects all Fog Computation Nodes (FCNs) in the hierarchy beneath the root and assigns
+     * them the FON ID of the root. If the root is not the cloud but has the cloud as its parent, the cloud
+     * is also included.
+     * </p>
+     * <p>
+     * Used to determine the devices a Fog Orchestration Node (FON) is responsible for. Can be extended for
+     * custom clustering strategies.
+     * </p>
+     *
+     * @param f the root {@link FogDevice}, in this case the cloud.
+     * @return list of {@link FogDevice} instances associated with the root.
+     */
     protected List<FogDevice> getDevicesForFON(FogDevice f) {
         List<FogDevice> fogDevices = new ArrayList<>();
         fogDevices.add(f);
@@ -639,6 +673,8 @@ public class MyMicroservicesController extends SimEntity {
         List<FogDevice> connected = new ArrayList<>();
         connected.add(f);
         boolean changed = true;
+        boolean isCloud = ((MyFogDevice) f).getDeviceType().equals(MyFogDevice.CLOUD);
+        
         while (changed) {
             changed = false;
             List<FogDevice> rootNodes = new ArrayList<>();
@@ -650,33 +686,28 @@ public class MyMicroservicesController extends SimEntity {
                     connected.add(device);
                     if (!fogDevices.contains(device)) {
                         MyFogDevice mfd = (MyFogDevice) device;
-//                        if (mfd.getDeviceType() == MyFogDevice.FCN) {
+//                        Only add FCN devices if this is the cloud
+//                        if (!isCloud || mfd.getDeviceType().equals(MyFogDevice.FCN)) {
                         fogDevices.add(mfd);
-//                        }
+                        // NOTE Simon (020425) says regardless of devices are added,
+                        //  ALL devices in simulation must have FON id information
                         mfd.setFonID(f.getId());
                         changed = true;
-//                    FogDevice device = getFogDeviceById(cluster);
-//                    connected.add(device);
                     }
                 }
-//                for (int cluster : ((MyFogDevice) rootD).getClusterMembers()) {
-//                    if (!fogDevices.contains(device)) {
-//                        fogDevices.add(device);
-//                        ((MyFogDevice) device).setFonID(f.getId());
-//                        changed = true;
-//                    }
-//                }
                 connected.remove(rootD);
-
             }
         }
-        int parentId = f.getParentId();
-        if (parentId != -1) {
-            MyFogDevice fogDevice = (MyFogDevice) getFogDeviceById(parentId);
-            if (fogDevice.getDeviceType().equals(MyFogDevice.CLOUD))
-                fogDevices.add(fogDevice);
+        
+        // Cloud doesn't need its parent in the list
+        if (!isCloud) {
+            int parentId = f.getParentId();
+            if (parentId != -1) {
+                MyFogDevice fogDevice = (MyFogDevice) getFogDeviceById(parentId);
+                if (fogDevice.getDeviceType().equals(MyFogDevice.CLOUD))
+                    fogDevices.add(fogDevice);
+            }
         }
-
         return fogDevices;
     }
 

@@ -3,6 +3,7 @@ package org.fog.entities;
 import org.apache.commons.math3.util.Pair;
 import org.cloudbus.cloudsim.UtilizationModelFull;
 import org.fog.application.Application;
+import org.fog.placement.MyHeuristic;
 import org.fog.utils.ModuleLaunchConfig;
 
 import java.util.List;
@@ -23,19 +24,23 @@ public class ManagementTuple extends Tuple {
 
     public int managementTupleType;
     protected PlacementRequest placementRequest;
-    protected Pair<String, Integer> serviceDiscoveryInfor;
+    protected MyHeuristic.PRContextAwareEntry serviceDiscoveryInfo;
     protected Map<Application, List<ModuleLaunchConfig>> deployementSet;
     protected Pair<Integer, Map<String, Double>> resourceData;
 
-    public Integer getBatchNumber() {
-        return batchNumber;
+    // TODO Note (sensorID, prIndex) fields serve different purposes in managementTuples and Tuples.
+    //  Tuples use them to PASS information to other FogDevices for service discovery.
+    //  In ManagementTuples they are the PAYLOADS to update service discovery entries with.
+
+    public Integer getCycleNumber() {
+        return cycleNumber;
     }
 
-    public void setBatchNumber(Integer batchNumber) {
-        this.batchNumber = batchNumber;
+    public void setCycleNumber(Integer cycleNumber) {
+        this.cycleNumber = cycleNumber;
     }
 
-    protected Integer batchNumber;
+    protected Integer cycleNumber;
 
     //todo check use of this
     public Double processingDelay = 0.0;
@@ -59,12 +64,12 @@ public class ManagementTuple extends Tuple {
         return placementRequest;
     }
 
-    public void setServiceDiscoveryInfor(Pair<String, Integer> serviceDiscoveryInfor) {
-        this.serviceDiscoveryInfor = serviceDiscoveryInfor;
+    public void setServiceDiscoveryInfo(MyHeuristic.PRContextAwareEntry serviceDiscoveryInfo) {
+        this.serviceDiscoveryInfo = serviceDiscoveryInfo;
     }
 
-    public Pair<String, Integer> getServiceDiscoveryInfor() {
-        return serviceDiscoveryInfor;
+    public MyHeuristic.PRContextAwareEntry getServiceDiscoveryInfo() {
+        return serviceDiscoveryInfo;
     }
 
     public void setDeployementSet(Map<Application, List<ModuleLaunchConfig>> deployementSet) {

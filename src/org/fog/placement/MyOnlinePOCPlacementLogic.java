@@ -4,10 +4,7 @@ import org.apache.commons.math3.util.Pair;
 import org.fog.application.AppEdge;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
-import org.fog.entities.ControllerComponent;
-import org.fog.entities.FogDevice;
-import org.fog.entities.PlacementRequest;
-import org.fog.entities.Tuple;
+import org.fog.entities.*;
 import org.fog.utils.Logger;
 import org.fog.utils.ModuleLaunchConfig;
 
@@ -115,29 +112,50 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
         //todo it assumed that modules are not shared among applications.
         // <deviceid, < app, list of modules to deploy > this is to remove deploying same module more than once on a certain device.
         Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice = new HashMap<>();
-        Map<Integer, List<Pair<String, Integer>>> serviceDiscoveryInfo = new HashMap<>();
+        Map<Integer, List<MyHeuristic.PRContextAwareEntry>> serviceDiscoveryInfo = new HashMap<>();
         Map<PlacementRequest, Integer> prStatus = new HashMap<>();
         if (placement != null) {
             for (int prID : placement.keySet()) {
-                //retrieve application
-                PlacementRequest placementRequest = null;
+                MyPlacementRequest placementRequest = null;
                 for (PlacementRequest pr : placementRequests) {
-                    if (pr.getSensorId() == prID)
-                        placementRequest = pr;
+                    if (pr.getSensorId() == prID) {
+                        placementRequest = (MyPlacementRequest) pr;
+                        break;
+                    }
+                }
+
+                if (placementRequest == null) {
+                    Logger.error("PlacementRequest query Error", "Could not find placement request for prID: " + prID);
+                    continue;
                 }
                 Application application = applicationInfo.get(placementRequest.getApplicationId());
+
                 for (String microserviceName : placement.get(prID).keySet()) {
                     int deviceID = placement.get(prID).get(microserviceName);
 
-                    //service discovery info propagation
-                    List<Integer> clientDevices = getClientServiceNodeIds(application, microserviceName, placementRequest.getPlacedMicroservices(), placement.get(prID));
+                    // Get client devices that need this service discovery info
+                    List<Integer> clientDevices = getClientServiceNodeIds(application,
+                            microserviceName,
+                            placementRequest.getPlacedMicroservices(),
+                            placement.get(prID));
+
                     for (int clientDevice : clientDevices) {
-                        if (serviceDiscoveryInfo.containsKey(clientDevice))
-                            serviceDiscoveryInfo.get(clientDevice).add(new Pair<>(microserviceName, deviceID));
-                        else {
-                            List<Pair<String, Integer>> s = new ArrayList<>();
-                            s.add(new Pair<>(microserviceName, deviceID));
-                            serviceDiscoveryInfo.put(clientDevice, s);
+                        // Create standard service discovery entry (Pair)
+                        Pair<String, Integer> sdEntry = new Pair<>(microserviceName, deviceID);
+
+                        // Create PR-aware entry with context
+                        MyHeuristic.PRContextAwareEntry entry = new MyHeuristic.PRContextAwareEntry(
+                                microserviceName,
+                                deviceID,
+                                placementRequest.getSensorId(),
+                                placementRequest.getPrIndex()
+                        );
+                        if (serviceDiscoveryInfo.containsKey(clientDevice)) {
+                            serviceDiscoveryInfo.get(clientDevice).add(entry);
+                        } else {
+                            List<MyHeuristic.PRContextAwareEntry> entries = new ArrayList<>();
+                            entries.add(entry);
+                            serviceDiscoveryInfo.put(clientDevice, entries);
                         }
                     }
                 }

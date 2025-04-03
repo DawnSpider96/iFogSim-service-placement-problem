@@ -150,10 +150,11 @@ public class OnlinePOC {
                 Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();
                 placedMicroservicesMap.put("clientModule", sensor.getGatewayDeviceId());
 
-                // Use MyMicroservicesController to create placement request
-                PlacementRequest p = microservicesController.createPlacementRequest(
+                // Use MyMicroservicesController to create PROTOTYPE placement request
+                //  They will not be processed, but used as template for periodic generation.
+                PlacementRequest prototypePR = microservicesController.createPlacementRequest(
                         sensor, placedMicroservicesMap);
-                placementRequests.add(p);
+                placementRequests.add(prototypePR);
             }
 
             // TODO Simon says now we need to give them time intervals to send periodically across the Simulation
