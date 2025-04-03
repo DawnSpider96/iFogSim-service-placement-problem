@@ -71,12 +71,12 @@ public class MyExperiment {
 
     public static void main(String[] args) {
         List<SimulationConfig> configs = Arrays.asList(
-//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ACO),
-//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.BEST_FIT),
-//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
-//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ILP),
-//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MAX_FIT),
-//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MULTI_OPT),
+                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ACO),
+                new SimulationConfig(100, 196, 1, PlacementLogicFactory.BEST_FIT),
+                new SimulationConfig(100, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
+                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ILP),
+                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MAX_FIT),
+                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MULTI_OPT),
                 new SimulationConfig(100, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
 
                 new SimulationConfig(200, 196, 1, PlacementLogicFactory.ACO),
@@ -188,6 +188,9 @@ public class MyExperiment {
         locator = null;
         TimeKeeper.deleteInstance();
         FogBroker.clear();
+        // Add FogUtils.clear() to reset tuple counters between simulations
+        FogUtils.clear();
+        
         try {
             Log.enable();
             Logger.ENABLED = true;
@@ -267,7 +270,7 @@ public class MyExperiment {
 
             CloudSim.startSimulation();
 //            CloudSim.stopSimulation();
-
+            // TODO Possible mega cleanup/metric collection function
             MyMonitor.getInstance().incrementSimulationRoundNumber();
             System.out.println("Simon app finished!");
         } catch (Exception e) {

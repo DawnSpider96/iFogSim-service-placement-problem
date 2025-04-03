@@ -197,10 +197,12 @@ public class MyFogDevice extends FogDevice {
 	protected void processTupleArrival(SimEvent ev) {
 
 		Tuple tuple = (Tuple) ev.getData();
-
 		Logger.debug(getName(), "Received tuple " + tuple.getCloudletId() + " with tupleType = " + tuple.getTupleType() + "\t| Source : " +
 				CloudSim.getEntityName(ev.getSource()) + " | Dest : " + CloudSim.getEntityName(ev.getDestination()));
 
+		// Simon (030425) says the cloud traffic might be worth capturing as metric
+		//  Especially since our network is flower-shaped.
+		//  However currently there is no support.
 		if (deviceType.equals(MyFogDevice.CLOUD)) {
 			updateCloudTraffic();
 		}
@@ -210,6 +212,8 @@ public class MyFogDevice extends FogDevice {
 		if (FogUtils.appIdToGeoCoverageMap.containsKey(tuple.getAppId())) {
 		}
 
+		// Case where tuple is at the end of AppLoop
+		//  AND self is the user device of the final destination actuator
 		if (tuple.getDirection() == Tuple.ACTUATOR) {
 			sendTupleToActuator(tuple);
 			return;
@@ -241,7 +245,8 @@ public class MyFogDevice extends FogDevice {
 			sendNow(getControllerId(), FogEvents.TUPLE_FINISHED, null);
 		}
 
-		// these are resultant tuples and created periodic tuples
+		// Case where sender device (self) processes resultant tuple/ periodic tuple
+		//  Previously produced by self
 		if (tuple.getDestinationDeviceId() == -1) {
 			// ACTUATOR tuples already handled above. Only UP and DOWN left
 			if (tuple.getDirection() == Tuple.UP) {
@@ -266,33 +271,49 @@ public class MyFogDevice extends FogDevice {
 			}
 		}
 
+		// Case where target device (self) receives tuple
 		if ((!getHost().getVmList().isEmpty()) && (tuple.getDestinationDeviceId() == getId())) {
-//			int vmId = -1;
-//			for (Vm vm : getHost().getVmList()) {
-//				if (((AppModule) vm).getName().equals(tuple.getDestModuleName()))
-//					vmId = vm.getId();
-//			}
 			AppModule operator = null;
-			for (Vm vm : getHost().getVmList()){
-				AppModule a = (AppModule) vm;
-				if (Objects.equals(a.getName(), tuple.getDestModuleName())){
-					TupleScheduler ts = (TupleScheduler) a.getCloudletScheduler();
-					int numberOfCloudletsExecuting = ts.runningCloudlets();
-					if (numberOfCloudletsExecuting == 0) {
-						operator = a;
-						break;
+			if (tuple.getDirection() == Tuple.UP) {
+				// Find first free VM (with same module name)
+				for (Vm vm : getHost().getVmList()) {
+					AppModule a = (AppModule) vm;
+					if (Objects.equals(a.getName(), tuple.getDestModuleName())) {
+						TupleScheduler ts = (TupleScheduler) a.getCloudletScheduler();
+						int numberOfCloudletsExecuting = ts.runningCloudlets();
+						if (numberOfCloudletsExecuting == 0) {
+							operator = a;
+							break;
+						} else if (numberOfCloudletsExecuting == 1) {
+							System.out.println("Encountered full VM.");
+						} else {
+							Logger.debug("Control Flow Error", "This vm has more than 1 Cloudlet!");
+						}
 					}
-					else if (numberOfCloudletsExecuting == 1) {
-						System.out.println("Encountered full VM.");
-					}
-					else {
-						Logger.debug("Control Flow Error", "This vm has more than 1 Cloudlet!");
+				}
+			}
+			else if (tuple.getDirection() == Tuple.DOWN) {
+				// Find target VM.
+				// Target VM's unique (per simulation) id will be in moduleCopyMap state.
+				for (Vm vm : getHost().getVmList()) {
+					AppModule a = (AppModule) vm;
+					if (tuple.getModuleCopyMap().get(tuple.getDestModuleName()) == a.getId()) {
+						// Still must check that VM is free
+						int numberOfCloudletsExecuting = ((TupleScheduler) a.getCloudletScheduler()).runningCloudlets();
+						if ( numberOfCloudletsExecuting == 0) {
+							operator = a;
+							break;
+						}
+						else {
+							Logger.error("Null Error", "Target VM is already full!");
+						}
 					}
 				}
 			}
             assert operator != null;
             int vmId = operator.getId();
-			if (CloudSim.clock() > 0) {
+
+//			if (CloudSim.clock() > 0) {
 //				getHost().getVmScheduler().deallocatePesForVm(operator);
 //				getHost().getVmScheduler().allocatePesForVm(operator, new ArrayList<Double>() {
 //					private static final long serialVersionUID = 1L;
@@ -313,7 +334,8 @@ public class MyFogDevice extends FogDevice {
 //					VmSchedulerTimeShared vmsch = (VmSchedulerTimeShared) getHost().getVmScheduler(); // For debugging
 //					Logger.error("AllocatePesForVm error", "Failure to allocate Pes. Check VmScheduler's state, see it aligns with VmList.");
 //				}
-			}
+//			}
+
 			// Simon (170125) says VmId will always have a value under OnlinePOC
 			// because operator cannot be null
 			if(tuple.getModuleCopyMap().containsKey(tuple.getDestModuleName()) &&
@@ -327,6 +349,7 @@ public class MyFogDevice extends FogDevice {
 
 			executeTuple(ev, tuple.getDestModuleName());
 		} else {
+			// Case where self is unrelated to the tuple, just forwarding
 			if (tuple.getDestinationDeviceId() != -1) {
 				int nextDeviceToSend = routingTable.get(tuple.getDestinationDeviceId());
 				if (nextDeviceToSend == parentId)

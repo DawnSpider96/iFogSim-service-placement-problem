@@ -8,6 +8,15 @@ public class FogUtils {
 	private static int ENTITY_ID = 1;
 	private static int ACTUAL_TUPLE_ID = 1;
 	
+	// Reset all static state for clean simulation runs
+	public static void clear() {
+		TUPLE_ID = 1;
+		ACTUAL_TUPLE_ID = 1;
+		// Don't reset ENTITY_ID as this could cause issues with entity identification
+		// Reset any other static state here if needed
+		appIdToGeoCoverageMap.clear();
+	}
+	
 	public static int generateTupleId(){
 		return TUPLE_ID++;
 	}

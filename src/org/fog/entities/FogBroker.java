@@ -176,6 +176,8 @@ public class FogBroker extends PowerDatacenterBroker{
 
 		// Retrieve the exact instance of the first microservice from the gateway device itself
 		// Queries and mutates activatedVMs
+		// NOTE This determines the instance of clientModule (first microservice) that the
+		//  tuple will END on.
 		AppModule firstMicroserviceModule = getAppModule(pr, firstMicroservice);
 
 		// Simon (180125) says this is a bit hacky
