@@ -273,7 +273,9 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
             }
         }
         else {
-            Logger.debug("Placement Failed", "But temporary state not affected");
+            // Simon says Simulated Annealing is an "All or nothing" placement strategy.
+            //  If one service fails to place, all cannot be placed, hence state is unchanged.
+            Logger.debug("Simulated Annealing Placement Failure", "But temporary state not affected");
         }
 //        placements.computeIfAbsent(entry.getKey(), k -> new HashMap<>());
 //        placements.get(entry.getKey()).put(service, deviceState.deviceId);

@@ -71,12 +71,12 @@ public class MyExperiment {
 
     public static void main(String[] args) {
         List<SimulationConfig> configs = Arrays.asList(
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ACO),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ILP),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ACO),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.BEST_FIT),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ILP),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MULTI_OPT),
                 new SimulationConfig(100, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
 
                 new SimulationConfig(200, 196, 1, PlacementLogicFactory.ACO),
@@ -166,7 +166,7 @@ public class MyExperiment {
                     MyMonitor.getInstance().getAllLatencies().stream()
                             .map(MetricUtils::handleSimulationLatency)
                             .collect(Collectors.toList());
-            MetricUtils.writeResourceDistributionToCSV(resourceData, latencyData, configs, "./output/resourceDistCrowdedScenario.csv");
+            MetricUtils.writeResourceDistributionToCSV(resourceData, latencyData, configs, "./output/resourceDist_Crowded_U400.csv");
             System.out.println("CSV file has been created successfully.");
         } catch (IOException e) {
             System.err.println("An error occurred while writing to the CSV file.");
@@ -403,7 +403,7 @@ public class MyExperiment {
     }
 
     private static FogDevice addImmobile(String name, int userId, Application app, int parentId) {
-        MyFogDevice mobile = createFogDevice(name, 200, 2048, 10000, 270, 0, 87.53, 82.44, MyFogDevice.GENERIC_USER);
+        MyFogDevice mobile = createFogDevice(name, 200, 200, 10000, 270, 0, 87.53, 82.44, MyFogDevice.GENERIC_USER);
         mobile.setParentId(parentId);
         //locator.setInitialLocation(name,drone.getId());
         Sensor mobileSensor = new MySensor("s-" + name, "SENSOR", userId, app.getAppId(), new DeterministicDistribution(SENSOR_TRANSMISSION_TIME)); // inter-transmission time of EEG sensor follows a deterministic distribution
@@ -413,9 +413,6 @@ public class MyExperiment {
         actuators.add(mobileDisplay);
 
         mobileSensor.setGatewayDeviceId(mobile.getId());
-        // TODO Simon says maybe change this. Very unclean. Originally the User Device should have no children
-        //  This is solely so that User Device can send EXECUTION_START_REQUEST to its sensor
-        mobile.setSensorID(mobileSensor.getId());
 
         mobileSensor.setLatency(6.0);  // latency of connection between EEG sensors and the parent Smartphone is 6 ms
 
@@ -427,185 +424,73 @@ public class MyExperiment {
     }
 
 
-    private static MyApplication createApplication(String appId, int userId, int appLoopLength) {
-        switch (appLoopLength){
-            case 1:
-                return createApplicationLength1(appId, userId);
-            case 3:
-                return createApplicationLength3(appId, userId);
-            case 5:
-                return createApplicationLength5(appId, userId);
-            default:
-                return null;
+    private static MyApplication createApplication(String appId, int userId, int numServices) {
+        MyApplication application = MyApplication.createMyApplication(appId, userId);
+
+        /*
+         * Adding modules (vertices) to the application model (directed graph)
+         */
+        application.addAppModule("clientModule", 4, 4, 50);
+        for (int i = 1; i <= numServices; i++) {
+            // Use consistent MIPS for all services (as seen in existing implementations)
+            application.addAppModule("mService" + i, 400, 400, 500);
         }
-    }
-
-    private static MyApplication createApplicationLength1(String appId, int userId) {
-
-        MyApplication application = MyApplication.createMyApplication(appId, userId);
-
-        /*
-         * Adding modules (vertices) to the application model (directed graph)
-         */
-        application.addAppModule("clientModule", 32, 32, 50);
-        application.addAppModule("mService1", 400, 400, 200);
 
         /*
          * Connecting the application modules (vertices) in the application model (directed graph) with edges
          */
-        application.addAppEdge("SENSOR", "clientModule", 100, 500, "SENSOR", Tuple.UP, AppEdge.SENSOR);
-        application.addAppEdge("clientModule", "mService1", 2000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService1", "clientModule", 2000, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
-        application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
-
-        /*
-         * Defining the input-output relationships (represented by selectivity) of the application modules.
-         */
-        application.addTupleMapping("clientModule", "SENSOR", "RAW_DATA", new FractionalSelectivity(1.0));
-        application.addTupleMapping("mService1", "RAW_DATA", "RESULT", new FractionalSelectivity(1.0));
-        application.addTupleMapping("clientModule", "RESULT", "RESULT_DISPLAY", new FractionalSelectivity(1.0));
-
-
-        final AppLoop loop1 = new AppLoop(new ArrayList<String>() {{
-            add("SENSOR");
-            add("clientModule");
-            add("mService1");
-            add("clientModule");
-            add("DISPLAY");
-        }});
-
-        List<AppLoop> loops = new ArrayList<AppLoop>() {{
-            add(loop1);
-        }};
-        application.setLoops(loops);
-
-
-//        application.createDAG();
-
-        return application;
-    }
-
-    private static MyApplication createApplicationLength3 (String appId, int userId) {
-
-        MyApplication application = MyApplication.createMyApplication(appId, userId);
-
-        /*
-         * Adding modules (vertices) to the application model (directed graph)
-         */
-        application.addAppModule("clientModule", 32, 32, 50);
-        application.addAppModule("mService1", 400, 400, 200);
-        application.addAppModule("mService2", 400, 400, 400);
-        application.addAppModule("mService3", 400, 400, 400);
-
-        /*
-         * Connecting the application modules (vertices) in the application model (directed graph) with edges
-         */
+        // Connect SENSOR to clientModule
         application.addAppEdge("SENSOR", "clientModule", 1000, 500, "SENSOR", Tuple.UP, AppEdge.SENSOR);
+        
+        // Connect clientModule to first microservice
         application.addAppEdge("clientModule", "mService1", 2000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService1", "mService2", 2000, 500, "FILTERED_DATA1", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService2", "mService3", 2000, 500, "FILTERED_DATA2", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService3", "clientModule", 2000, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
+        
+        // Connect microservices in sequence
+        for (int i = 1; i < numServices; i++) {
+            String sourceModule = "mService" + i;
+            String destModule = "mService" + (i+1);
+            String tupleType = "FILTERED_DATA" + i;
+            
+            application.addAppEdge(sourceModule, destModule, 2000, 500, tupleType, Tuple.UP, AppEdge.MODULE);
+        }
+        
+        // Connect last microservice back to clientModule
+        application.addAppEdge("mService" + numServices, "clientModule", 2000, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
+        
+        // Connect clientModule to DISPLAY
         application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
-//        application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT2_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
-
 
         /*
          * Defining the input-output relationships (represented by selectivity) of the application modules.
          */
         application.addTupleMapping("clientModule", "SENSOR", "RAW_DATA", new FractionalSelectivity(1.0));
-        application.addTupleMapping("mService1", "RAW_DATA", "FILTERED_DATA1", new FractionalSelectivity(1.0));
-        application.addTupleMapping("mService2", "FILTERED_DATA1", "FILTERED_DATA2", new FractionalSelectivity(1.0));
-        application.addTupleMapping("mService3", "FILTERED_DATA2", "RESULT", new FractionalSelectivity(1.0));
+        for (int i = 1; i < numServices; i++) {
+            String sourceModule = "mService" + i;
+            String inputTupleType = (i == 1) ? "RAW_DATA" : "FILTERED_DATA" + (i-1);
+            String outputTupleType = "FILTERED_DATA" + i;
+            
+            application.addTupleMapping(sourceModule, inputTupleType, outputTupleType, new FractionalSelectivity(1.0));
+        }
+        String lastInputTupleType = (numServices == 1) ? "RAW_DATA" : "FILTERED_DATA" + (numServices-1);
+        application.addTupleMapping("mService" + numServices, lastInputTupleType, "RESULT", new FractionalSelectivity(1.0));
         application.addTupleMapping("clientModule", "RESULT", "RESULT_DISPLAY", new FractionalSelectivity(1.0));
 
-//        application.setSpecialPlacementInfo("mService3", "cloud");
-//        if (CLOUD) {
-//            application.setSpecialPlacementInfo("mService1", "cloud");
-//            application.setSpecialPlacementInfo("mService2", "cloud");
-//        }
-
-        final AppLoop loop3 = new AppLoop(new ArrayList<String>() {{
+        final AppLoop loop = new AppLoop(new ArrayList<String>() {{
             add("SENSOR");
             add("clientModule");
-            add("mService1");
-            add("mService2");
-            add("mService3");
+            
+            for (int i = 1; i <= numServices; i++) {
+                add("mService" + i);
+            }
+            
             add("clientModule");
             add("DISPLAY");
         }});
 
         List<AppLoop> loops = new ArrayList<AppLoop>() {{
-            add(loop3);
+            add(loop);
         }};
         application.setLoops(loops);
-
-
-        // TODO Simon says maybe we look into this?
-//        application.createDAG();
-
-        return application;
-    }
-
-    private static MyApplication createApplicationLength5 (String appId, int userId) {
-
-        MyApplication application = MyApplication.createMyApplication(appId, userId);
-
-        /*
-         * Adding modules (vertices) to the application model (directed graph)
-         */
-        application.addAppModule("clientModule", 32, 32, 50);
-        application.addAppModule("mService1", 400, 400, 500);
-        application.addAppModule("mService2", 400, 400, 500);
-        application.addAppModule("mService3", 400, 400, 500);
-        application.addAppModule("mService4", 400, 400, 500);
-        application.addAppModule("mService5", 400, 400, 500);
-
-        /*
-         * Connecting the application modules (vertices) in the application model (directed graph) with edges
-         */
-
-        application.addAppEdge("SENSOR", "clientModule", 2000, 500, "SENSOR", Tuple.UP, AppEdge.SENSOR);
-        application.addAppEdge("clientModule", "mService1", 2000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService1", "mService2", 2000, 500, "FILTERED_DATA1", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService2", "mService3", 2000, 500, "FILTERED_DATA2", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService3", "mService4", 2000, 500, "FILTERED_DATA3", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService4", "mService5", 2000, 500, "FILTERED_DATA4", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService5", "clientModule", 28, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
-        application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
-//        application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT2_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
-
-
-        /*
-         * Defining the input-output relationships (represented by selectivity) of the application modules.
-         */
-        application.addTupleMapping("clientModule", "SENSOR", "RAW_DATA", new FractionalSelectivity(1.0));
-        application.addTupleMapping("mService1", "RAW_DATA", "FILTERED_DATA1", new FractionalSelectivity(1.0));
-        application.addTupleMapping("mService2", "FILTERED_DATA1", "FILTERED_DATA2", new FractionalSelectivity(1.0));
-        application.addTupleMapping("mService3", "FILTERED_DATA2", "FILTERED_DATA3", new FractionalSelectivity(1.0));
-        application.addTupleMapping("mService4", "FILTERED_DATA3", "FILTERED_DATA4", new FractionalSelectivity(1.0));
-        application.addTupleMapping("mService5", "FILTERED_DATA4", "RESULT", new FractionalSelectivity(1.0));
-        application.addTupleMapping("clientModule", "RESULT", "RESULT_DISPLAY", new FractionalSelectivity(1.0));
-
-
-        final AppLoop loop5 = new AppLoop(new ArrayList<String>() {{
-            add("SENSOR");
-            add("clientModule");
-            add("mService1");
-            add("mService2");
-            add("mService3");
-            add("mService4");
-            add("mService5");
-            add("clientModule");
-            add("DISPLAY");
-        }});
-
-        List<AppLoop> loops = new ArrayList<AppLoop>() {{
-            add(loop5);
-        }};
-        application.setLoops(loops);
-
-        // TODO Simon says maybe we look into this?
-//        application.createDAG();
 
         return application;
     }

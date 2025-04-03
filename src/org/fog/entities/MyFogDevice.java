@@ -44,7 +44,6 @@ public class MyFogDevice extends FogDevice {
 	 */
 	protected int fonID = -1;
 	private int microservicesControllerId = -1;
-	protected int sensorID = -1;
 
 	/**
 	 * used to forward tuples towards the destination device
@@ -1026,18 +1025,6 @@ public class MyFogDevice extends FogDevice {
 	private void startExecution(SimEvent ev) {
 		// Simon says (140125) we will be shelving this functionality for now
 		Logger.error("Unintended event error", "Mobile users should not be notified to executing!");
-		// Simon says this should only be executed by users
-//		if (!(deviceType.equals(AMBULANCE_USER) || deviceType.equals(OPERA_USER) || deviceType.equals(GENERIC_USER))) {
-//			Logger.error("Device Type Error", "This device should be a user.");
-//		}
-//		if (ev.getSource() != parentId) {
-//			Logger.error("Parent Error", "This request should have been sent from parent.");
-//		}
-//		if (getSensorID() == -1) {
-//			Logger.error("Child Error", "This user should have a sensor.");
-//		}
-//		int childSensorId = getSensorID();
-//		sendNow(childSensorId, FogEvents.EMIT_TUPLE);
 	}
 
 	/**
@@ -1133,14 +1120,6 @@ public class MyFogDevice extends FogDevice {
 
 	public void addMonitoredDevice(FogDevice fogDevice) {
 		controllerComponent.addMonitoredDevice(fogDevice);
-	}
-
-	public int getSensorID() {
-		return sensorID;
-	}
-
-	public void setSensorID(int sensorID) {
-		this.sensorID = sensorID;
 	}
 
 	public int getMicroservicesControllerId() {

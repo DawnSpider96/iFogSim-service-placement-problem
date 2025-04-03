@@ -306,9 +306,6 @@ public class OnlinePOC {
         actuators.add(mobileDisplay);
 
         mobileSensor.setGatewayDeviceId(mobile.getId());
-        // TODO Simon says maybe change this. Very unclean. Originally the User Device should have no children
-        //  This is solely so that User Device can send EXECUTION_START_REQUEST to its sensor
-        mobile.setSensorID(mobileSensor.getId());
 
         mobileSensor.setLatency(6.0);  // latency of connection between EEG sensors and the parent Smartphone is 6 ms
 
