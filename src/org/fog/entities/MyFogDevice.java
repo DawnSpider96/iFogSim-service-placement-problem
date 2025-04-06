@@ -202,7 +202,7 @@ public class MyFogDevice extends FogDevice {
 
 		// Simon (030425) says the cloud traffic might be worth capturing as metric
 		//  Especially since our network is flower-shaped.
-		//  However currently there is no support.
+		//  However, currently there is no support.
 		if (deviceType.equals(MyFogDevice.CLOUD)) {
 			updateCloudTraffic();
 		}
@@ -349,7 +349,7 @@ public class MyFogDevice extends FogDevice {
 
 			executeTuple(ev, tuple.getDestModuleName());
 		} else {
-			// Case where self is unrelated to the tuple, just forwarding
+			// Case where self is unrelated to the tuple, just forwarding. Also, followup to above case where destination was just determined.
 			if (tuple.getDestinationDeviceId() != -1) {
 				int nextDeviceToSend = routingTable.get(tuple.getDestinationDeviceId());
 				if (nextDeviceToSend == parentId)
@@ -606,9 +606,9 @@ public class MyFogDevice extends FogDevice {
 		int fogDeviceCount = 0; // todo Simon says I still don't know what this variable does. Currently unused (050125).
 		StringBuilder placementString = new StringBuilder();
 
-		// Simon says (140125) we send perDevice and all updated PRs to FogBroker
-		// before sending deployment requests to devices specified in perDevice
-		// PRs from targets.keySet()
+		// Send perDevice and all updated PRs to FogBroker
+		// MUST be before sending deployment requests to devices specified in perDevice
+		// 	PRs are retrived from targets.keySet()
 		JSONObject forFogBroker = new JSONObject();
 		forFogBroker.put("targets", targets);
 		forFogBroker.put("perDevice", perDevice);
@@ -616,61 +616,43 @@ public class MyFogDevice extends FogDevice {
 
 		sendNow(CloudSim.getFogBrokerId(), FogEvents.RECEIVE_PLACEMENT_DECISION, forFogBroker);
 
+		// Propagate service discovery entries to relevant FogDevices
 		for (int clientDevice : serviceDiscovery.keySet()) {
-			if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
+			if (Objects.equals(MicroservicePlacementConfig.SIMULATION_MODE, "DYNAMIC")) {
 				for (MyHeuristic.PRContextAwareEntry entry : serviceDiscovery.get(clientDevice)) {
 					transmitServiceDiscoveryData(clientDevice, entry);
 				}
 			}
-			else if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC") {
+			else if (Objects.equals(MicroservicePlacementConfig.SIMULATION_MODE, "STATIC")) {
 				Logger.error("Simulation static mode error", "Simulation should not be static.");
 			}
 		}
 
-//		for (int clientDevice : serviceDiscovery.keySet()) {
-//			for (Pair serviceData : serviceDiscovery.get(clientDevice)) {
-//				if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
-//					// You need to get sensorId and prIndex here
-//					PlacementRequest pr = findPlacementRequestForServiceData(serviceData, targets);
-//					if (pr != null && pr instanceof MyPlacementRequest) {
-//						MyPlacementRequest myPr = (MyPlacementRequest)pr;
-//						transmitServiceDiscoveryData(clientDevice, serviceData, myPr.getSensorId(), myPr.getPrIndex());
-//					} else {
-//						// Handle error or log if PR not found
-//						Logger.error("Service Discovery Error", "Could not find placement request for service data");
-//					}
-//				}
-//				else if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC") {
-//					Logger.error("Simulation static mode error", "Simulation should not be static.");
-//				}
-//			}
-//		}
-
+		// Inform edge servers to install modules
 		for (int deviceID : perDevice.keySet()) {
 			MyFogDevice f = (MyFogDevice) CloudSim.getEntity(deviceID);
 			if (!f.getDeviceType().equals(MyFogDevice.CLOUD))
 				fogDeviceCount++;
 			placementString.append(CloudSim.getEntity(deviceID).getName() + " : ");
-			for (Application app : perDevice.get(deviceID).keySet()) {
-				if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC") {
-					Logger.error("Simulation static mode error", "Simulation should not be static.");
-				}
-			}
-			if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
+			if (Objects.equals(MicroservicePlacementConfig.SIMULATION_MODE, "DYNAMIC")) {
 				transmitModulesToDeploy(deviceID, perDevice.get(deviceID), FogBroker.getCycleNumber());
+			}
+			else {
+				Logger.error("Simulation static mode error", "Simulation mode should be dynamic.");
 			}
 			placementString.append("\n");
 		}
-		FogBroker.setCycleNumber(FogBroker.getCycleNumber() + 1);
 
+		FogBroker.setCycleNumber(FogBroker.getCycleNumber() + 1);
 		System.out.println(placementString.toString());
 
+		// Resend failed Placement Requests
 		for (PlacementRequest pr : placementRequestStatus.keySet()) {
 			if (placementRequestStatus.get(pr) != -1) {
-				if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC")
+				if (Objects.equals(MicroservicePlacementConfig.SIMULATION_MODE, "DYNAMIC"))
 					transmitPR(pr, placementRequestStatus.get(pr));
 
-				else if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC")
+				else if (Objects.equals(MicroservicePlacementConfig.SIMULATION_MODE, "STATIC"))
 //					sendNow(placementRequestStatus.get(pr), FogEvents.RECEIVE_PR, pr);
 					Logger.error("Simulation static mode error", "Simulation should not be static.");
 
@@ -945,6 +927,13 @@ public class MyFogDevice extends FogDevice {
 	}
 
 	private void transmitServiceDiscoveryData(int clientDevice, MyHeuristic.PRContextAwareEntry entry) {
+		System.out.printf("Sending service discovery entry to %d (%s), microservice %s, sensorId %d, prIndex %d%n",
+				clientDevice,
+				CloudSim.getEntityName(clientDevice),
+				entry.getMicroserviceName(),
+				entry.getSensorId(),
+				entry.getPrIndex());
+
 		ManagementTuple sdTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.SERVICE_DISCOVERY_INFO);
 		sdTuple.setSourceDeviceId(getId());
 		sdTuple.setServiceDiscoveryInfo(entry);

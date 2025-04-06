@@ -18,6 +18,12 @@ public class NetworkConstants {
 	public static int currentCloudletId = 0;
 	public static int currentAppId = 0;
 
+	// Add a method to reset the ID counters between simulations
+	public static void clear() {
+		currentCloudletId = 0;
+		currentAppId = 0;
+	}
+
 	// stage type
 	public static final int EXECUTION = 0; 
 	public static final int WAIT_SEND = 1;

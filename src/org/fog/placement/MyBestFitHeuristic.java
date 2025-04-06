@@ -5,6 +5,7 @@ import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.entities.FogBroker;
 import org.fog.entities.FogDevice;
+import org.fog.entities.MyPlacementRequest;
 import org.fog.entities.PlacementRequest;
 import org.fog.utils.Logger;
 import org.fog.utils.ModuleLaunchConfig;
@@ -45,7 +46,19 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
         int f = placementCompleteCount;
         for (PlacementRequest placementRequest : placementRequests) {
             Application app = applicationInfo.get(placementRequest.getApplicationId());
-            Set<String> alreadyPlaced = mappedMicroservices.get(placementRequest.getSensorId()).keySet();
+            
+            // Create a key for this placement request
+            PlacementRequestKey prKey = new PlacementRequestKey(
+                placementRequest.getSensorId(), 
+                ((MyPlacementRequest)placementRequest).getPrIndex()
+            );
+            
+            // Skip if this placement request doesn't have an entry in mappedMicroservices yet
+            if (!mappedMicroservices.containsKey(prKey)) {
+                continue;
+            }
+            
+            Set<String> alreadyPlaced = mappedMicroservices.get(prKey).keySet();
             List<String> completeModuleList = getAllModulesToPlace(new HashSet<>(alreadyPlaced), app);
 
             if (completeModuleList.isEmpty()) {
@@ -102,6 +115,10 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
             AppModule service = getModule(s, app);
             Collections.sort(DeviceStates);
 
+            if (!DeviceStates.get(0).canFit(service.getMips(), service.getRam(), service.getSize())) {
+                Logger.error("Simulation limitation problem", "FogDevices have no resources! Check DeviceStates.");
+            }
+
             for (int i = 0; i < DeviceStates.size(); i++) {
                 // Try to place
                 if (DeviceStates.get(i).canFit(service.getMips(), service.getRam(), service.getSize())) {
@@ -119,9 +136,13 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
             }
 
             if (placed[j] < 0) {
+                MyPlacementRequest mpr = (MyPlacementRequest) placementRequest;
                 // todo Simon says what do we do when failure?
                 //  (160125) Nothing. Because (aggregated) failure will be determined outside the for loop
-                System.out.println("Failed to place module " + s + "on PR " + placementRequest.getSensorId());
+                System.out.printf("Failed to place module %s on PR %d, cycle %d%n",
+                        s,
+                        mpr.getSensorId(),
+                        mpr.getPrIndex());
                 System.out.println("Failed placement " + placementRequest.getSensorId());
 
                 // Undo every "placement" recorded in placed. Only deviceStates was changed, so we change it back
@@ -151,20 +172,35 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
         }
 
         if (allPlaced) {
+            // Create a key for this placement request
+            PlacementRequestKey prKey = new PlacementRequestKey(
+                placementRequest.getSensorId(), 
+                ((MyPlacementRequest)placementRequest).getPrIndex()
+            );
+            
+            // Ensure the key exists in mappedMicroservices
+            if (!mappedMicroservices.containsKey(prKey)) {
+                mappedMicroservices.put(prKey, new LinkedHashMap<>());
+            }
+            
             for (int i = 0 ; i < microservices.size(); i++) {
                 String s = microservices.get(i);
                 AppModule service = getModule(s, app);
                 int deviceId = placed[i];
 
-                Logger.debug("ModulePlacementEdgeward", "Placement of operator " + s + " on device " + CloudSim.getEntityName(deviceId) + " successful.");
-                System.out.println("Placement of operator " + s + " on device " + CloudSim.getEntityName(deviceId) + " successful.");
+                System.out.printf("Placement of operator %s on device %s successful. Device id: %d, sensorId: %d, prIndex: %d%n",
+                        s,
+                        CloudSim.getEntityName(deviceId),
+                        deviceId,
+                        placementRequest.getSensorId(),
+                        ((MyPlacementRequest) placementRequest).getPrIndex());
 
                 moduleToApp.put(s, app.getAppId());
 
                 if (!currentModuleMap.get(deviceId).contains(s))
                     currentModuleMap.get(deviceId).add(s);
 
-                mappedMicroservices.get(placementRequest.getSensorId()).put(s, deviceId);
+                mappedMicroservices.get(prKey).put(s, deviceId);
 
                 //currentModuleLoad
                 if (!currentModuleLoadMap.get(deviceId).containsKey(s))
@@ -180,50 +216,11 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
             }
         }
         else {
-            Logger.error("BestFit Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
+            Logger.error("BestFit Control Flow Problem", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
         }
 
         if (allPlaced) return -1;
         else return getFonID();
-    }
-
-
-    /**
-     * Queries FogBroker to obtain the name(s) of second Microservice(s) in the AppLoop
-     * Iterates through all Placement Requests, using them to extract target for the second Microservice(s)
-     * State that can be used:
-     *   - List<PlacementRequest> placementRequests:    This has the completed placement target IDs.
-     *   - Map<PlacementRequest, Integer> closestNodes
-     *  - Map<Integer, Application> applicationInfo
-     * @param perDevice     Actually not very needed. Contains details of exactly how many module instance requests
-     *                      were sent to each device. Includes the module instances themselves.
-     * @return Map of each PR to the deviceId that the FogBroker will inform to begin execution
-     * */
-    @Override
-    protected Map<PlacementRequest, Integer> determineTargets(Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice) {
-        Map<PlacementRequest, Integer> targets = new HashMap<>();
-        for (PlacementRequest pr : placementRequests) {
-            Application app = applicationInfo.get(pr.getApplicationId());
-            // Simon says we want one target per second microservice in the PR's application
-            // If there are no second microservices, targeted is true
-            boolean targeted = true;
-            for (String secondMicroservice : FogBroker.getApplicationToSecondMicroservicesMap().get(app)) {
-                for (Map.Entry<String, Integer> entry : pr.getPlacedMicroservices().entrySet()) {
-                    if (Objects.equals(entry.getKey(), secondMicroservice)) {
-                        targets.put(pr, entry.getValue());
-                        targeted = true;
-                        break;
-                    }
-                    targeted = false;
-                }
-            }
-
-            if (!targeted) {
-                Logger.error("BestFit Deployment Error", "Cannot find target device for " + pr.getSensorId() + ". Check the placement of its first microservice.");
-            }
-        }
-        return targets;
-
     }
 }
 

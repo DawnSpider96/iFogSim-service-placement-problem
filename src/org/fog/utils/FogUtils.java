@@ -12,7 +12,10 @@ public class FogUtils {
 	public static void clear() {
 		TUPLE_ID = 1;
 		ACTUAL_TUPLE_ID = 1;
-		// Don't reset ENTITY_ID as this could cause issues with entity identification
+		// Reset ENTITY_ID to ensure VMs and other entities start from ID 1 in each simulation
+		ENTITY_ID = 1;
+		// Reset USER_ID as well
+		USER_ID = 1;
 		// Reset any other static state here if needed
 		appIdToGeoCoverageMap.clear();
 	}

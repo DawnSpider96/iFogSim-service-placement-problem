@@ -207,7 +207,7 @@ public class MetricUtils {
                 || averagedLatencyData.size() != simConfigs.size()
                 || stdDevLatencyData.size() != simConfigs.size()) {
             throw new IllegalArgumentException(String.format(
-                    "averagedResourceData and averagedLatencyData size mismatch: both must have one element per simulation. %d %d %d",
+                    "averagedResourceData and averagedLatencyData size mismatch: both must have one element per simulation. %d %d %d %d %d",
                     averagedResourceData.size(),
                     stdDevResourceData.size(),
                     averagedLatencyData.size(),

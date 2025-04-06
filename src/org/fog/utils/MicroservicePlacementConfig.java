@@ -12,8 +12,8 @@ public class MicroservicePlacementConfig {
     public static String PR_PROCESSING_MODE = PERIODIC;
 
     // For periodic placement
-    public static final double PLACEMENT_PROCESS_INTERVAL = 1;
-    public static final double PLACEMENT_GENERATE_INTERVAL = 7;
+    public static final double PLACEMENT_PROCESS_INTERVAL = 8;
+    public static final double PLACEMENT_GENERATE_INTERVAL = 10;
 //    public static final double PLACEMENT_PROCESS_INTERVAL = 10;
 //    public static final double PLACEMENT_GENERATE_INTERVAL = 70;
 

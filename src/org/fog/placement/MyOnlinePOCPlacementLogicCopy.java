@@ -2,6 +2,7 @@ package org.fog.placement;
 
 import org.fog.application.Application;
 import org.fog.entities.FogDevice;
+import org.fog.entities.MyPlacementRequest;
 import org.fog.entities.PlacementRequest;
 import org.fog.utils.Logger;
 import org.fog.utils.ModuleLaunchConfig;
@@ -46,11 +47,23 @@ public class MyOnlinePOCPlacementLogicCopy extends MyHeuristic implements Micros
         int f = placementCompleteCount;
         for (PlacementRequest placementRequest : placementRequests) {
             Application app = applicationInfo.get(placementRequest.getApplicationId());
+            
+            // Create a key for this placement request
+            PlacementRequestKey prKey = new PlacementRequestKey(
+                placementRequest.getSensorId(), 
+                ((MyPlacementRequest)placementRequest).getPrIndex()
+            );
+            
+            // Skip if this placement request doesn't have an entry in mappedMicroservices yet
+            if (!mappedMicroservices.containsKey(prKey)) {
+                continue;
+            }
+            
             // modulesToPlace returns all the modules from the APP which 1. Have not been placed 2. All their dependent modules (from UP or DOWN) within their PR have been placed
             // NOTE: Every PR (primary key placementRequestId) has its own set of placed modules (stored in mappedMicroservices).
             // Meaning each module in all PRs has a separate set of dependent modules, which are from the same PR
             // As argument we pass the list of set modules FOR THAT PR that have been placed. But in the function we are iterating through ALL modules in the app
-            List<String> modulesToPlace = getNextLayerOfModulesToPlace(mappedMicroservices.get(placementRequest.getSensorId()).keySet(), app);
+            List<String> modulesToPlace = getNextLayerOfModulesToPlace(mappedMicroservices.get(prKey).keySet(), app);
             if (modulesToPlace.isEmpty())
                 f++;
             else
@@ -86,7 +99,11 @@ public class MyOnlinePOCPlacementLogicCopy extends MyHeuristic implements Micros
 
                     if (toPlace.containsKey(placementRequest)) {
                         for (String microservice : toPlace.get(placementRequest)) {
-                            tryPlacingMicroserviceNoAggregate(microservice, device, app, placed::add, placementRequest.getSensorId());
+                            PlacementRequestKey prKey = new PlacementRequestKey(
+                                    placementRequest.getSensorId(),
+                                    ((MyPlacementRequest)placementRequest).getPrIndex()
+                            );
+                            tryPlacingMicroserviceNoAggregate(microservice, device, app, placed::add, prKey);
                         }
                         for (String m : placed) {
                             toPlace.get(placementRequest).remove(m);
@@ -108,28 +125,5 @@ public class MyOnlinePOCPlacementLogicCopy extends MyHeuristic implements Micros
             prStatus.put(placementRequest, -1);
         }
         return prStatus;
-    }
-
-
-    @Override
-    protected Map<PlacementRequest, Integer> determineTargets(Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice) {
-        // Simon says that ALL the parent edge servers of the users that made PRs must receive deployments. Otherwise, error.
-        Map<PlacementRequest, Integer> targets = new HashMap<>();
-        for (PlacementRequest pr : placementRequests) {
-            int parentOfGateway = closestNodes.get(pr);
-            boolean targeted = false;
-            for (int target : perDevice.keySet()) {
-                if (parentOfGateway == target) {
-                    targeted = true;
-                    targets.put(pr, parentOfGateway);
-                    break;
-                }
-            }
-            if (!targeted) {
-                Logger.error("Deployment Error", "Deployment Request is not being sent to "
-                        + parentOfGateway + ", the parent of gateway device " + Objects.requireNonNull(getDevice(pr.getRequester())).getName());
-            }
-        }
-        return targets;
     }
 }

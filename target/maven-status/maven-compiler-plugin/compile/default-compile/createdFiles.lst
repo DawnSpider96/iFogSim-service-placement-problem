@@ -38,7 +38,6 @@ org/cloudbus/cloudsim/sdn/graph/example/GraphicSDN$13.class
 org/fog/gui/dialog/AddLink$3.class
 org/fog/placement/ModulePlacement.class
 org/fog/application/selectivity/BurstySelectivity.class
-org/fog/entities/MyFogDevice$1.class
 org/fog/gui/dialog/AddAppEdge$1.class
 org/cloudbus/cloudsim/sdn/Node.class
 org/fog/entities/PlacementRequest.class
@@ -269,6 +268,7 @@ org/cloudbus/cloudsim/power/PowerDatacenterNonPowerAware.class
 org/fog/placement/ModulePlacementEdgewards.class
 org/cloudbus/cloudsim/sdn/graph/dialog/About.class
 org/fog/placement/MyOnlinePOCPlacementLogicCopy.class
+org/fog/entities/PRAwareServiceDiscovery.class
 org/cloudbus/cloudsim/sdn/graph/dialog/SDNRun$1.class
 org/cloudbus/cloudsim/sdn/graph/example/GraphicSDN$8.class
 org/cloudbus/cloudsim/VmSchedulerTimeSharedOverSubscription.class
@@ -375,6 +375,7 @@ org/cloudbus/cloudsim/lists/HostList.class
 org/fog/gui/dialog/AddLink.class
 org/fog/gui/example/FogGui$3.class
 org/cloudbus/cloudsim/sdn/graph/core/GraphView.class
+org/fog/placement/MyHeuristic$PlacementRequestKey.class
 org/fog/scheduler/TupleScheduler.class
 org/fog/application/selectivity/FractionalSelectivity.class
 org/cloudbus/cloudsim/sdn/graph/example/GraphicSDNExample.class
@@ -433,7 +434,6 @@ org/cloudbus/cloudsim/sdn/overbooking/BwProvisionerOverbooking.class
 org/fog/gui/dialog/AddPhysicalNode.class
 org/fog/gui/dialog/AddVirtualEdge$3.class
 org/fog/gui/core/SwitchNode.class
-org/fog/test/perfeval/MyExperiment$6.class
 org/fog/gui/dialog/AddAppEdge$3.class
 org/fog/test/perfeval/MicroserviceAppSample2$2.class
 org/fog/gui/dialog/AddSensor.class
@@ -471,6 +471,7 @@ org/cloudbus/cloudsim/Host.class
 org/fog/utils/ShortestPathRoutingGenerator.class
 org/cloudbus/cloudsim/core/CloudSim.class
 org/fog/test/perfeval/TranslationServiceFog$2.class
+org/fog/placement/MyHeuristic$PRContextAwareEntry.class
 org/fog/gui/dialog/AddVirtualEdge$2.class
 org/cloudbus/cloudsim/sdn/graph/dialog/AddPhysicalEdge$2.class
 org/cloudbus/cloudsim/core/predicates/PredicateNotType.class
@@ -485,7 +486,6 @@ org/cloudbus/cloudsim/Log.class
 org/cloudbus/cloudsim/sdn/graph/example/GraphicSDN$9.class
 org/cloudbus/cloudsim/power/PowerVmAllocationPolicyMigrationInterQuartileRange.class
 org/cloudbus/cloudsim/VmAllocationPolicy.class
-org/fog/test/perfeval/MyExperiment$5.class
 org/fog/test/perfeval/TranslationServiceFog_RandomMobility_Clustering.class
 org/fog/utils/ResourceUsageDetails.class
 org/cloudbus/cloudsim/CloudletSchedulerSpaceShared.class
@@ -504,7 +504,6 @@ org/cloudbus/cloudsim/HostStateHistoryEntry.class
 org/cloudbus/cloudsim/VmStateHistoryEntry.class
 org/fog/placement/MyPlacementLogicOutput.class
 org/cloudbus/cloudsim/ParameterException.class
-org/fog/test/perfeval/MyExperiment$3.class
 org/fog/utils/FogLinearPowerModel.class
 org/cloudbus/cloudsim/Vm.class
 org/cloudbus/cloudsim/power/PowerHostUtilizationHistory.class
@@ -517,7 +516,6 @@ org/cloudbus/cloudsim/power/models/PowerModelSpecPowerIbmX3550XeonX5670.class
 org/cloudbus/cloudsim/network/datacenter/HostPacket.class
 org/cloudbus/cloudsim/sdn/graph/dialog/AddPhysicalEdge$3.class
 org/cloudbus/cloudsim/provisioners/PeProvisioner.class
-org/fog/test/perfeval/MyExperiment$4.class
 org/cloudbus/cloudsim/sdn/graph/core/VmNode.class
 org/cloudbus/cloudsim/sdn/example/topogenerators/PhysicalTopologyGenerator$NodeSpec.class
 org/fog/application/AppEdge.class
@@ -530,3 +528,4 @@ org/cloudbus/cloudsim/lists/CloudletList.class
 org/cloudbus/cloudsim/sdn/example/SDNExample$VmAllocationPolicyFactory.class
 org/fog/test/perfeval/MicroserviceAppSample2.class
 org/cloudbus/cloudsim/sdn/graph/example/GraphicSDN$17.class
+org/fog/entities/MyPlacementRequest.class

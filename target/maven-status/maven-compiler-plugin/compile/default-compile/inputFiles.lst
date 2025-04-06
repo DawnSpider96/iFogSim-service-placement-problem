@@ -315,6 +315,7 @@
 /home/dawn/repos/iFogSim-placement/src/org/fog/mobilitydata/OfflineDataParser.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/power/PowerVmSelectionPolicyMinimumUtilization.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/placement/PlacementLogicFactory.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/entities/MyPlacementRequest.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/mobilitydata/RandomMobilityGenerator.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/entities/PhysicalTopology.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/provisioners/BwProvisionerSimple.java
