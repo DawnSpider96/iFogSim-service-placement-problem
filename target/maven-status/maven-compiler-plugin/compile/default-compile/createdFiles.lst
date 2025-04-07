@@ -416,6 +416,7 @@ org/cloudbus/cloudsim/UtilizationModel.class
 org/fog/gui/dialog/About.class
 org/fog/gui/core/ActuatorModule.class
 org/fog/gui/example/FogGui$11.class
+org/fog/test/btrplaceLoggerTest.class
 org/cloudbus/cloudsim/sdn/example/SDNExample.class
 org/cloudbus/cloudsim/sdn/graph/example/GraphicSDN$15.class
 org/cloudbus/cloudsim/power/models/PowerModelSpecPowerIbmX3550XeonX5675.class

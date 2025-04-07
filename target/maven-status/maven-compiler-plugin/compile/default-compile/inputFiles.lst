@@ -204,6 +204,7 @@
 /home/dawn/repos/iFogSim-placement/src/org/fog/placement/ModulePlacementMobileEdgewards.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/Datacenter.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/application/selectivity/SelectivityModel.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/test/btrplaceLoggerTest.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/power/PowerVmAllocationPolicyMigrationStaticThreshold.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/placement/ClusteringController.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/utils/distribution/UniformDistribution.java

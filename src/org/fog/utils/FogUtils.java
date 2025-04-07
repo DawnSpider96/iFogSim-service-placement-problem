@@ -42,4 +42,17 @@ public class FogUtils {
 	public static int MAX = 10000000;
 	
 	public static Map<String, GeoCoverage> appIdToGeoCoverageMap = new HashMap<String, GeoCoverage>();
+	
+	// Add debugging methods to check current counter values
+	public static int getCurrentEntityId() {
+		return ENTITY_ID;
+	}
+	
+	public static int getCurrentTupleId() {
+		return TUPLE_ID;
+	}
+	
+	public static int getCurrentActualTupleId() {
+		return ACTUAL_TUPLE_ID;
+	}
 }

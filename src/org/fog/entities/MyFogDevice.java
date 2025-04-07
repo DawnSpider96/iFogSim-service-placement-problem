@@ -752,6 +752,7 @@ public class MyFogDevice extends FogDevice {
 						.getAllocatedMipsForVm(module));
 
 				System.out.println("Module " + module.getName() + " created on " + getName() + " under processModuleArrival()");
+				System.out.println("Current ENTITY_ID after module creation: " + org.fog.utils.FogUtils.getCurrentEntityId());
 				Logger.debug("Module deploy success", "Module " + module.getName() + " placement on " + getName() + " successful. vm id : " + module.getId());
 			} else {
 				Logger.error("Module deploy error", "Module " + module.getName() + " placement on " + getName() + " failed");
@@ -771,6 +772,7 @@ public class MyFogDevice extends FogDevice {
 						.getAllocatedMipsForVm(module));
 
 				System.out.println("Nevertheless, Module " + module.getName() + " created on " + getName() + " under processModuleArrival()");
+				System.out.println("Current ENTITY_ID after module creation: " + org.fog.utils.FogUtils.getCurrentEntityId());
 				Logger.debug("Module deploy success", "Module " + module.getName() + " placement on " + getName() + " successful. vm id : " + module.getId());
 			} else {
 				Logger.error("Module deploy error", "Module " + module.getName() + " placement on " + getName() + " failed");

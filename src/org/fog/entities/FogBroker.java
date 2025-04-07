@@ -27,6 +27,9 @@ public class FogBroker extends PowerDatacenterBroker{
 	// DeviceId -> List(VmId)
 	private static final Map<Integer, Set<Integer>> activatedVMs = new HashMap<>();
 
+	// Track the number of VMs created for debugging
+	private static int vmCounter = 0;
+
 
 	private static int cycleNumber = 1;
 
@@ -45,6 +48,8 @@ public class FogBroker extends PowerDatacenterBroker{
 		checklist.clear();
 		toSend.clear();
 		activatedVMs.clear();
+		vmCounter = 0;
+		System.out.println("FogBroker state cleared, vmCounter reset to 0");
 	}
 
 	// Simon (170125) says DatacenterBroker class has
@@ -208,6 +213,14 @@ public class FogBroker extends PowerDatacenterBroker{
 		int deviceId = pr.getRequester();
 		MyFogDevice device = (MyFogDevice) CloudSim.getEntity(deviceId);
 		if (!activatedVMs.containsKey(deviceId)) activatedVMs.put(deviceId, new HashSet<Integer>());
+
+		// Debug VM IDs
+		System.out.println("Getting AppModule for service: " + targetService + 
+		                   ", ENTITY_ID: " + org.fog.utils.FogUtils.getCurrentEntityId());
+		System.out.println("Device " + device.getName() + " has " + device.getVmList().size() + " VMs");
+		for (Vm vm : device.getVmList()) {
+		    System.out.println("  VM ID: " + vm.getId() + ", Name: " + ((AppModule)vm).getName());
+		}
 
 		AppModule firstMicroserviceModule = null;
 		// Simon (130325) says the activatedVms state in FogBroker keeps track of what VMs have already been assigned to

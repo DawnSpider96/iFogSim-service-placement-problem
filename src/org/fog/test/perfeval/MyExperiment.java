@@ -71,8 +71,8 @@ public class MyExperiment {
 
     public static void main(String[] args) {
         List<SimulationConfig> configs = Arrays.asList(
-//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ACO),
-//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.BEST_FIT),
+                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ACO),
+                new SimulationConfig(100, 196, 1, PlacementLogicFactory.BEST_FIT),
                 new SimulationConfig(100, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
                 new SimulationConfig(100, 196, 1, PlacementLogicFactory.ILP),
                 new SimulationConfig(100, 196, 1, PlacementLogicFactory.MAX_FIT),
@@ -149,6 +149,13 @@ public class MyExperiment {
         for (SimulationConfig config : configs) {
             run(config);
         }
+        
+        // Print final entity ID information
+        System.out.println("\n========= FINAL SUMMARY =========");
+        System.out.println("Final ENTITY_ID: " + FogUtils.getCurrentEntityId());
+        System.out.println("Final TUPLE_ID: " + FogUtils.getCurrentTupleId());
+        System.out.println("Final ACTUAL_TUPLE_ID: " + FogUtils.getCurrentActualTupleId());
+        System.out.println("=================================\n");
 
         // (170225) For ease of debugging only
         MyMonitor mm = MyMonitor.getInstance();
@@ -159,14 +166,14 @@ public class MyExperiment {
 //                    .map(MetricUtils::handleSimulationResource)
 //                    .collect(Collectors.toList());
             List<Map<Double, Double>> resourceData =
-                    MyMonitor.getInstance().getAllSnapshots().stream()
+                    mm.getAllSnapshots().stream()
                             .map(MetricUtils::handleSimulationResource)
                             .collect(Collectors.toList());
             List<Map<Double, Double>> latencyData =
-                    MyMonitor.getInstance().getAllLatencies().stream()
+                    mm.getAllLatencies().stream()
                             .map(MetricUtils::handleSimulationLatency)
                             .collect(Collectors.toList());
-            MetricUtils.writeResourceDistributionToCSV(resourceData, latencyData, configs, "./output/resourceDist_Crowded_U400.csv");
+            MetricUtils.writeResourceDistributionToCSV(resourceData, latencyData, configs, "./output/resourceDist_trash1.csv");
             System.out.println("CSV file has been created successfully.");
         } catch (IOException e) {
             System.err.println("An error occurred while writing to the CSV file.");
@@ -176,9 +183,28 @@ public class MyExperiment {
 
 
     private static void run(SimulationConfig simulationConfig) {
-
         System.out.println("Starting Simon's Experiment...");
         System.out.println(simulationConfig.toString());
+
+        // Debug: Print entity and tuple IDs before reset
+        System.out.println("Before reset - ENTITY_ID: " + FogUtils.getCurrentEntityId() + 
+                           ", TUPLE_ID: " + FogUtils.getCurrentTupleId());
+
+        try {
+            CloudSim.stopSimulation();
+        } catch (Exception e) {
+            // Ignore errors if no simulation is running
+        }
+
+        // Reset ENTITY_ID and related counters FIRST
+        FogUtils.clear();
+        org.cloudbus.cloudsim.network.datacenter.NetworkConstants.clear();
+        TimeKeeper.deleteInstance();
+        FogBroker.clear();
+
+        // Debug: Print entity and tuple IDs after reset
+        System.out.println("After reset - ENTITY_ID: " + FogUtils.getCurrentEntityId() + 
+                           ", TUPLE_ID: " + FogUtils.getCurrentTupleId());
 
         // Reset THIS class's temporary state
         // Simon (040225) says MyMonitor is NOT reset
@@ -186,12 +212,6 @@ public class MyExperiment {
         sensors.clear();
         actuators.clear();
         locator = null;
-        TimeKeeper.deleteInstance();
-        FogBroker.clear();
-        // Add FogUtils.clear() to reset tuple counters between simulations
-        FogUtils.clear();
-        // Also reset network-related ID counters
-        org.cloudbus.cloudsim.network.datacenter.NetworkConstants.clear();
         
         try {
             Log.enable();
@@ -205,11 +225,17 @@ public class MyExperiment {
             boolean trace_flag = false; // mean trace events
 
             CloudSim.init(num_user, calendar, trace_flag);
+            
+            // Debug: Print entity IDs after CloudSim.init
+            System.out.println("After CloudSim.init - ENTITY_ID: " + FogUtils.getCurrentEntityId());
 
             String appId = "SimonApp"; // identifier of the application
 
             FogBroker broker = new FogBroker("broker");
             CloudSim.setFogBrokerId(broker.getId());
+            
+            // Debug: Print broker ID
+            System.out.println("FogBroker ID: " + broker.getId());
 
             MyApplication application = createApplication(appId, broker.getId(), appLoopLength);
             application.setUserId(broker.getId());
@@ -361,12 +387,17 @@ public class MyExperiment {
     private static MyFogDevice createFogDevice(String nodeName, long mips,
                                                int ram, long upBw, long downBw, double ratePerMips, double busyPower, double idlePower, String deviceType) {
 
+        // Debug: Print entity ID before creating device
+        System.out.println("Creating fog device '" + nodeName + "', ENTITY_ID before: " + FogUtils.getCurrentEntityId());
+        
         List<Pe> peList = new ArrayList<Pe>();
 
         // 3. Create PEs and add these into a list.
         peList.add(new Pe(0, new PeProvisionerOverbooking(mips))); // need to store Pe id and MIPS Rating
 
         int hostId = FogUtils.generateEntityId();
+        System.out.println("Created host with ID: " + hostId);
+        
         long storage = 1000000; // host storage
         int bw = 10000;
 
@@ -432,134 +463,69 @@ public class MyExperiment {
     }
 
 
-//    private static MyApplication createApplication(String appId, int userId, int numServices) {
-//        MyApplication application = MyApplication.createMyApplication(appId, userId);
-//
-//        application.addAppModule("clientModule", 4, 4, 50);
-//        for (int i = 1; i <= numServices; i++) {
-//            // Use consistent MIPS for all services (as seen in existing implementations)
-//            application.addAppModule("mService" + i, 400, 400, 500);
-//        }
-//
-//        /*
-//         * Connecting the application modules (vertices) in the application model (directed graph) with edges
-//         */
-//        // Connect SENSOR to clientModule
-//        application.addAppEdge("SENSOR", "clientModule", 1000, 500, "SENSOR", Tuple.UP, AppEdge.SENSOR);
-//
-//        // Connect clientModule to first microservice
-//        application.addAppEdge("clientModule", "mService1", 2000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
-//
-//        // Connect microservices in sequence
-//        for (int i = 1; i < numServices; i++) {
-//            String sourceModule = "mService" + i;
-//            String destModule = "mService" + (i+1);
-//            String tupleType = "FILTERED_DATA" + i;
-//
-//            application.addAppEdge(sourceModule, destModule, 2000, 500, tupleType, Tuple.UP, AppEdge.MODULE);
-//        }
-//
-//        // Connect last microservice back to clientModule
-//        application.addAppEdge("mService" + numServices, "clientModule", 2000, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
-//
-//        // Connect clientModule to DISPLAY
-//        application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
-//
-//        /*
-//         * Defining the input-output relationships (represented by selectivity) of the application modules.
-//         */
-//        application.addTupleMapping("clientModule", "SENSOR", "RAW_DATA", new FractionalSelectivity(1.0));
-//        for (int i = 1; i < numServices; i++) {
-//            String sourceModule = "mService" + i;
-//            String inputTupleType = (i == 1) ? "RAW_DATA" : "FILTERED_DATA" + (i-1);
-//            String outputTupleType = "FILTERED_DATA" + i;
-//
-//            application.addTupleMapping(sourceModule, inputTupleType, outputTupleType, new FractionalSelectivity(1.0));
-//        }
-//        String lastInputTupleType = (numServices == 1) ? "RAW_DATA" : "FILTERED_DATA" + (numServices-1);
-//        application.addTupleMapping("mService" + numServices, lastInputTupleType, "RESULT", new FractionalSelectivity(1.0));
-//        application.addTupleMapping("clientModule", "RESULT", "RESULT_DISPLAY", new FractionalSelectivity(1.0));
-//
-//        final AppLoop loop = new AppLoop(new ArrayList<String>() {{
-//            add("SENSOR");
-//            add("clientModule");
-//
-//            for (int i = 1; i <= numServices; i++) {
-//                add("mService" + i);
-//            }
-//
-//            add("clientModule");
-//            add("DISPLAY");
-//        }});
-//
-//        List<AppLoop> loops = new ArrayList<AppLoop>() {{
-//            add(loop);
-//        }};
-//        application.setLoops(loops);
-//
-//        return application;
-//    }
-private static MyApplication createApplication(String appId, int userId, int num) {
+    private static MyApplication createApplication(String appId, int userId, int numServices) {
+        MyApplication application = MyApplication.createMyApplication(appId, userId);
 
-    MyApplication application = MyApplication.createMyApplication(appId, userId);
+        application.addAppModule("clientModule", 4, 4, 50);
+        for (int i = 1; i <= numServices; i++) {
+            // Use consistent MIPS for all services (as seen in existing implementations)
+            application.addAppModule("mService" + i, 200, 200, 500);
+        }
 
-    /*
-     * Adding modules (vertices) to the application model (directed graph)
-     */
-    application.addAppModule("clientModule", 4, 4, 50);
-    application.addAppModule("mService1", 400, 400, 500);
-    application.addAppModule("mService2", 400, 400, 500);
-    application.addAppModule("mService3", 400, 400, 500);
+        /*
+         * Connecting the application modules (vertices) in the application model (directed graph) with edges
+         */
+        application.addAppEdge("SENSOR", "clientModule", 14, 50, "SENSOR", Tuple.UP, AppEdge.SENSOR);
+        // TODO Always make tupleCPULength here same value as below. It determines how long mService1 runs.
+        application.addAppEdge("clientModule", "mService1", 4000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
 
-    /*
-     * Connecting the application modules (vertices) in the application model (directed graph) with edges
-     */
+        // Connect microservices in sequence
+        for (int i = 1; i < numServices; i++) {
+            String sourceModule = "mService" + i;
+            String destModule = "mService" + (i+1);
+            String tupleType = "FILTERED_DATA" + i;
 
-    application.addAppEdge("SENSOR", "clientModule", 1000, 500, "SENSOR", Tuple.UP, AppEdge.SENSOR);
-    application.addAppEdge("clientModule", "mService1", 2000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
-    application.addAppEdge("mService1", "mService2", 2500, 500, "FILTERED_DATA1", Tuple.UP, AppEdge.MODULE);
-    application.addAppEdge("mService2", "mService3", 4000, 500, "FILTERED_DATA2", Tuple.UP, AppEdge.MODULE);
+            application.addAppEdge(sourceModule, destModule, 4000, 500, tupleType, Tuple.UP, AppEdge.MODULE);
+        }
 
-//        application.addAppEdge("mService2", "clientModule", 14, 500, "RESULT1", Tuple.DOWN, AppEdge.MODULE);
-    application.addAppEdge("mService3", "clientModule", 28, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
-    application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
-//        application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT2_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
+        application.addAppEdge("mService" + numServices, "clientModule", 4, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
+        // NOTE tupleCpuLength and tupleNwLength don't matter; actuator doesn't execute.
+        application.addAppEdge("clientModule", "DISPLAY", 4, 50, "RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
 
+        /*
+         * Defining the input-output relationships (represented by selectivity) of the application modules.
+         */
+        application.addTupleMapping("clientModule", "SENSOR", "RAW_DATA", new FractionalSelectivity(1.0));
+        for (int i = 1; i < numServices; i++) {
+            String sourceModule = "mService" + i;
+            String inputTupleType = (i == 1) ? "RAW_DATA" : "FILTERED_DATA" + (i-1);
+            String outputTupleType = "FILTERED_DATA" + i;
 
-    /*
-     * Defining the input-output relationships (represented by selectivity) of the application modules.
-     */
-    application.addTupleMapping("clientModule", "SENSOR", "RAW_DATA", new FractionalSelectivity(1.0));
-    application.addTupleMapping("mService1", "RAW_DATA", "FILTERED_DATA1", new FractionalSelectivity(1.0));
-    application.addTupleMapping("mService2", "FILTERED_DATA1", "FILTERED_DATA2", new FractionalSelectivity(1.0));
-    application.addTupleMapping("mService3", "FILTERED_DATA2", "RESULT", new FractionalSelectivity(1.0));
-    application.addTupleMapping("clientModule", "RESULT", "RESULT_DISPLAY", new FractionalSelectivity(1.0));
+            application.addTupleMapping(sourceModule, inputTupleType, outputTupleType, new FractionalSelectivity(1.0));
+        }
+        String lastInputTupleType = (numServices == 1) ? "RAW_DATA" : "FILTERED_DATA" + (numServices-1);
+        application.addTupleMapping("mService" + numServices, lastInputTupleType, "RESULT", new FractionalSelectivity(1.0));
+        application.addTupleMapping("clientModule", "RESULT", "RESULT_DISPLAY", new FractionalSelectivity(1.0));
 
-//        application.setSpecialPlacementInfo("mService3", "cloud");
-//        if (CLOUD) {
-//            application.setSpecialPlacementInfo("mService1", "cloud");
-//            application.setSpecialPlacementInfo("mService2", "cloud");
-//        }
+        final AppLoop loop = new AppLoop(new ArrayList<String>() {{
+            add("SENSOR");
+            add("clientModule");
 
-    final AppLoop loop3 = new AppLoop(new ArrayList<String>() {{
-        add("SENSOR");
-        add("clientModule");
-        add("mService1");
-        add("mService2");
-        add("mService3");
-        add("clientModule");
-        add("DISPLAY");
-    }});
+            for (int i = 1; i <= numServices; i++) {
+                add("mService" + i);
+            }
 
-    List<AppLoop> loops = new ArrayList<AppLoop>() {{
-        add(loop3);
-    }};
-    application.setLoops(loops);
+            add("clientModule");
+            add("DISPLAY");
+        }});
 
+        List<AppLoop> loops = new ArrayList<AppLoop>() {{
+            add(loop);
+        }};
+        application.setLoops(loops);
 
-//        application.createDAG();
+        return application;
+    }
 
-    return application;
-}
 }
 
