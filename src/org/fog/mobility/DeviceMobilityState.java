@@ -20,7 +20,7 @@ public abstract class DeviceMobilityState {
      * A structure that holds the upcoming waypoints for the device.
      * This could be a queue (FIFO) so that we can pop the next WayPoint easily.
      */
-    protected WaypointPath path;
+    protected WayPointPath path;
 
     /**
      * The mobility strategy used to generate paths from the current location to an attraction point.
@@ -31,7 +31,7 @@ public abstract class DeviceMobilityState {
      * The current point of attraction or destination.
      * Potentially used for determining pause time or generating the next path.
      */
-    protected IAttract attractionPoint;
+    protected Attractor attractionPoint;
 
     /**
      * The walking/driving speed of this device (units: e.g., meters/second or km/h).
@@ -56,7 +56,8 @@ public abstract class DeviceMobilityState {
         this.currentLocation = location;
         this.strategy = strategy;
         this.speed = speed;
-        this.path = new WaypointPath();
+        this.path = new WayPointPath();
+        this.attractionPoint = null;
     }
     
     /**
@@ -82,7 +83,7 @@ public abstract class DeviceMobilityState {
      * 
      * @return the waypoint path
      */
-    public WaypointPath getPath() {
+    public WayPointPath getPath() {
         return path;
     }
     
@@ -91,7 +92,7 @@ public abstract class DeviceMobilityState {
      * 
      * @param path the new path
      */
-    public void setPath(WaypointPath path) {
+    public void setPath(WayPointPath path) {
         this.path = path;
     }
     
@@ -151,7 +152,7 @@ public abstract class DeviceMobilityState {
      * Subclasses may override to consider current status.
      * Updates the attractionPoint field.
      */
-    public abstract void createAttractionPoint();
+    public abstract void createAttractionPoint(Attractor currentAttractionPoint);
 
     /**
      * Determines how long the device should pause after reaching its final WayPoint.

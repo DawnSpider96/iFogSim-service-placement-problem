@@ -9,7 +9,7 @@ import java.util.List;
  * Holds an ordered list (or queue) of WayPoints for a single route.
  * Provides methods to access the "next" waypoint or remove the consumed ones.
  */
-public class WaypointPath {
+public class WayPointPath {
 
     /**
      * The ordered list of WayPoints the device will traverse.
@@ -25,7 +25,7 @@ public class WaypointPath {
     /**
      * Creates a new, empty waypoint path
      */
-    public WaypointPath() {
+    public WayPointPath() {
         this.path = new LinkedList<>();
         this.completedWaypoints = new ArrayList<>();
     }
@@ -35,7 +35,7 @@ public class WaypointPath {
      * 
      * @param path the initial waypoints
      */
-    public WaypointPath(Queue<WayPoint> path) {
+    public WayPointPath(Queue<WayPoint> path) {
         this.path = path;
         this.completedWaypoints = new ArrayList<>();
     }

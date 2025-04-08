@@ -16,5 +16,5 @@ public abstract class MobilityStrategy {
      * @param currentLocation the starting location
      * @return a WaypointPath from currentLocation to attractionPoint
      */
-    public abstract WaypointPath makePath(IAttract attractionPoint, double speed, Location currentLocation);
+    public abstract WayPointPath makePath(Attractor attractionPoint, double speed, Location currentLocation);
 } 

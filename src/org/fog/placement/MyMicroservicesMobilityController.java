@@ -15,9 +15,9 @@ import org.fog.mobilitydata.References;
 import org.fog.utils.FogEvents;
 import org.fog.utils.MigrationDelayMonitor;
 import org.fog.mobility.DeviceMobilityState;
-import org.fog.mobility.IAttract;
+import org.fog.mobility.Attractor;
 import org.fog.mobility.WayPoint;
-import org.fog.mobility.WaypointPath;
+import org.fog.mobility.WayPointPath;
 import org.json.simple.JSONObject;
 import org.fog.utils.Logger;
 
@@ -38,7 +38,7 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
      * List of "landmark" attractions available in the simulation.
      * For example, these might be special points such as hospitals or city hotspots.
      */
-    private List<IAttract> landmarks;
+    private List<Attractor> landmarks;
 
     /**
      * Maps a device's simulation ID (deviceId) to its mobility state object.
@@ -140,7 +140,7 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
         }
         
         // Get the next waypoint
-        WaypointPath path = dms.getPath();
+        WayPointPath path = dms.getPath();
         WayPoint nextWaypoint = path.getNextWayPoint();
         
         if (nextWaypoint != null) {
@@ -247,7 +247,7 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
      * 
      * @param landmark the landmark to add
      */
-    public void addLandmark(IAttract landmark) {
+    public void addLandmark(Attractor landmark) {
         landmarks.add(landmark);
     }
     
@@ -256,7 +256,7 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
      * 
      * @return list of landmarks
      */
-    public List<IAttract> getLandmarks() {
+    public List<Attractor> getLandmarks() {
         return landmarks;
     }
     
