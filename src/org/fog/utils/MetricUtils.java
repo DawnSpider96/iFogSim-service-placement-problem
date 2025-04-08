@@ -9,6 +9,7 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class MetricUtils {
     // This class contains static functions for manipulation and plotting of simulation metric values
@@ -94,38 +95,22 @@ public class MetricUtils {
 //        return Math.sqrt(variance);
 //    }
 
-    public static Map<Double, Double> handleSimulationResource (Map<Double, List<MyHeuristic.DeviceState>> snapshots){
-        /**
-         * For a SINGLE simulation,
-         * calculates the standard deviation of resource usage (CPU, RAM, etc.) for each resource at each timestamp.
-         * This method is used to analyze variability in resource usage over time in a simulation environment.
-         *
-         * @param snapshots A map where each key is a timestamp (double) corresponding to a placement cycle,
-         *                  and each value is a list of {@code DeviceState} instances representing the state
-         *                  of all edge servers at that timestamp.
-         *                  Each {@code DeviceState} includes id, resources remaining (after the cycle) and total resources.
-         * @return A map where each key is a resource name (String) and each value is another map.
-         *         The nested map's key is the timestamp of the placement cycle (double), and its value is the standard deviation
-         *         (double) of the usage of that resource across all edge servers at that timestamp.
-         *         This structure allows easy access to the variability data of each resource at each simulation timestamp.
-         */
-//        Map<String, Map<Double, Double>> standardDeviationsPerResource = new HashMap<>();
-//        for (String resourceName : resources) {
-//            Map<Double, Double> standardDeviations = new HashMap<>();
-//            for (Map.Entry<Double, List<MyHeuristic.DeviceState>> entry : snapshots.entrySet()) {
-//                Double timestamp = entry.getKey();
-//                List<MyHeuristic.DeviceState> snapshot = entry.getValue();
-//                standardDeviations.put(timestamp, calculateStandardDeviation(snapshot, resourceName));
-//            }
-//            standardDeviationsPerResource.put(resourceName, standardDeviations);
-//        }
-        Map<Double, Double> standardDeviations = new HashMap<>();
-        for (Map.Entry<Double, List<MyHeuristic.DeviceState>> entry : snapshots.entrySet()) {
-            Double timestamp = entry.getKey();
-            List<MyHeuristic.DeviceState> snapshot = entry.getValue();
-            standardDeviations.put(timestamp, computeResourceUtilisation(snapshot));
+    /**
+     * For a SINGLE simulation, computes all resource utilization values across all timestamps
+     * @param snapshots A map where each key is a timestamp corresponding to a placement cycle,
+     *                 and each value is a list of DeviceState instances
+     * @return A list of all resource utilization values across all timestamps
+     */
+    public static List<Double> handleSimulationResource(Map<Double, List<MyHeuristic.DeviceState>> snapshots) {
+        // Flatten the map and compute resource utilization for each timestamp's device states
+        List<Double> allUtilizationValues = new ArrayList<>();
+        
+        for (List<MyHeuristic.DeviceState> snapshot : snapshots.values()) {
+            double utilization = computeResourceUtilisation(snapshot);
+            allUtilizationValues.add(utilization);
         }
-        return standardDeviations;
+        
+        return allUtilizationValues;
     }
 
     private static double calculateMapMean(Map<Double, Double> timestampToValue) {
@@ -145,103 +130,86 @@ public class MetricUtils {
         return Math.sqrt(variance);
     }
 
-    private static Double calculateLatencyOneCycle(Map<PlacementRequest, Double> latencyMap){
-        /**
-         * Calculates the average latency
-         * of a placement cycle
-         * at a single timestamp.
-         *
-         * @param latencyMap Map of PlacementRequest objects to their latencies in ONE placement cycle.
-         * @return The mean of the latencies. Nothing related to the PRs themselves.
-         */
-
-        return latencyMap.values().stream()
+    /**
+     * Calculates descriptive statistics (mean, standard deviation) for a list of double values
+     * @param values List of double values
+     * @return Array with [mean, standardDeviation]
+     */
+    public static double[] calculateStatistics(List<Double> values) {
+        if (values.isEmpty()) {
+            return new double[]{0.0, 0.0};
+        }
+        
+        double mean = values.stream()
                 .mapToDouble(Double::doubleValue)
                 .average()
-                .orElse(0);
+                .orElse(0.0);
+                
+        double variance = values.stream()
+                .mapToDouble(Double::doubleValue)
+                .map(x -> Math.pow(x - mean, 2))
+                .average()
+                .orElse(0.0);
+                
+        double stdDev = Math.sqrt(variance);
+        
+        return new double[]{mean, stdDev};
     }
 
-    public static Map<Double, Double> handleSimulationLatency (Map<Double, Map<PlacementRequest, Double>> latencies){
-        /**
-         * For a SINGLE simulation,
-         * calculates the average latency of PRs at each placement cycle (timestamp).
-         *
-         * @param latencies A map where each key is a timestamp (double) corresponding to a placement cycle,
-         *                  and each value is a Map of PlacementRequest Objects to their latency.
-         * @return A map of timestamp to average latency of that PLacement Cycle (timestamp).
-         */
-        Map<Double, Double> ls = new HashMap<>();
-        for (Map.Entry<Double, Map<PlacementRequest, Double>> entry : latencies.entrySet()) {
-            Double timestamp = entry.getKey();
-            Map<PlacementRequest, Double> latencyMap = entry.getValue();
-            ls.put(timestamp, calculateLatencyOneCycle(latencyMap));
+    /**
+     * For a SINGLE simulation, extracts all latency values across all timestamps
+     * @param latencies A map where each key is a timestamp and each value is a map of placement requests to latencies
+     * @return A list of all latency values across all timestamps
+     */
+    public static List<Double> handleSimulationLatency(Map<Double, Map<PlacementRequest, Double>> latencies) {
+        // Flatten all latency values from all placement requests across all timestamps
+        List<Double> allLatencyValues = new ArrayList<>();
+        
+        for (Map<PlacementRequest, Double> latencyMap : latencies.values()) {
+            allLatencyValues.addAll(latencyMap.values());
         }
-        return ls;
+        
+        return allLatencyValues;
     }
 
-    public static void writeResourceDistributionToCSV(List<Map<Double, Double>> resourceData,
-                                                      List<Map<Double, Double>> latencyData,
+    public static void writeResourceDistributionToCSV(List<List<Double>> resourceData,
+                                                      List<List<Double>> latencyData,
                                                       List<SimulationConfig> simConfigs,
                                                       String filePath) throws IOException {
-        List<Double> averagedResourceData = new ArrayList<>();
-        List<Double> stdDevResourceData = new ArrayList<>();
-
-        List<Double> averagedLatencyData = new ArrayList<>();
-        List<Double> stdDevLatencyData = new ArrayList<>();
-
-
-        for (Map<Double, Double> resourceMap : resourceData) {
-            double resourceMean = calculateMapMean(resourceMap);
-            averagedResourceData.add(resourceMean);
-            stdDevResourceData.add(calculateMapStandardDeviation(resourceMap, resourceMean));
-        }
-
-        for (Map<Double, Double> latencyMap : latencyData) {
-            double latencyMean = calculateMapMean(latencyMap);
-            averagedLatencyData.add(latencyMean);
-            stdDevLatencyData.add(calculateMapStandardDeviation(latencyMap, latencyMean));
-        }
-
-        if (averagedResourceData.size() != simConfigs.size()
-                || stdDevResourceData.size() != simConfigs.size()
-                || averagedLatencyData.size() != simConfigs.size()
-                || stdDevLatencyData.size() != simConfigs.size()) {
+        if (resourceData.size() != simConfigs.size() || latencyData.size() != simConfigs.size()) {
             throw new IllegalArgumentException(String.format(
-                    "averagedResourceData and averagedLatencyData size mismatch: both must have one element per simulation. %d %d %d %d %d",
-                    averagedResourceData.size(),
-                    stdDevResourceData.size(),
-                    averagedLatencyData.size(),
-                    stdDevLatencyData.size(),
+                    "resourceData and latencyData size mismatch: both must have one element per simulation. %d %d %d",
+                    resourceData.size(),
+                    latencyData.size(),
                     simConfigs.size()));
         }
 
+        List<double[]> resourceStats = resourceData.stream()
+                .map(MetricUtils::calculateStatistics)
+                .collect(Collectors.toList());
+                
+        List<double[]> latencyStats = latencyData.stream()
+                .map(MetricUtils::calculateStatistics)
+                .collect(Collectors.toList());
+
         try (FileWriter fileWriter = new FileWriter(filePath)) {
-            fileWriter.append("Edge Servers, Users, Services, Placement Logic , Avg Resource, Resource stddev, Avg Latency, Latency stddev\n");
+            fileWriter.append("Edge Servers, Users, Services, Placement Logic, Avg Resource, Resource stddev, Avg Latency, Latency stddev\n");
 
-            Iterator<Double> resourceDataIterator = averagedResourceData.iterator();
-            Iterator<Double> resourceStdDevIterator = stdDevResourceData.iterator();
-            Iterator<Double> latencyDataIterator = averagedLatencyData.iterator();
-            Iterator<Double> latencyStdDevIterator = stdDevLatencyData.iterator();
-            Iterator<SimulationConfig> configIterator = simConfigs.iterator();
-
-            while (resourceDataIterator.hasNext() && latencyDataIterator.hasNext()) {
-                double utilisation = resourceDataIterator.next();
-                double stdDevUtilisation = resourceStdDevIterator.next();
-                double latency = latencyDataIterator.next();
-                double stdDevLatency = latencyStdDevIterator.next();
-
-                SimulationConfig sc = configIterator.next();
-
+            for (int i = 0; i < simConfigs.size(); i++) {
+                SimulationConfig sc = simConfigs.get(i);
+                double[] resStats = resourceStats.get(i);
+                double[] latStats = latencyStats.get(i);
+                
                 fileWriter.append(String.format(
                         "%d,%d,%d,%s,%f,%f,%f,%f\n",
                         sc.getNumberOfEdge(),
                         sc.getNumberOfUser(),
                         sc.getAppLoopLength(),
                         heuristics.get(sc.getPlacementLogic()),
-                        utilisation,
-                        stdDevUtilisation,
-                        latency,
-                        stdDevLatency
+                        resStats[0],  // mean resource utilization
+                        resStats[1],  // stddev resource utilization
+                        latStats[0],  // mean latency
+                        latStats[1]   // stddev latency
                 ));
             }
         }

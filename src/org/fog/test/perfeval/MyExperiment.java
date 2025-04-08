@@ -165,15 +165,15 @@ public class MyExperiment {
 //                    MyMonitor.getInstance().getAllSnapshots().stream()
 //                    .map(MetricUtils::handleSimulationResource)
 //                    .collect(Collectors.toList());
-            List<Map<Double, Double>> resourceData =
+            List<List<Double>> resourceData =
                     mm.getAllSnapshots().stream()
                             .map(MetricUtils::handleSimulationResource)
                             .collect(Collectors.toList());
-            List<Map<Double, Double>> latencyData =
+            List<List<Double>> latencyData =
                     mm.getAllLatencies().stream()
                             .map(MetricUtils::handleSimulationLatency)
                             .collect(Collectors.toList());
-            MetricUtils.writeResourceDistributionToCSV(resourceData, latencyData, configs, "./output/resourceDist_trash1.csv");
+            MetricUtils.writeResourceDistributionToCSV(resourceData, latencyData, configs, "./output/resourceDist_Crowded_U00.csv");
             System.out.println("CSV file has been created successfully.");
         } catch (IOException e) {
             System.err.println("An error occurred while writing to the CSV file.");
@@ -469,7 +469,7 @@ public class MyExperiment {
         application.addAppModule("clientModule", 4, 4, 50);
         for (int i = 1; i <= numServices; i++) {
             // Use consistent MIPS for all services (as seen in existing implementations)
-            application.addAppModule("mService" + i, 200, 200, 500);
+            application.addAppModule("mService" + i, 100, 100, 500);
         }
 
         /*
@@ -477,7 +477,7 @@ public class MyExperiment {
          */
         application.addAppEdge("SENSOR", "clientModule", 14, 50, "SENSOR", Tuple.UP, AppEdge.SENSOR);
         // TODO Always make tupleCPULength here same value as below. It determines how long mService1 runs.
-        application.addAppEdge("clientModule", "mService1", 4000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("clientModule", "mService1", 2000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
 
         // Connect microservices in sequence
         for (int i = 1; i < numServices; i++) {
@@ -485,7 +485,7 @@ public class MyExperiment {
             String destModule = "mService" + (i+1);
             String tupleType = "FILTERED_DATA" + i;
 
-            application.addAppEdge(sourceModule, destModule, 4000, 500, tupleType, Tuple.UP, AppEdge.MODULE);
+            application.addAppEdge(sourceModule, destModule, 2000, 500, tupleType, Tuple.UP, AppEdge.MODULE);
         }
 
         application.addAppEdge("mService" + numServices, "clientModule", 4, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
