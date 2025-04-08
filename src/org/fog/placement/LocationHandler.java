@@ -11,29 +11,75 @@ import org.fog.mobilitydata.ExperimentDataParser;
 import org.fog.mobilitydata.Location;
 import org.fog.mobilitydata.DataParser;
 import org.fog.mobilitydata.References;
+import org.fog.mobility.DeviceMobilityState;
 import org.fog.utils.Config;
 
+/**
+ * This class handles device location tracking and parent determination.
+ * 
+ * NOTE: The original methodology using predefined mobility data from files is being
+ * deprecated in favor of the dynamic DeviceMobilityState system. Methods related to static
+ * mobility data loading and processing will be phased out in future versions.
+ */
 public class LocationHandler {
 	
+	/**
+	 * @deprecated This data structure is part of the old static mobility system and will be phased out.
+	 * Future implementations should use the DeviceMobilityState system instead.
+	 */
 	public DataParser dataObject;
+	
 	public Map<Integer, String> instanceToDataId;
 	private final double baseServerLatency = 1 * Consts.MILLISECOND;
 	private final double baseWifiLatency = 2 * Consts.MILLISECOND;
 	private final double latencyPerKilometer = 10 * Consts.MICROSECOND;
 	
+	/** Maps deviceId to its mobility state for dynamic location tracking */
+	private Map<Integer, DeviceMobilityState> deviceMobilityStates;
 
+	/**
+	 * Creates a new LocationHandler with the given DataParser.
+	 * 
+	 * @param dataObject the data parser
+	 * @deprecated The DataParser parameter is part of the old static mobility system.
+	 * Future implementations should use registerDeviceMobilityState() instead of DataParser.
+	 */
 	public LocationHandler(DataParser dataObject) {
-		// TODO Auto-generated constructor stub
 		this.dataObject = dataObject;
 		instanceToDataId = new HashMap<Integer, String>();
-		
+		deviceMobilityStates = new HashMap<Integer, DeviceMobilityState>();
 	}
 
 	public LocationHandler() {
-		// TODO Auto-generated constructor stub
-
+		instanceToDataId = new HashMap<Integer, String>();
+		deviceMobilityStates = new HashMap<Integer, DeviceMobilityState>();
 	}
 	
+	/**
+	 * Registers a device's mobility state with the location handler
+	 * 
+	 * @param deviceId the device ID
+	 * @param mobilityState the mobility state
+	 */
+	public void registerDeviceMobilityState(int deviceId, DeviceMobilityState mobilityState) {
+		deviceMobilityStates.put(deviceId, mobilityState);
+	}
+	
+	/**
+	 * Gets a device's mobility state
+	 * 
+	 * @param deviceId the device ID
+	 * @return the device's mobility state, or null if not registered
+	 */
+	public DeviceMobilityState getDeviceMobilityState(int deviceId) {
+		return deviceMobilityStates.get(deviceId);
+	}
+	
+	/**
+	 * @return the data object
+	 * @deprecated This method returns the old static mobility DataParser and will be phased out.
+	 * Future implementations should use the DeviceMobilityState system instead.
+	 */
 	public DataParser getDataObject(){
 		return dataObject;
 	}
@@ -60,7 +106,6 @@ public class LocationHandler {
 		Location loc1;
 		Location loc2;
 
-		// TODO Simon (020225) says check if the "time" parameter of getUserLocationInfo accepts this
 		double time = CloudSim.clock();
 
 		String dataId = getDataIdByInstanceID(entity1);
@@ -68,14 +113,14 @@ public class LocationHandler {
 		if(resourceLevel != getDataObject().levelID.get("User"))
 			loc1 = getResourceLocationInfo(dataId);
 		else
-			loc1 = getUserLocationInfo(dataId,time);
+			loc1 = getUserLocationInfo(entity1, dataId, time);
 
 		String dataId2 = getDataIdByInstanceID(entity2);
 		int resourceLevel2 = getDataObject().resourceAndUserToLevel.get(dataId2);
 		if(resourceLevel2 != getDataObject().levelID.get("User"))
 			loc2 = getResourceLocationInfo(dataId2);
 		else
-			loc2 = getUserLocationInfo(dataId2,time);
+			loc2 = getUserLocationInfo(entity2, dataId2, time);
 
 		return calculateDistance(loc1, loc2);
 	}
@@ -102,7 +147,7 @@ public class LocationHandler {
 		if(resourceLevel != getDataObject().levelID.get("User"))
 			resourceLoc = getResourceLocationInfo(dataId);
 		else
-			resourceLoc = getUserLocationInfo(dataId,time);
+			resourceLoc = getUserLocationInfo(resourceId, dataId, time);
 		
 		int parentInstanceId = References.NOT_SET;	
 		String parentDataId = "";
@@ -149,57 +194,118 @@ public class LocationHandler {
 		return parentInstanceId;	
 	}	
 
-	private Location getUserLocationInfo(String dataId, double time) {
-		// TODO Auto-generated method stub
+	/**
+	 * Gets the user's location, first checking the mobility state and falling back to historical data if not found
+	 * 
+	 * @param deviceId the device ID
+	 * @param dataId the data ID
+	 * @param time the timestamp
+	 * @return the user's location
+	 */
+	private Location getUserLocationInfo(int deviceId, String dataId, double time) {
+		// First check if we have a mobility state for this device
+		DeviceMobilityState mobilityState = deviceMobilityStates.get(deviceId);
+		if (mobilityState != null) {
+			return mobilityState.getCurrentLocation();
+		}
+		
+		// Fall back to historical data if no mobility state exists
 		return getDataObject().usersLocation.get(dataId).get(time);
 	}
 
 	private Location getResourceLocationInfo(String dataId) {
-		// TODO Auto-generated method stub
 		return getDataObject().resourceLocationData.get(dataId);
 	}
 
-	
+	/**
+	 * Gets the time sheet for a device from the static mobility data.
+	 * 
+	 * @param instanceId the device ID
+	 * @return the time sheet
+	 * @deprecated This method is part of the old static mobility system and will be phased out.
+	 * Future implementations should use the DeviceMobilityState system for dynamic mobility scheduling.
+	 */
 	public List<Double> getTimeSheet(int instanceId) {
-		
 		String dataId = getDataIdByInstanceID(instanceId);
 		List<Double>timeSheet = new ArrayList<Double>(getDataObject().usersLocation.get(dataId).keySet());
 		return timeSheet;
 	}
 
 	public void linkDataWithInstance(int instanceId, String dataID) {
-		// TODO Auto-generated method stub
 		instanceToDataId.put(instanceId, dataID);
 	}
 
 	public int getLevelID(String resourceType) {
-		// TODO Auto-generated method stub
 		return dataObject.levelID.get(resourceType);
 	}
 	
 	public ArrayList<String> getLevelWiseResources(int levelNo) {
-		// TODO Auto-generated method stub
 		return getDataObject().levelwiseResources.get(levelNo);
 	}
 
+	/**
+	 * Parses user mobility data from a file.
+	 * 
+	 * @param userMobilityPattern the mobility pattern map
+	 * @param datasetReference the path to the dataset file
+	 * @throws IOException if an I/O error occurs
+	 * @deprecated This method loads static mobility data from files and will be phased out.
+	 * Future implementations should use registerDeviceMobilityState() with DeviceMobilityState
+	 * instances for dynamic mobility control.
+	 */
 	public void parseUserInfo(Map<Integer, Integer> userMobilityPattern, String datasetReference) throws IOException {
 		getDataObject().parseUserData(userMobilityPattern, datasetReference);
 	}
 
+	/**
+	 * Parses user mobility data from a file with a specified number of users.
+	 * 
+	 * @param userMobilityPattern the mobility pattern map
+	 * @param datasetReference the path to the dataset file
+	 * @param numberOfUser the number of users to parse
+	 * @throws NumberFormatException if a parsing error occurs
+	 * @throws IOException if an I/O error occurs
+	 * @deprecated This method loads static mobility data from files and will be phased out.
+	 * Future implementations should use registerDeviceMobilityState() with DeviceMobilityState
+	 * instances for dynamic mobility control.
+	 */
 	public void parseUserInfo(Map<Integer, Integer> userMobilityPattern, String datasetReference, int numberOfUser) throws NumberFormatException, IOException {
 		((ExperimentDataParser) getDataObject()).parseUserData(userMobilityPattern, datasetReference, numberOfUser);
 	}
 
+	/**
+	 * Parses resource location data from a file.
+	 * 
+	 * @throws NumberFormatException if a parsing error occurs
+	 * @throws IOException if an I/O error occurs
+	 * @deprecated This method loads static resource data from files and will be phased out
+	 * in favor of a more dynamic approach in future versions.
+	 */
 	public void parseResourceInfo() throws NumberFormatException, IOException {
 		getDataObject().parseResourceData();
 	}
 
+	/**
+	 * Parses resource location data from a file with a specified number of edge nodes.
+	 * 
+	 * @param numberOfEdge the number of edge nodes to parse
+	 * @throws NumberFormatException if a parsing error occurs
+	 * @throws IOException if an I/O error occurs
+	 * @deprecated This method loads static resource data from files and will be phased out
+	 * in favor of a more dynamic approach in future versions.
+	 */
 	public void parseResourceInfo(int numberOfEdge) throws NumberFormatException, IOException {
 		((ExperimentDataParser) getDataObject()).parseResourceData(numberOfEdge);
 	}
 
+	/**
+	 * Gets the list of mobile user data IDs.
+	 * 
+	 * @return list of mobile user data IDs
+	 * @deprecated This method is part of the old static mobility system and will be phased out.
+	 * Future implementations should use the DeviceMobilityState system instead.
+	 */
 	public List<String> getMobileUserDataId() {
-		// TODO Auto-generated method stub
 		List<String> userDataIds = new ArrayList<>(getDataObject().usersLocation.keySet());
 		return userDataIds;
 	}
@@ -212,12 +318,10 @@ public class LocationHandler {
 //	}
 
 	public Map<String, Integer> getDataIdsLevelReferences() {
-		// TODO Auto-generated method stub
 		return getDataObject().resourceAndUserToLevel;
 	}
 	
 	public boolean isCloud(int instanceID) {
-		// TODO Auto-generated method stub
 		String dataId = getDataIdByInstanceID(instanceID);
 		int instenceLevel=getDataObject().resourceAndUserToLevel.get(dataId);
 		if(instenceLevel==getDataObject().levelID.get("Cloud"))
@@ -227,17 +331,14 @@ public class LocationHandler {
 	}
 	
 	public String getDataIdByInstanceID(int instanceID) {
-		// TODO Auto-generated method stub
 		return instanceToDataId.get(instanceID);
 	}
 	
 	public Map<Integer, String> getInstanceDataIdReferences() {
-		// TODO Auto-generated method stub
 		return instanceToDataId;
 	}
 
 	public boolean isAMobileDevice(int instanceId) {
-		// TODO Auto-generated method stub
 		String dataId = getDataIdByInstanceID(instanceId);
 		int instanceLevel=getDataObject().resourceAndUserToLevel.get(dataId);
 		if(instanceLevel==getDataObject().levelID.get("User"))

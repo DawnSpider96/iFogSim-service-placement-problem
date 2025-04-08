@@ -56,4 +56,7 @@ public class FogEvents {
     // MyMicroserviceController--------------------
     public static final int GENERATE_PERIODIC_PR = BASE + 53;
     public static final int USER_RESOURCE_UPDATE = BASE + 54;
+    // Mobility Management ------------------------
+    public static final int SCHEDULER_NEXT_MOVEMENT_UPDATE = BASE + 55;
+    public static final int MAKE_PATH = BASE + 56;
 }
