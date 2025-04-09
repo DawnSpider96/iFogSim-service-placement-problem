@@ -31,7 +31,7 @@ public abstract class DeviceMobilityState {
      * The current point of attraction or destination.
      * Potentially used for determining pause time or generating the next path.
      */
-    protected Attractor attractionPoint;
+    protected Attractor currentAttractor;
 
     /**
      * The walking/driving speed of this device (units: e.g., meters/second or km/h).
@@ -57,7 +57,7 @@ public abstract class DeviceMobilityState {
         this.strategy = strategy;
         this.speed = speed;
         this.path = new WayPointPath();
-        this.attractionPoint = null;
+        this.currentAttractor = null;
     }
     
     /**
@@ -67,6 +67,10 @@ public abstract class DeviceMobilityState {
      */
     public Location getCurrentLocation() {
         return currentLocation;
+    }
+
+    public Attractor getCurrentAttractor() {
+        return currentAttractor;
     }
     
     /**
@@ -141,8 +145,8 @@ public abstract class DeviceMobilityState {
      * In turn, it calls the assigned MobilityStrategy to build the path.
      */
     public void makePath() {
-        if (attractionPoint != null && strategy != null) {
-            path = strategy.makePath(attractionPoint, speed, currentLocation);
+        if (currentAttractor != null && strategy != null) {
+            path = strategy.makePath(currentAttractor, speed, currentLocation);
         }
     }
 
@@ -161,8 +165,8 @@ public abstract class DeviceMobilityState {
      * @return the pause time in simulation units
      */
     public double determinePauseTime() {
-        if (attractionPoint != null) {
-            return attractionPoint.determinePauseTime();
+        if (currentAttractor != null) {
+            return currentAttractor.determinePauseTime();
         }
         return 0.1; // default placeholder
     }

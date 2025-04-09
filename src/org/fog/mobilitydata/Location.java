@@ -1,22 +1,27 @@
 package org.fog.mobilitydata;
 
+import org.fog.utils.Config;
+
 import java.util.Random;
 
 public class Location {
+
+	// Simon (080425) says block is deprecated
 
 	public double latitude;
 	public double longitude;
 	public int block;
 
-	public static final double[][] BOUNDARY = {
-		{-37.8234, 144.95441}, // Bottom-left
-		{-37.81559, 144.97882}, // Bottom-right
-		{-37.81192, 144.94713}, // Top-left
-		{-37.80406, 144.97107}  // Top-right
-	};
+	private static double[][] BOUNDARY = Config.BOUNDARY;
+	private static double minLat = Config.minLat;
+	private static double maxLat = Config.maxLat;
+	private static double minLon = Config.minLon;
+	private static double maxLon = Config.maxLon;
+
+	// Landmarks
+	public static final Location HOSPITAL1 = Config.HOSPITAL1;
 	
 	public Location(double latitude, double longitude, int block) {
-		// TODO Auto-generated constructor stub
 		this.latitude = latitude;
 		this.longitude = longitude;
 		this.block = block;
@@ -24,20 +29,20 @@ public class Location {
 
 	public double calculateDistance(Location loc2) {
 
-	    final int R = 6371; // Radius of the earth in Kilometers
+		final int R = 6371; // Radius of the earth in Kilometers
 
-	    double latDistance = Math.toRadians(this.latitude - loc2.latitude);
-	    double lonDistance = Math.toRadians(this.longitude - loc2.longitude);
-	    double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-	            + Math.cos(Math.toRadians(this.latitude)) * Math.cos(Math.toRadians(loc2.latitude))
-	            * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-	    double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-	    double distance = R * c; // kms
+		double latDistance = Math.toRadians(this.latitude - loc2.latitude);
+		double lonDistance = Math.toRadians(this.longitude - loc2.longitude);
+		double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+				+ Math.cos(Math.toRadians(this.latitude)) * Math.cos(Math.toRadians(loc2.latitude))
+				* Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+		double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+		double distance = R * c; // kms
 
 
-	    distance = Math.pow(distance, 2);
+		distance = Math.pow(distance, 2);
 
-	    return Math.sqrt(distance);
+		return Math.sqrt(distance);
 	}
 
 	public Location movedTowards(Location endLocation, double distance) {
@@ -52,7 +57,8 @@ public class Location {
 	}
 
 
-	public static Location getRandomLocation() {
+	@Deprecated
+	public static Location getRandomLocationSmallbox() {
 		Random rand = new Random();
 		double horizontalRatio = rand.nextDouble();
 		double verticalRatio = rand.nextDouble();
@@ -61,5 +67,39 @@ public class Location {
 		double newLatitude = BOUNDARY[0][0] + horizontalRatio * width;
 		double newLongitude = BOUNDARY[0][1] + verticalRatio * height;
 		return new Location(newLatitude, newLongitude, -1);
+	}
+
+	public static Location getRandomLocation() {
+		Random rand = new Random();
+		while (true) {
+			double randLat = minLat + rand.nextDouble() * (maxLat - minLat);
+			double randLon = minLon + rand.nextDouble() * (maxLon - minLon);
+
+			if (isPointInPolygon(randLat, randLon, BOUNDARY)) {
+				return new Location(randLat, randLon, -1);
+			}
+		}
+	}
+
+	public static boolean isPointInPolygon(double testLat, double testLon, double[][] polygon) {
+		int intersections = 0;
+		for (int i = 0; i < polygon.length; i++) {
+			int j = (i + 1) % polygon.length;
+			double lat_i = polygon[i][0];
+			double lon_i = polygon[i][1];
+			double lat_j = polygon[j][0];
+			double lon_j = polygon[j][1];
+	
+			// Check if one vertex is above and one below the test latitude
+			if ((lat_i > testLat) != (lat_j > testLat)) {
+				// Interpolate a rightward ray from the test point,
+				double intersectLon = (lon_j - lon_i) * (testLat - lat_i) / (lat_j - lat_i) + lon_i;
+				// Check to avoid corner case.
+				if (testLon < intersectLon) {
+					intersections++;
+				}
+			}
+		}
+		return (intersections % 2) == 1;
 	}
 }

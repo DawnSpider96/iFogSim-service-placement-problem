@@ -198,7 +198,7 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
         if (dms != null) {
             return dms.determinePauseTime();
         }
-        return 0.1; // default value if no mobility state exists
+        return 0.1; // default
     }
 
     /**
@@ -216,7 +216,7 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
         // Status change
         dms.startMoving();
         // Create a new attraction point and path
-        dms.createAttractionPoint();
+        dms.createAttractionPoint(dms.getCurrentAttractor());
         dms.makePath();
         
         if (!dms.getPath().isEmpty()) {
