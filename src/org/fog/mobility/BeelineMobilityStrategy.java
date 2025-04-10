@@ -5,7 +5,11 @@ import java.util.Random;
 import org.cloudbus.cloudsim.core.CloudSim;
 
 
-public class BeelineMobilityStrategy extends MobilityStrategy {
+public class BeelineMobilityStrategy implements MobilityStrategy {
+
+    public BeelineMobilityStrategy() {
+        // No state this class is behavioural
+    }
 
     /**
      * Creates a new path for the device to follow.

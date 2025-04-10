@@ -18,21 +18,15 @@ public class GenericUserMobilityState extends DeviceMobilityState {
         WALKING     // Device is moving to a destination
     }
     
-    private Random random;
-    private double minPauseTime;
-    private double maxPauseTime;
-    
     /**
      * Creates a new generic user mobility state
      * 
      * @param location initial device location
      * @param strategy the mobility strategy to use
      * @param speed the travel speed (e.g., meters/second)
-     * @param minPauseTime minimum pause time at destinations
-     * @param maxPauseTime maximum pause time at destinations
      */
     public GenericUserMobilityState(Location location, MobilityStrategy strategy, 
-                                  double speed, double minPauseTime, double maxPauseTime) {
+                                  double speed) {
         super(location, strategy, speed);
         this.status = GenericUserStatus.PAUSED;        
     }

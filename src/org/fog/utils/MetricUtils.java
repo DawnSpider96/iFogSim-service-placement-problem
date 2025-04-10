@@ -113,22 +113,22 @@ public class MetricUtils {
         return allUtilizationValues;
     }
 
-    private static double calculateMapMean(Map<Double, Double> timestampToValue) {
-        return timestampToValue.values().stream()
-                .mapToDouble(Double::doubleValue)
-                .average()
-                .orElse(0.0);
-    }
-
-    public static double calculateMapStandardDeviation(Map<Double, Double> data, Double mean) {
-        double variance = data.values()
-                .stream()
-                .mapToDouble(i -> i)
-                .map(i -> Math.pow(i - mean, 2))
-                .average()
-                .orElse(0.0); // Returns 0 if there are no values
-        return Math.sqrt(variance);
-    }
+//    private static double calculateMapMean(Map<Double, Double> timestampToValue) {
+//        return timestampToValue.values().stream()
+//                .mapToDouble(Double::doubleValue)
+//                .average()
+//                .orElse(0.0);
+//    }
+//
+//    public static double calculateMapStandardDeviation(Map<Double, Double> data, Double mean) {
+//        double variance = data.values()
+//                .stream()
+//                .mapToDouble(i -> i)
+//                .map(i -> Math.pow(i - mean, 2))
+//                .average()
+//                .orElse(0.0); // Returns 0 if there are no values
+//        return Math.sqrt(variance);
+//    }
 
     /**
      * Calculates descriptive statistics (mean, standard deviation) for a list of double values

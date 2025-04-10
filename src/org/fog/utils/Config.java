@@ -31,6 +31,10 @@ public class Config {
 	public static final double minLon = 144.947130;
 	public static final double maxLon = 144.978820;
 
+	public static final double baseServerLatency = 1.0; // in milliseconds
+	public static final double baseWifiLatency = 2.0;   // in milliseconds
+	public static final double latencyPerKilometer = 0.01; // in milliseconds
+
 	// Create cluster among devices of same level with common parent irrespective of location. Only one of the two clustering modes should be used for clustering
 	public static boolean ENABLE_STATIC_CLUSTERING = false;
 	//Dynamic Clustering

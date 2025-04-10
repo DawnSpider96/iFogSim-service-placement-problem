@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 
 public class MyMicroservicesMobilityController extends MyMicroservicesController {
 
-    private LocationHandler locator;
     private Map<Integer, Integer> parentReference;
     
     /**
@@ -39,13 +38,6 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
      * For example, these might be special points such as hospitals or city hotspots.
      */
     private List<Attractor> landmarks;
-
-    /**
-     * Maps a device's simulation ID (deviceId) to its mobility state object.
-     * The mobility state is where per-device path, location, and status are stored.
-     */
-    private Map<Integer, DeviceMobilityState> deviceMobilityStates;
-
 
     protected Map<Integer, Map<String, PlacementRequest>> perClientDevicePrs = new HashMap<>();  // clientDevice -> <Application -> PR>
 
@@ -55,49 +47,77 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
      * @param sensors
      * @param applications
      */
-    public MyMicroservicesMobilityController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, List<Application> applications, int placementLogic, LocationHandler locator) {
+    public MyMicroservicesMobilityController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, List<Application> applications, int placementLogic) {
         super(name, fogDevices, sensors, applications, placementLogic);
 
-        setLocator(locator);
         setParentReference(new HashMap<Integer, Integer>());
         this.landmarks = new ArrayList<>();
-        this.deviceMobilityStates = new HashMap<>();
 
-        super.init();
+        // Note: super.init() is no longer called automatically
+        // It will be called after location data is loaded via completeInitialization()
     }
 
-    public MyMicroservicesMobilityController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, List<Application> applications, int placementLogic, Map<Integer, List<FogDevice>> monitored, LocationHandler locator) {
+    public MyMicroservicesMobilityController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, List<Application> applications, int placementLogic, Map<Integer, List<FogDevice>> monitored) {
         super(name, fogDevices, sensors, applications, placementLogic, monitored);
 
-        setLocator(locator);
         setParentReference(new HashMap<Integer, Integer>());
         this.landmarks = new ArrayList<>();
-        this.deviceMobilityStates = new HashMap<>();
 
-        super.init(monitored);
+        // Note: super.init(monitored) is no longer called automatically
+        // It will be called after location data is loaded via completeInitialization(monitored)
     }
 
+    /**
+     * Completes the initialization process after location data has been loaded.
+     * Overrides parent class method to store parent references after connections are established.
+     */
     @Override
-    protected void init() {
-        // kept empty as locator should be set before init functions.
+    public void completeInitialization() {
+        // Call the parent class method to perform basic initialization
+        super.completeInitialization();
+        
+        // Store initial parent references
+        for (FogDevice device : fogDevices) {
+            parentReference.put(device.getId(), device.getParentId());
+        }
     }
 
+    /**
+     * Completes the initialization process with monitored devices after location data has been loaded.
+     * Overrides parent class method to store parent references after connections are established.
+     * 
+     * @param monitored map of monitored devices
+     */
     @Override
-    protected void init(Map<Integer, List<FogDevice>> monitored) {
-        // kept empty as locator should be set before init functions.
+    public void completeInitialization(Map<Integer, List<FogDevice>> monitored) {
+        // Call the parent class method to perform basic initialization
+        super.completeInitialization(monitored);
+        
+        // Store initial parent references
+        for (FogDevice device : fogDevices) {
+            parentReference.put(device.getId(), device.getParentId());
+        }
     }
 
     private void setParentReference(HashMap<Integer, Integer> parentReference) {
-        // TODO Auto-generated method stub
         this.parentReference = parentReference;
     }
 
     @Override
     public void startEntity() {
-//        if (Config.ENABLE_DYNAMIC_CLUSTERING)
-//            clusteringSubmit(clustering_levels);
-
         super.startEntity();
+
+        // Initialize parent references for existing devices
+        initializeParentReferences();
+    }
+
+    /**
+     * Initializes parent references for all devices
+     */
+    private void initializeParentReferences() {
+        for (FogDevice device : fogDevices) {
+            parentReference.put(device.getId(), device.getParentId());
+        }
     }
 
     @Override
@@ -117,8 +137,6 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
                 printNetworkUsageDetails();
                 printMigrationDelayDetails();
                 endSimulation();
-                // Simon (280125) says for experiment purposes we can't forcibly stop execution.
-//                System.exit(0);
                 break;
             default:
                 super.processEvent(ev);
@@ -133,7 +151,7 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
      */
     public void scheduleNextMovementUpdate(int deviceId) {
         // Get the device's mobility state
-        DeviceMobilityState dms = deviceMobilityStates.get(deviceId);
+        DeviceMobilityState dms = getDeviceMobilityState(deviceId);
         if (dms == null) {
             System.out.println("Error: No mobility state found for device " + deviceId);
             return;
@@ -151,10 +169,13 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
             
             FogDevice device = getFogDeviceById(deviceId);
             FogDevice prevParent = getFogDeviceById(parentReference.get(deviceId));
-            FogDevice newParent = getFogDeviceById(locator.determineParent(deviceId, CloudSim.clock()));
+            
+            // Use LocationManager to determine new parent based on proximity
+            int newParentId = locationManager.determineParentByProximity(deviceId, fogDevices);
+            FogDevice newParent = getFogDeviceById(newParentId);
             
             // If the parent has changed, update parent and routing tables
-            if (prevParent.getId() != newParent.getId()) {
+            if (newParent != null && prevParent.getId() != newParent.getId()) {
                 updateDeviceParent(device, newParent, prevParent);
                 setNewOrchestratorNode(device, newParent);
                 System.out.println("Device " + deviceId + " updated parent to " + newParent.getId());
@@ -162,8 +183,6 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
             
             // Remove the current waypoint as it's been processed
             path.removeNextWayPoint();
-            // TODO Simon (080425) maybe add discarded waypoints to a list for metric collection
-            //  The list will be dms state
             
             // Schedule next movement if there are more waypoints
             if (!path.isEmpty()) {
@@ -194,7 +213,7 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
      * @return the pause duration (in simulation time units, e.g., seconds)
      */
     public double determinePauseTime(int deviceId) {
-        DeviceMobilityState dms = deviceMobilityStates.get(deviceId);
+        DeviceMobilityState dms = getDeviceMobilityState(deviceId);
         if (dms != null) {
             return dms.determinePauseTime();
         }
@@ -207,7 +226,7 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
      * @param deviceId the unique ID of the device
      */
     public void makePath(int deviceId) {
-        DeviceMobilityState dms = deviceMobilityStates.get(deviceId);
+        DeviceMobilityState dms = getDeviceMobilityState(deviceId);
         if (dms == null) {
             Logger.error("Error","No mobility state found for device " + deviceId);
             return;
@@ -231,15 +250,17 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
     }
 
     /**
-     * Register a device's mobility state with the controller
+     * Register a device's mobility state with the controller.
+     * This method overrides the parent class implementation to maintain compatibility
+     * with existing code.
      * 
      * @param deviceId the device ID
      * @param mobilityState the device's mobility state
      */
+    @Override
     public void registerDeviceMobilityState(int deviceId, DeviceMobilityState mobilityState) {
-        deviceMobilityStates.put(deviceId, mobilityState);
-        // Also register with LocationHandler for integrated location tracking
-        locator.registerDeviceMobilityState(deviceId, mobilityState);
+        // Use parent class implementation which updates the shared deviceMobilityStates map
+        super.registerDeviceMobilityState(deviceId, mobilityState);
     }
     
     /**
@@ -261,16 +282,6 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
     }
     
     /**
-     * Gets the mobility state for a specific device
-     * 
-     * @param deviceId the device ID
-     * @return the device's mobility state
-     */
-    public DeviceMobilityState getDeviceMobilityState(int deviceId) {
-        return deviceMobilityStates.get(deviceId);
-    }
-    
-    /**
      * Starts mobility for a specific device by creating an initial path
      * 
      * @param deviceId the device to start moving
@@ -282,9 +293,6 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
     // In your entity that decides to stop the simulation
     public void endSimulation() {
         CloudSim.stopSimulation();  // Stops the simulation internally
-//        for (SimEntity entity : CloudSim.getEntityList()) {
-//            entity.shutdownEntity();  // Make sure this method clears each entity's state
-//        }
         CloudSim.clearQueues();  // A hypothetical method to clear static variables if implemented
     }
 
@@ -314,34 +322,10 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
 
     @Override
     protected void connectWithLatencies() {
-        for (String dataId : locator.getDataIdsLevelReferences().keySet()) {
-            for (int instanceId : locator.getInstanceDataIdReferences().keySet()) {
-                if (locator.getInstanceDataIdReferences().get(instanceId).equals(dataId)) {
-                    FogDevice fogDevice = getFogDeviceById(instanceId);
-                    if (locator.getDataIdsLevelReferences().get(dataId) == locator.getLevelID("User") && fogDevice.getParentId() == References.NOT_SET) {
-                        int parentID = locator.determineParent(fogDevice.getId(), References.INIT_TIME);
-                        parentReference.put(fogDevice.getId(), parentID);
-                        fogDevice.setParentId(parentID);
-                        fogDevice.setUplinkLatency(locator.calculateLatencyUsingDistance(parentID, instanceId));
-                    } else
-                        parentReference.put(fogDevice.getId(), fogDevice.getParentId());
-                }
-            }
-        }
-
-
-        FogDevice cloud = getCloud();
-        parentReference.put(cloud.getId(), cloud.getParentId());
-
-        for (FogDevice fogDevice : fogDevices) {
-            FogDevice parent = getFogDeviceById(parentReference.get(fogDevice.getId()));
-            if (parent == null)
-                continue;
-            double latency = fogDevice.getUplinkLatency();
-            parent.getChildToLatencyMap().put(fogDevice.getId(), latency);
-            parent.getChildrenIds().add(fogDevice.getId());
-            System.out.println("Child " + fogDevice.getName() + "\t----->\tParent " + parent.getName());
-        }
+        // Use parent's implementation which now uses the LocationManager
+        super.connectWithLatencies();
+        
+        // No need to store parent references here, as it's now done in completeInitialization()
     }
 
     /**
@@ -352,7 +336,8 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
     public void updateRoutingTable(FogDevice fogDevice) {
         for (FogDevice f : fogDevices) {
             if (f.getId() != fogDevice.getId()) {
-                // for mobile device update all to parent
+                // NO communication overhead.
+                // Simon (090425) says MicroservicesController is an entity EXTERNAL to the network.
                 ((MyFogDevice) fogDevice).updateRoutingTable(f.getId(), fogDevice.getParentId());
 
                 ////for other update route to mobile based on route to parent
@@ -403,7 +388,12 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
     public void updateDeviceParent(FogDevice fogDevice, FogDevice newParent, FogDevice prevParent) {
         fogDevice.setParentId(newParent.getId());
         System.out.println("Child " + fogDevice.getName() + "\t----->\tParent " + newParent.getName());
-        newParent.getChildToLatencyMap().put(fogDevice.getId(), fogDevice.getUplinkLatency());
+        
+        // Calculate latency based on distance using the LocationManager
+        double latency = locationManager.calculateNetworkLatency(fogDevice.getId(), newParent.getId());
+        fogDevice.setUplinkLatency(latency);
+        
+        newParent.getChildToLatencyMap().put(fogDevice.getId(), latency);
         newParent.addChild(fogDevice.getId());
         prevParent.removeChild(fogDevice.getId());
         
@@ -412,13 +402,5 @@ public class MyMicroservicesMobilityController extends MyMicroservicesController
         
         // Update routing tables
         updateRoutingTable(fogDevice);
-    }
-
-    public LocationHandler getLocator() {
-        return locator;
-    }
-
-    public void setLocator(LocationHandler locator) {
-        this.locator = locator;
     }
 }

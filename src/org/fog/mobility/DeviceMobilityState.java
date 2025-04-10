@@ -61,6 +61,20 @@ public abstract class DeviceMobilityState {
     }
     
     /**
+     * Creates a new device mobility state with just a location.
+     * This constructor is meant for simple use cases where only the location is needed.
+     * 
+     * @param location initial location
+     */
+    public DeviceMobilityState(Location location) {
+        this.currentLocation = location;
+        this.path = new WayPointPath();
+        this.strategy = null;
+        this.speed = 0.0;
+        this.currentAttractor = null;
+    }
+    
+    /**
      * Gets the current location of the device
      * 
      * @return the current location

@@ -541,7 +541,7 @@ public class MyFogDevice extends FogDevice {
 		if (getDeviceType() == MyFogDevice.FON || getDeviceType() == MyFogDevice.CLOUD) {
 			controllerComponent = new ControllerComponent(getId(), loadBalancer, mPlacement, resourceAvailability, applications, fogDevices);
 		} else
-			Logger.error("Controller init failed", "FON controller initialized for device " + getName() + " of type " + getDeviceType());
+			Logger.error("Controller init failed", "Wrong device type: " + getDeviceType());
 	}
 
 	/**

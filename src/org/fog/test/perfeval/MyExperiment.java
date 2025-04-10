@@ -16,10 +16,8 @@ import org.fog.application.Application;
 import org.fog.application.MyApplication;
 import org.fog.application.selectivity.FractionalSelectivity;
 import org.fog.entities.*;
-import org.fog.mobilitydata.DataParser;
-import org.fog.mobilitydata.ExperimentDataParser;
+import org.fog.mobilitydata.Location;
 import org.fog.mobilitydata.References;
-import org.fog.placement.LocationHandler;
 import org.fog.placement.MyMicroservicesMobilityController;
 import org.fog.placement.PlacementLogicFactory;
 import org.fog.policy.AppModuleAllocationPolicy;
@@ -55,19 +53,10 @@ public class MyExperiment {
     static List<Sensor> sensors = new ArrayList<Sensor>();
     static List<Actuator> actuators = new ArrayList<Actuator>();
 
-    //    static Map<Integer, Integer> userMobilityPattern = new HashMap<Integer, Integer>();
-    static LocationHandler locator;
-
-//    static boolean CLOUD = false;
-
+    // Constants for CSV file paths and data configurations
+    private static final String USERS_LOCATION_PATH = "./dataset/usersLocation-melbCBD_Experiments.csv";
+    private static final String RESOURCES_LOCATION_PATH = "./dataset/edgeResources-melbCBD_Experiments.csv";
     static double SENSOR_TRANSMISSION_TIME = 10;
-//    static int numberOfUser = 196;
-
-    // TODO: 8/8/2021  not required for this scenario
-    // if random mobility generator for users is True, new random dataset will be created for each user
-//    static boolean randomMobility_generator = true; // To use random datasets
-//    static boolean renewDataset = false; // To overwrite existing random datasets
-//    static List<Integer> clusteringLevels = new ArrayList<Integer>(); // The selected fog layers for clustering
 
     public static void main(String[] args) {
         List<SimulationConfig> configs = Arrays.asList(
@@ -211,7 +200,6 @@ public class MyExperiment {
         fogDevices.clear();
         sensors.clear();
         actuators.clear();
-        locator = null;
         
         try {
             Log.enable();
@@ -239,6 +227,7 @@ public class MyExperiment {
 
             MyApplication application = createApplication(appId, broker.getId(), appLoopLength);
             application.setUserId(broker.getId());
+
             // Simon (140125) says tuples will be sent to FogDevices and executed under mService1
             // because source module is clientModule but dest module is mService1
             // TODO Change accordingly if the AppLoop ever changes (or there are more AppLoops)
@@ -246,17 +235,9 @@ public class MyExperiment {
             List<String> simonAppSecondMicroservices = new ArrayList<>();
             simonAppSecondMicroservices.add("mService1");
             FogBroker.getApplicationToSecondMicroservicesMap().put(application, simonAppSecondMicroservices);
-            DataParser dataObject = new ExperimentDataParser();
-            locator = new LocationHandler(dataObject);
 
-//            if (randomMobility_generator) {
-//                datasetReference = References.dataset_random;
-//                createRandomMobilityDatasets(References.random_walk_mobility_model, datasetReference, renewDataset);
-//            }
-
-            createImmobileUsers(broker.getId(), application, numberOfUser);
-            createFogDevices(broker.getId(), application, numberOfEdge);
-
+            // Create fog devices (cloud, gateways, and mobile devices)
+            createFogDevices(broker.getId(), application, numberOfEdge, numberOfUser);
 
             /**
              * Central controller for performing preprocessing functions
@@ -264,17 +245,38 @@ public class MyExperiment {
             List<Application> appList = new ArrayList<>();
             appList.add(application);
 
-            MyMicroservicesMobilityController microservicesController = new MyMicroservicesMobilityController("controller", fogDevices, sensors, appList, placementLogicType, locator);
-
-            // Register user devices
-            for (FogDevice device : fogDevices) {
-                if (((MyFogDevice)device).getDeviceType().equals(MyFogDevice.GENERIC_USER) ||
-                        ((MyFogDevice)device).getDeviceType().equals(MyFogDevice.AMBULANCE_USER) ||
-                        ((MyFogDevice)device).getDeviceType().equals(MyFogDevice.OPERA_USER)) {
-                    microservicesController.registerUserDevice((MyFogDevice)device);
-                    ((MyFogDevice)device).setMicroservicesControllerId(microservicesController.getId());
-                }
+            MyMicroservicesMobilityController microservicesController = new MyMicroservicesMobilityController(
+                "controller", fogDevices, sensors, appList, placementLogicType);
+                
+            // Initialize location data from CSV files
+            try {
+                System.out.println("Initializing location data from CSV files...");
+                microservicesController.initializeLocationData(
+                    RESOURCES_LOCATION_PATH,
+                    USERS_LOCATION_PATH,
+                    numberOfEdge,
+                    numberOfUser
+                );
+                System.out.println("Location data initialization complete.");
+                
+                // Complete initialization now that location data is loaded
+                microservicesController.completeInitialization();
+                System.out.println("Controller initialization completed with proximity-based connections.");
+            } catch (IOException e) {
+                System.out.println("Failed to initialize location data: " + e.getMessage());
+                e.printStackTrace();
+                return;
             }
+
+            // todo Simon (100425) says we do this in controller.connectWithLatencies instead
+//            for (FogDevice device : fogDevices) {
+//                if (((MyFogDevice)device).getDeviceType().equals(MyFogDevice.GENERIC_USER) ||
+//                        ((MyFogDevice)device).getDeviceType().equals(MyFogDevice.AMBULANCE_USER) ||
+//                        ((MyFogDevice)device).getDeviceType().equals(MyFogDevice.OPERA_USER)) {
+//                    microservicesController.registerUserDevice((MyFogDevice)device);
+//                    ((MyFogDevice)device).setMicroservicesControllerId(microservicesController.getId());
+//                }
+//            }
 
             // generate placement requests
             List<PlacementRequest> placementRequests = new ArrayList<>();
@@ -311,63 +313,49 @@ public class MyExperiment {
     }
 
     /**
-     * Creates variable number of fog devices in the physical topology of the simulation.
+     * Creates fog devices for the simulation.
+     * This method creates a cloud device, gateway devices, and user devices.
+     * It now handles device creation without relying on the LocationHandler.
      *
-     * @param userId
+     * @param userId User ID for the broker
+     * @param app Application to be deployed
+     * @param numberOfEdge Number of edge devices to create
+     * @param numberOfUser Number of user devices to create
      */
-    private static void createFogDevices(int userId, Application app, int numberOfEdge) throws NumberFormatException, IOException {
-        locator.parseResourceInfo(numberOfEdge);
+    private static void createFogDevices(int userId, Application app, int numberOfEdge, int numberOfUser) {
+        // Create cloud device at the top of the hierarchy
+        MyFogDevice cloud = createFogDevice("cloud", 44800, 40000, 100, 10000, 0.01, 16 * 103, 16 * 83.25, MyFogDevice.CLOUD);
+        cloud.setParentId(References.NOT_SET);
+        cloud.setLevel(0);
+        fogDevices.add(cloud);
 
-        if (locator.getLevelWiseResources(locator.getLevelID("Cloud")).size() == 1) {
-
-            FogDevice cloud = createFogDevice("cloud", 44800, 40000, 100, 10000, 0.01, 16 * 103, 16 * 83.25, MyFogDevice.CLOUD); // creates the fog device Cloud at the apex of the hierarchy with level=0
-            cloud.setParentId(References.NOT_SET);
-            locator.linkDataWithInstance(cloud.getId(), locator.getLevelWiseResources(locator.getLevelID("Cloud")).get(0));
-            cloud.setLevel(0);
-            fogDevices.add(cloud);
-
-//            for (int i = 0; i < locator.getLevelWiseResources(locator.getLevelID("Proxy")).size(); i++) {
-//
-//                FogDevice proxy = createFogDevice("proxy-server_" + i, 2800, 4000, 10000, 10000, 0.0, 107.339, 83.4333, MyFogDevice.FON); // creates the fog device Proxy Server (level=1)
-//                locator.linkDataWithInstance(proxy.getId(), locator.getLevelWiseResources(locator.getLevelID("Proxy")).get(i));
-//                proxy.setParentId(cloud.getId()); // setting Cloud as parent of the Proxy Server
-//                proxy.setUplinkLatency(100); // latency of connection from Proxy Server to the Cloud is 100 ms
-//                proxy.setLevel(1);
-//                fogDevices.add(proxy);
-//
-//            }
-
-            for (int i = 0; i < locator.getLevelWiseResources(locator.getLevelID("Gateway")).size(); i++) {
-                // TODO (NOT Simon says): Depending on the Placement Logic maybe these should be FON instead of FCN
-                // I kept the comment to reflect the creator's thought process about Placement Logic.
-                // But Simon says these should definitely be FCN. The cloud will sort everything out.
-                FogDevice gateway = createFogDevice("gateway_" + i, 2800, 4000, 10000, 10000, 0.0, 107.339, 83.4333, MyFogDevice.FCN);
-                locator.linkDataWithInstance(gateway.getId(), locator.getLevelWiseResources(locator.getLevelID("Gateway")).get(i));
-                gateway.setParentId(cloud.getId());
-                // Simon (020225) says we will determine distance
-                gateway.setUplinkLatency(locator.calculateLatencyUsingDistance(cloud.getId(), gateway.getId()));
-                gateway.setLevel(1);
-                fogDevices.add(gateway);
-            }
+        // Create gateway devices
+        for (int i = 0; i < numberOfEdge; i++) {
+            MyFogDevice gateway = createFogDevice("gateway_" + i, 2800, 4000, 10000, 10000, 0.0, 107.339, 83.4333, MyFogDevice.FCN);
+            gateway.setParentId(cloud.getId());
+            // Let latency be set by LocationManager in connectWithLatencies
+            gateway.setUplinkLatency(100); // Default latency, will be updated by LocationManager
+            gateway.setLevel(1);
+            fogDevices.add(gateway);
         }
-    }
 
-    private static void createImmobileUsers(int userId, Application app, int numberOfUser) throws IOException {
-        // Just keep this empty, I'm too lazy to override the LocationHandler as well
-        Map<Integer, Integer> userMobilityPattern = new HashMap<Integer, Integer>();
-
-        locator.parseUserInfo(userMobilityPattern, "./dataset/usersLocation-melbCBD_Experiments.csv", numberOfUser);
-
-        List<String> mobileUserDataIds = locator.getMobileUserDataId();
-
-        for (int i = 0; i < numberOfUser; i++) {
-            FogDevice mobile = addImmobile("immobile_" + i, userId, app, References.NOT_SET); // adding mobiles to the physical topology. Smartphones have been modeled as fog devices as well.
-            // Simon (020225) says we set uplink latency of users in MyMicroservicesMobilityController.connectWithLatencies
-            mobile.setUplinkLatency(-1);
-            locator.linkDataWithInstance(mobile.getId(), mobileUserDataIds.get(i));
-            mobile.setLevel(2);
-
-            fogDevices.add(mobile);
+        // Create user devices
+        int usersPerGateway = numberOfUser / numberOfEdge;
+        int remainingUsers = numberOfUser % numberOfEdge;
+        
+        int userCount = 0;
+        for (int i = 0; i < numberOfEdge; i++) {
+            int usersToCreate = usersPerGateway + (i < remainingUsers ? 1 : 0);
+            
+            for (int j = 0; j < usersToCreate && userCount < numberOfUser; j++) {
+                FogDevice mobile = addImmobile("immobile_" + userCount, userId, app, References.NOT_SET);
+                // Don't set uplink latency, it will be set by LocationManager based on distance
+                mobile.setUplinkLatency(-1);
+                mobile.setLevel(2);
+                
+                fogDevices.add(mobile);
+                userCount++;
+            }
         }
     }
 
@@ -444,15 +432,15 @@ public class MyExperiment {
     private static FogDevice addImmobile(String name, int userId, Application app, int parentId) {
         MyFogDevice mobile = createFogDevice(name, 200, 200, 10000, 270, 0, 87.53, 82.44, MyFogDevice.GENERIC_USER);
         mobile.setParentId(parentId);
-        //locator.setInitialLocation(name,drone.getId());
-        Sensor mobileSensor = new MySensor("s-" + name, "SENSOR", userId, app.getAppId(), new DeterministicDistribution(SENSOR_TRANSMISSION_TIME)); // inter-transmission time of EEG sensor follows a deterministic distribution
+        
+        Sensor mobileSensor = new MySensor("s-" + name, "SENSOR", userId, app.getAppId(), new DeterministicDistribution(SENSOR_TRANSMISSION_TIME));
         mobileSensor.setApp(app);
         sensors.add(mobileSensor);
+        
         Actuator mobileDisplay = new Actuator("a-" + name, userId, app.getAppId(), "DISPLAY");
         actuators.add(mobileDisplay);
 
         mobileSensor.setGatewayDeviceId(mobile.getId());
-
         mobileSensor.setLatency(6.0);  // latency of connection between EEG sensors and the parent Smartphone is 6 ms
 
         mobileDisplay.setGatewayDeviceId(mobile.getId());
@@ -526,6 +514,5 @@ public class MyExperiment {
 
         return application;
     }
-
 }
 

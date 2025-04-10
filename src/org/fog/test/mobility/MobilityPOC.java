@@ -29,7 +29,6 @@ import org.fog.mobility.GenericUserMobilityState;
 import org.fog.mobility.PauseTimeStrategy;
 import org.fog.mobilitydata.Location;
 import org.fog.mobilitydata.References;
-import org.fog.placement.LocationHandler;
 import org.fog.placement.MyMicroservicesMobilityController;
 import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.utils.FogEvents;
@@ -49,6 +48,7 @@ public class MobilityPOC {
     
     // Path to the CSV file with user locations
     private static final String LOCATIONS_CSV_PATH = "./dataset/usersLocation-melbCBD_Experiments.csv";
+    private static final String RESOURCES_CSV_PATH = "./dataset/edgeResources-melbCBD_Experiments.csv";
     private static final int NUM_USERS = 196; // Number of users to create
     private static final int NUM_GATEWAYS = 50; // Number of gateway devices to create
     
@@ -56,16 +56,6 @@ public class MobilityPOC {
         Log.printLine("Starting Mobility Proof of Concept...");
         
         try {
-            // Load locations from CSV file
-            List<Location> userLocations = loadLocationsFromCSV(LOCATIONS_CSV_PATH);
-            
-            if (userLocations.isEmpty()) {
-                Log.printLine("Failed to load locations from CSV. Exiting simulation.");
-                return;
-            }
-            
-            Log.printLine("Successfully loaded " + userLocations.size() + " locations from CSV file.");
-            
             // Initialize the CloudSim library
             int num_user = 1;
             Calendar calendar = Calendar.getInstance();
@@ -73,9 +63,7 @@ public class MobilityPOC {
             CloudSim.init(num_user, calendar, trace_flag);
             
             // Create the fog devices
-            List<FogDevice> fogDevices = createFogDevices(userLocations);
-
-            LocationHandler locator = new LocationHandler();
+            List<FogDevice> fogDevices = createFogDevices();
             
             // Create a mobility controller without sensors and applications
             MyMicroservicesMobilityController controller = new MyMicroservicesMobilityController(
@@ -83,14 +71,31 @@ public class MobilityPOC {
                 fogDevices, 
                 new ArrayList<>(), // no sensors
                 new ArrayList<>(), // no applications
-                0, // placementLogic
-                locator
+                0 // placementLogic
             );
+            
+            // Initialize location data from CSV files
+            try {
+                controller.initializeLocationData(
+                    RESOURCES_CSV_PATH,
+                    LOCATIONS_CSV_PATH,
+                    NUM_GATEWAYS,
+                    NUM_USERS
+                );
+                Log.printLine("Successfully initialized location data from CSV files.");
+                
+                // Complete initialization now that location data is loaded
+                controller.completeInitialization();
+                Log.printLine("Controller initialization completed with proximity-based connections.");
+            } catch (IOException e) {
+                Log.printLine("Failed to initialize location data: " + e.getMessage());
+                return;
+            }
             
             // Create a mobility strategy
             BeelineMobilityStrategy mobilityStrategy = new BeelineMobilityStrategy();
             
-            // For each mobile device, create and register a mobility state
+            // For each mobile device, create attraction points and start mobility
             for (FogDevice device : fogDevices) {
                 if (device instanceof MyFogDevice) {
                     MyFogDevice myDevice = (MyFogDevice) device;
@@ -101,48 +106,36 @@ public class MobilityPOC {
                         deviceType.equals(MyFogDevice.AMBULANCE_USER) || 
                         deviceType.equals(MyFogDevice.OPERA_USER)) {
                         
-                        // Get the device index from the name (format: "user_X")
-                        int deviceIndex = getDeviceIndex(myDevice.getName());
-                        if (deviceIndex >= userLocations.size()) {
-                            deviceIndex = deviceIndex % userLocations.size(); // Wrap around if needed
+                        // Get the device's current mobility state
+                        GenericUserMobilityState mobilityState = 
+                            (GenericUserMobilityState) controller.getDeviceMobilityState(device.getId());
+                        
+                        if (mobilityState != null) {
+                            // Create an initial attraction point template
+                            Location currentLocation = mobilityState.getCurrentLocation();
+                            Attractor initialAttraction = new Attractor(
+                                currentLocation, // Initial location (will be replaced with random by createAttractionPoint)
+                                "Initial Destination",
+                                0.1, // min pause time
+                                3.0, // max pause time
+                                new PauseTimeStrategy()
+                            );
+                            
+                            // Set initial attraction point
+                            mobilityState.createAttractionPoint(initialAttraction);
+                            
+                            // Start device mobility
+                            controller.startDeviceMobility(device.getId());
+                            
+                            // Schedule some future mobility events for demonstration
+                            CloudSim.send(controller.getId(), device.getId(), 100, FogEvents.MOBILITY_MANAGEMENT, device);
+                            
+                            System.out.println("Started mobility for device: " + device.getName() + 
+                                              " (Type: " + deviceType + ") at location: " + 
+                                              currentLocation.latitude + ", " + currentLocation.longitude);
+                        } else {
+                            System.out.println("WARNING: No mobility state found for device " + device.getName());
                         }
-                        
-                        // Get location from the loaded data
-                        Location userLocation = userLocations.get(deviceIndex);
-                        
-                        // Create mobility state for the user with the loaded location
-                        GenericUserMobilityState mobilityState = new GenericUserMobilityState(
-                            userLocation,
-                            mobilityStrategy,
-                            5.0, // speed in m/s (walking speed)
-                            10.0, // min pause time
-                            30.0  // max pause time
-                        );
-                        
-                        // Register mobility state with controller
-                        controller.registerDeviceMobilityState(device.getId(), mobilityState);
-                        
-                        // Create an initial attraction point template
-                        Attractor initialAttraction = new Attractor(
-                            userLocation, // Initial location (will be replaced with random by createAttractionPoint)
-                            "Initial Destination",
-                            10.0, // min pause time
-                            30.0, // max pause time
-                            new PauseTimeStrategy()
-                        );
-                        
-                        // Set initial attraction point (the method will generate a random location)
-                        mobilityState.createAttractionPoint(initialAttraction);
-                        
-                        // Start device mobility
-                        controller.startDeviceMobility(device.getId());
-                        
-                        // Schedule some future mobility events for demonstration
-                        CloudSim.send(controller.getId(), device.getId(), 100, FogEvents.MOBILITY_MANAGEMENT, device);
-                        
-                        System.out.println("Registered mobility for device: " + device.getName() + 
-                                          " (Type: " + deviceType + ") at location: " + 
-                                          userLocation.latitude + ", " + userLocation.longitude);
                     }
                 }
             }
@@ -159,62 +152,11 @@ public class MobilityPOC {
     }
     
     /**
-     * Loads location data from the specified CSV file
+     * Creates fog devices for the simulation
      * 
-     * @param filePath path to the CSV file
-     * @return list of Location objects
-     */
-    private static List<Location> loadLocationsFromCSV(String filePath) {
-        List<Location> locations = new ArrayList<>();
-        
-        try (BufferedReader csvReader = new BufferedReader(new FileReader(filePath))) {
-            String row;
-            // Read each line from the CSV
-            while ((row = csvReader.readLine()) != null) {
-                String[] data = row.split(",");
-                if (data.length >= 2) {
-                    try {
-                        double latitude = Double.parseDouble(data[0]);
-                        double longitude = Double.parseDouble(data[1]);
-                        int block = References.NOT_SET; // Default block setting
-                        
-                        Location location = new Location(latitude, longitude, block);
-                        locations.add(location);
-                    } catch (NumberFormatException e) {
-                        System.err.println("Error parsing coordinates from line: " + row);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("Error reading CSV file: " + e.getMessage());
-        }
-        
-        return locations;
-    }
-    
-    /**
-     * Extracts the index from a device name (e.g., "user_0_1" returns 1)
-     */
-    private static int getDeviceIndex(String deviceName) {
-        try {
-            // Split the string by underscore and get the last part
-            String[] parts = deviceName.split("_");
-            if (parts.length >= 2) {
-                return Integer.parseInt(parts[parts.length - 1]);
-            }
-        } catch (NumberFormatException e) {
-            // If parsing fails, return 0
-        }
-        return 0;
-    }
-    
-    /**
-     * Creates fog devices for the simulation, using the loaded user locations
-     * 
-     * @param userLocations list of user locations loaded from CSV
      * @return list of fog devices
      */
-    private static List<FogDevice> createFogDevices(List<Location> userLocations) {
+    private static List<FogDevice> createFogDevices() {
         List<FogDevice> devices = new ArrayList<>();
         
         // Create cloud device
@@ -240,7 +182,7 @@ public class MobilityPOC {
             // Create user devices connected to each gateway
             for (int j = 0; j < numUsers; j++) {
                 int userIndex = startIndex + j;
-                if (userIndex < userLocations.size()) {
+                if (userIndex < NUM_USERS) {
                     MyFogDevice userDevice = createFogDevice(
                         "user_" + i + "_" + j, 
                         1000, 
@@ -267,13 +209,6 @@ public class MobilityPOC {
      * Randomly selects one of the user device types
      */
     private static String getRandomUserType() {
-//        int type = (int)(Math.random() * 3);
-//        switch(type) {
-//            case 0: return MyFogDevice.GENERIC_USER;
-//            case 1: return MyFogDevice.AMBULANCE_USER;
-//            case 2: return MyFogDevice.OPERA_USER;
-//            default: return MyFogDevice.GENERIC_USER;
-//        }
         return MyFogDevice.GENERIC_USER;
     }
     

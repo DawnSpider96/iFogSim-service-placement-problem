@@ -6,7 +6,7 @@ import org.fog.mobilitydata.Location;
  * Given the current location, speed, and an attraction point, this strategy builds 
  * a new WaypointPath that the device should follow to reach that point.
  */
-public abstract class MobilityStrategy {
+public interface MobilityStrategy {
 
     /**
      * Builds and returns a WaypointPath from the current location to the attraction point.
@@ -16,5 +16,5 @@ public abstract class MobilityStrategy {
      * @param currentLocation the starting location
      * @return a WaypointPath from currentLocation to attractionPoint
      */
-    public abstract WayPointPath makePath(Attractor attractionPoint, double speed, Location currentLocation);
+    WayPointPath makePath(Attractor attractionPoint, double speed, Location currentLocation);
 } 

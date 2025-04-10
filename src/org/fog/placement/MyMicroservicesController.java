@@ -7,10 +7,17 @@ import org.fog.application.AppLoop;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.entities.*;
+import org.fog.mobility.AmbulanceUserMobilityState;
 import org.fog.utils.*;
 import org.json.simple.JSONObject;
+import org.fog.mobility.BeelineMobilityStrategy;
+import org.fog.mobility.DeviceMobilityState;
+import org.fog.mobility.GenericUserMobilityState;
+import org.fog.mobilitydata.Location;
 
+import java.io.IOException;
 import java.util.*;
+import java.util.Comparator;
 
 
 public class MyMicroservicesController extends SimEntity {
@@ -37,7 +44,12 @@ public class MyMicroservicesController extends SimEntity {
      */
     private double prGenerationInterval = MicroservicePlacementConfig.PLACEMENT_GENERATE_INTERVAL;
 
-
+    // New fields for location management
+    private DataLoader dataLoader;
+    protected LocationManager locationManager;
+    private Map<Integer, DeviceMobilityState> deviceMobilityStates = new HashMap<>();
+    private boolean locationDataInitialized = false;
+    
     /**
      * @param name
      * @param fogDevices
@@ -48,65 +60,93 @@ public class MyMicroservicesController extends SimEntity {
         super(name);
         this.fogDevices = fogDevices;
         this.sensors = sensors;
-//        this.clustering_levels = clusterLevels;
         this.placementLogic = placementLogic;
         for (Application app : applications) {
             this.applications.put(app.getAppId(), app);
         }
 
-        init();
-
+        // Initialize the location management components
+        initializeLocationComponents();
+        
+        // Note: init() is no longer called automatically
+        // It will be called after location data is loaded via completeInitialization()
     }
 
     public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, List<Application> applications, int placementLogic, Map<Integer, List<FogDevice>> monitored) {
         super(name);
         this.fogDevices = fogDevices;
         this.sensors = sensors;
-//        this.clustering_levels = clusterLevels;
         this.placementLogic = placementLogic;
         for (Application app : applications) {
             this.applications.put(app.getAppId(), app);
         }
+        
+        // Initialize the location management components
+        initializeLocationComponents();
+        
+        // Note: init(monitored) is no longer called automatically
+        // It will be called after location data is loaded via completeInitialization(monitored)
+    }
+
+    /**
+     * Initializes the location management components
+     */
+    private void initializeLocationComponents() {
+        this.dataLoader = new DataLoader();
+        this.locationManager = new LocationManager(
+            dataLoader.getLevelID(),
+            dataLoader.getLevelwiseResources(),
+            deviceMobilityStates
+        );
+    }
+
+    /**
+     * Completes the initialization process after location data has been loaded.
+     * This method should be called after initializeLocationData() to ensure 
+     * proximity-based connections are established correctly.
+     */
+    public void completeInitialization() {
+        init();
+    }
+
+    /**
+     * Completes the initialization process with monitored devices after location data has been loaded.
+     * This method should be called after initializeLocationData() to ensure 
+     * proximity-based connections are established correctly.
+     * 
+     * @param monitored map of monitored devices
+     */
+    public void completeInitialization(Map<Integer, List<FogDevice>> monitored) {
         init(monitored);
     }
 
     protected void init() {
         connectWithLatencies();
-
-//        if (Config.ENABLE_STATIC_CLUSTERING) {
-//            for (Integer id : clustering_levels)
-//                createClusterConnections(id, fogDevices, Config.clusteringLatency);
-//        }
-//        printClusterConnections();
-
         initializeControllers(placementLogic);
         generateRoutingTable();
     }
 
     protected void init(Map<Integer, List<FogDevice>> monitored) {
         connectWithLatencies();
-
-//        if (!Config.ENABLE_STATIC_CLUSTERING) {
-//            for (Integer id : clustering_levels)
-//                createClusterConnections(id, fogDevices, Config.clusteringLatency);
-//        }
-//        printClusterConnections();
-
         initializeControllers(placementLogic, monitored);
         generateRoutingTable();
     }
 
     protected void initializeControllers(int placementLogic) {
         for (FogDevice device : fogDevices) {
-            LoadBalancer loadBalancer = new RRLoadBalancer();
+            LoadBalancer loadBalancer = new UselessLoadBalancer(); // Simon (100425) says this is useless, but for backwards compatibility
             MyFogDevice cdevice = (MyFogDevice) device;
 
-            //responsible for placement decision making
+            // responsible for placement decision-making
             if (cdevice.getDeviceType().equals(MyFogDevice.FON) || cdevice.getDeviceType().equals(MyFogDevice.CLOUD)) {
                 List<FogDevice> monitoredDevices = getDevicesForFON(cdevice);
-                MicroservicePlacementLogic microservicePlacementLogic = placementLogicFactory.getPlacementLogic(placementLogic, cdevice.getId());
+                MicroservicePlacementLogic microservicePlacementLogic = placementLogicFactory.getPlacementLogic(placementLogic, cdevice.getId()); // NULL VALUE
                 cdevice.initializeController(loadBalancer, microservicePlacementLogic, getResourceInfo(monitoredDevices), applications, monitoredDevices);
-            } else if (cdevice.getDeviceType().equals(MyFogDevice.FCN) || cdevice.getDeviceType().equals(MyFogDevice.GENERIC_USER)) {
+            } else if (cdevice.getDeviceType().equals(MyFogDevice.FCN) ||
+                    cdevice.getDeviceType().equals(MyFogDevice.GENERIC_USER) ||
+                    cdevice.getDeviceType().equals(MyFogDevice.AMBULANCE_USER) ||
+                    cdevice.getDeviceType().equals(MyFogDevice.OPERA_USER)
+            ) {
                 cdevice.initializeController(loadBalancer);
             }
             else {
@@ -137,8 +177,6 @@ public class MyMicroservicesController extends SimEntity {
     @Override
     public void processEvent(SimEvent ev) {
         switch (ev.getTag()) {
-//            case FogEvents.TRANSMIT_PR:
-//                transmitPr(ev);
             case FogEvents.CONTROLLER_RESOURCE_MANAGE:
                 manageResources();
                 break;
@@ -163,13 +201,127 @@ public class MyMicroservicesController extends SimEntity {
         }
     }
 
+    /**
+     * Register a device's mobility state with the location manager
+     * 
+     * @param deviceId the device ID
+     * @param mobilityState the mobility state
+     */
+    public void registerDeviceMobilityState(int deviceId, DeviceMobilityState mobilityState) {
+        deviceMobilityStates.put(deviceId, mobilityState);
+    }
+
+    /**
+     * Gets a device's mobility state
+     * 
+     * @param deviceId the device ID
+     * @return the device's mobility state, or null if not registered
+     */
+    public DeviceMobilityState getDeviceMobilityState(int deviceId) {
+        return deviceMobilityStates.get(deviceId);
+    }
+
+    /**
+     * Initializes location data from CSV files
+     * 
+     * @param resourceFilename the filename for resource locations
+     * @param userFilename the filename for user locations
+     * @param numberOfEdge the number of edge nodes
+     * @param numberOfUsers the number of users
+     * @throws IOException if there's an error reading the files
+     */
+    public void initializeLocationData(String resourceFilename, String userFilename, 
+                                      int numberOfEdge, int numberOfUsers) throws IOException {
+        Map<String, Location> resourceLocations = dataLoader.loadResourceLocations(resourceFilename, numberOfEdge);
+        Map<Integer, Location> userLocations = dataLoader.loadInitialUserLocations(userFilename, numberOfUsers);
+        
+        // Reproducible random for mobility generation
+        Random random = new Random(33);
+        BeelineMobilityStrategy beelineMobilityStrategy = new BeelineMobilityStrategy();
+
+        // Separate resource and user devices
+        List<MyFogDevice> resourceDevices = new ArrayList<>();
+        List<MyFogDevice> sortedUserDevices = new ArrayList<>();
+        
+        for (FogDevice device : fogDevices) {
+            MyFogDevice fogDevice = (MyFogDevice) device;
+            String deviceType = fogDevice.getDeviceType();
+            if (!(deviceType.equals(MyFogDevice.GENERIC_USER) ||
+                  deviceType.equals(MyFogDevice.AMBULANCE_USER) ||
+                  deviceType.equals(MyFogDevice.OPERA_USER))) {
+                resourceDevices.add(fogDevice);
+            } else {
+                sortedUserDevices.add(fogDevice);
+            }
+        }
+        
+        // Sort devices for consistent mapping
+        resourceDevices.sort(Comparator.comparingInt(FogDevice::getId));
+        sortedUserDevices.sort(Comparator.comparingInt(FogDevice::getId));
+        
+        // Process resource devices - direct mapping from index to device
+        for (int i = 0; i < Math.min(numberOfEdge, resourceDevices.size()); i++) {
+            MyFogDevice fogDevice = resourceDevices.get(i);
+            int csvIndex = i + 1; // CSV indices start at 1
+            String dataId = "res_" + csvIndex;
+            int level = fogDevice.getLevel();
+            
+            if (resourceLocations.containsKey(dataId)) {
+                locationManager.registerResourceLocation(
+                        fogDevice.getId(),
+                        resourceLocations.get(dataId),
+                        dataId,
+                        level
+                );
+                System.out.println("Mapped resource CSV index " + csvIndex + " to device ID " + fogDevice.getId());
+            }
+        }
+        
+        // Process user devices - direct mapping from index to device
+        for (int i = 0; i < Math.min(numberOfUsers, sortedUserDevices.size()); i++) {
+            MyFogDevice fogDevice = sortedUserDevices.get(i);
+            int csvIndex = i + 1; // CSV indices start at 1
+            
+            // Register the device
+            // Simon (100425) says we do NOT register in main Sim file anymore.
+            registerUserDevice(fogDevice);
+            fogDevice.setMicroservicesControllerId(getId());
+            
+            if (userLocations.containsKey(csvIndex)) {
+                System.out.println("Mapped user CSV index " + csvIndex + " to device ID " + fogDevice.getId());
+                
+                if (fogDevice.getDeviceType().equals(MyFogDevice.GENERIC_USER)) {
+                    DeviceMobilityState mobilityState = new GenericUserMobilityState(
+                            userLocations.get(csvIndex),
+                            beelineMobilityStrategy,
+                            random.nextDouble() * 50
+                    );
+                    registerDeviceMobilityState(fogDevice.getId(), mobilityState);
+                }
+                else if (fogDevice.getDeviceType().equals(MyFogDevice.AMBULANCE_USER)) {
+                    DeviceMobilityState mobilityState = new AmbulanceUserMobilityState(
+                            userLocations.get(csvIndex), // We don't use this, instead spawn user at hospital.
+                            beelineMobilityStrategy,
+                            random.nextDouble() * 50
+                    );
+                    registerDeviceMobilityState(fogDevice.getId(), mobilityState);
+                } // TODO Add for Opera user
+                else {
+                    Logger.error("Invalid deviceType Error", "DeviceType is not Generic/Ambulance/Opera");
+                }
+            }
+        }
+        
+        locationDataInitialized = true;
+        System.out.println("Location data initialization complete with direct mapping.");
+    }
+
     protected void generateRoutingTable() {
         Map<Integer, Map<Integer, Integer>> routing = ShortestPathRoutingGenerator.generateRoutingTable(fogDevices);
 
         for (FogDevice f : fogDevices) {
             ((MyFogDevice) f).addRoutingTable(routing.get(f.getId()));
         }
-
     }
 
     public void startEntity() {
@@ -185,34 +337,17 @@ public class MyMicroservicesController extends SimEntity {
         if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC")
             initiatePlacementRequestProcessingDynamic();
 
-//        if (MicroservicePlacementConfig.ENABLE_RESOURCE_DATA_SHARING) {
-//            shareResourceDataAmongClusterNodes();
-//        }
-
         send(getId(), Config.RESOURCE_MANAGE_INTERVAL, FogEvents.CONTROLLER_RESOURCE_MANAGE);
         send(getId(), Config.MAX_SIMULATION_TIME, FogEvents.STOP_SIMULATION);
     }
 
-//    protected void shareResourceDataAmongClusterNodes() {
-//        for (FogDevice f : fogDevices) {
-//            if (((MyFogDevice) f).getIsInCluster()) {
-//                for (int deviceId : ((MyFogDevice) f).getClusterMembers()) {
-//                    Pair<Integer, Map<String, Double>> resources = new Pair<>(f.getId(), ((MyFogDevice) f).getResourceAvailabilityOfDevice());
-//                    sendNow(deviceId, FogEvents.UPDATE_RESOURCE_INFO, resources);
-//                }
-//            }
-//        }
-//    }
-
     public void initializeUserResources() {
         for (MyFogDevice device : userDevices) {
-            if (device.getDeviceType().equals(MyFogDevice.GENERIC_USER)) {
-                Map<String, Double> resources = new HashMap<>();
-                resources.put(ControllerComponent.CPU, (double) device.getHost().getTotalMips());
-                resources.put(ControllerComponent.RAM, (double) device.getHost().getRam());
-                resources.put(ControllerComponent.STORAGE, (double) device.getHost().getStorage());
-                userResourceAvailability.put(device.getId(), resources);
-            }
+            Map<String, Double> resources = new HashMap<>();
+            resources.put(ControllerComponent.CPU, (double) device.getHost().getTotalMips());
+            resources.put(ControllerComponent.RAM, (double) device.getHost().getRam());
+            resources.put(ControllerComponent.STORAGE, (double) device.getHost().getStorage());
+            userResourceAvailability.put(device.getId(), resources);
         }
     }
 
@@ -230,7 +365,6 @@ public class MyMicroservicesController extends SimEntity {
             Logger.error("Control Flow Error", "Tried to update user resource usage of a non-user device");
         }
     }
-
 
     /**
      * Checks whether a user device has sufficient resources to host a service.
@@ -304,7 +438,7 @@ public class MyMicroservicesController extends SimEntity {
         //  should initializes PRs once as PROTOTYPES for periodic generation.
         //  Those PRs are not processed, hence index should be -1.
         // TODO Potential problems with the -1 initialization if
-        //  for eg sensors get added mid-simulation, their PRs will start at -1
+        //  for example sensors get added mid-simulation, their PRs will start at -1
         int currentSeq = sensorToSequenceNumber.getOrDefault(sensorId, -1);
         int nextSeq = currentSeq + 1;
         sensorToSequenceNumber.put(sensorId, nextSeq);
@@ -378,7 +512,9 @@ public class MyMicroservicesController extends SimEntity {
      */
     public void generatePeriodicPlacementRequests() {
         for (MyFogDevice userDevice : userDevices) {
-            // Find existing placement request for this user
+            // TODO Simon says this wrong.
+            //  We should be checking by sensorId, not requester
+            //  And also update requester according to the current parent.
             MyPlacementRequest existingPR = null;
             for (PlacementRequest pr : placementRequestDelayMap.keySet()) {
                 if (pr.getRequester() == userDevice.getId()) {
@@ -407,18 +543,7 @@ public class MyMicroservicesController extends SimEntity {
         send(getId(), prGenerationInterval, FogEvents.GENERATE_PERIODIC_PR);
     }
 
-
     protected void initiatePlacementRequestProcessingDynamic() {
-//        for (PlacementRequest p : placementRequestDelayMap.keySet()) {
-////            processPlacedModules(p);
-//            JSONObject jsonSend = new JSONObject();
-//            jsonSend.put("PR", p);
-//            jsonSend.put("app", applications.get(p.getApplicationId()));
-//            if (placementRequestDelayMap.get(p) == 0) {
-//                sendNow(p.getRequester(), FogEvents.TRANSMIT_PR, jsonSend);
-//            } else
-//                send(p.getRequester(), placementRequestDelayMap.get(p), FogEvents.TRANSMIT_PR, jsonSend);
-//        }
         if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC) {
             for (FogDevice f : fogDevices) {
                 // todo Simon says for the Offline POC there are no proxy servers, so the cloud processes all PRs
@@ -450,48 +575,6 @@ public class MyMicroservicesController extends SimEntity {
                     "Tried to update resources for non-user device " + CloudSim.getEntityName(userId));
         }
     }
-
-//    protected void initiatePlacementRequestProcessing() {
-//        for (PlacementRequest p : placementRequestDelayMap.keySet()) {
-//            // todo Install the starting modules of the PR
-//            processPlacedModules(p);
-//
-//            int fonId = ((MyFogDevice) getFogDeviceById(p.getGatewayDeviceId())).getFonId();
-//            if (placementRequestDelayMap.get(p) == 0) {
-//                sendNow(fonId, FogEvents.RECEIVE_PR, p);
-//            } else
-//                // NOTE: Here is TRANSMIT_PR for the CONTROLLER. All other instances are for FogDevice
-//                send(getId(), placementRequestDelayMap.get(p), FogEvents.TRANSMIT_PR, p);
-//        }
-//        if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC) {
-//            for (FogDevice f : fogDevices) {
-//                // todo Simon says for the Offline POC there are no proxy servers, so the cloud processes all PRs
-//                // todo The second OR condition was added for Offline POC, whether it stays tbc
-//                if (((MyFogDevice) f).getDeviceType() == MyFogDevice.FON || ((MyFogDevice) f).getDeviceType() == MyFogDevice.CLOUD) {
-//                    sendNow(f.getId(), FogEvents.PROCESS_PRS);
-//                }
-//            }
-//        }
-//    }
-
-//    protected void processPlacedModules(PlacementRequest p) {
-//        for (String placed : p.getPlacedMicroservices().keySet()) {
-//            int deviceId = p.getPlacedMicroservices().get(placed);
-//            Application application = applications.get(p.getApplicationId());
-//            sendNow(deviceId, FogEvents.ACTIVE_APP_UPDATE, application);
-//            sendNow(deviceId, FogEvents.APP_SUBMIT, application);
-//            sendNow(deviceId, FogEvents.LAUNCH_MODULE, new AppModule(application.getModuleByName(placed)));
-//        }
-//    }
-
-
-
-//    private void transmitPr(SimEvent ev) {
-//        PlacementRequest placementRequest = (PlacementRequest) ev.getData();
-//        int fonId = ((MyFogDevice) getFogDeviceById(placementRequest.getGatewayDeviceId())).getFonId();
-//        sendNow(fonId, FogEvents.RECEIVE_PR, placementRequest);
-//    }
-
 
     protected void printQoSDetails() {
         System.out.println("=========================================");
@@ -554,7 +637,6 @@ public class MyMicroservicesController extends SimEntity {
 
     protected void printTimeDetails() {
         TimeKeeper t = TimeKeeper.getInstance();
-//        Calendar c = Calendar.getInstance();
         System.out.println("Simon START TIME : " + TimeKeeper.getInstance().getSimulationStartTime());
         System.out.println("Simon END TIME : " + Calendar.getInstance().getTimeInMillis());
         System.out.println("EXECUTION TIME : " + (Calendar.getInstance().getTimeInMillis() - TimeKeeper.getInstance().getSimulationStartTime()));
@@ -562,16 +644,6 @@ public class MyMicroservicesController extends SimEntity {
         System.out.println("APPLICATION LOOP DELAYS");
         System.out.println("=========================================");
         for (Integer loopId : TimeKeeper.getInstance().getLoopIdToTupleIds().keySet()) {
-			/*double average = 0, count = 0;
-			for(int tupleId : TimeKeeper.getInstance().getLoopIdToTupleIds().get(loopId)){
-				Double startTime = 	TimeKeeper.getInstance().getEmitTimes().get(tupleId);
-				Double endTime = 	TimeKeeper.getInstance().getEndTimes().get(tupleId);
-				if(startTime == null || endTime == null)
-					break;
-				average += endTime-startTime;
-				count += 1;
-			}
-			System.out.println(getStringForLoopId(loopId) + " ---> "+(average/count));*/
             System.out.println(getStringForLoopId(loopId) + " ---> " + TimeKeeper.getInstance().getLoopIdToCurrentAverage().get(loopId));
         }
         System.out.println("=========================================");
@@ -620,7 +692,6 @@ public class MyMicroservicesController extends SimEntity {
         return resources;
     }
 
-
     public void submitPlacementRequests(List<PlacementRequest> placementRequests, int delay) {
         for (PlacementRequest p : placementRequests) {
             placementRequestDelayMap.put(p, delay);
@@ -628,6 +699,7 @@ public class MyMicroservicesController extends SimEntity {
     }
 
     protected FogDevice getFogDeviceById(int id) {
+        // Simono (090425) says Consider cloudsim?
         for (FogDevice f : fogDevices) {
             if (f.getId() == id)
                 return f;
@@ -635,15 +707,68 @@ public class MyMicroservicesController extends SimEntity {
         return null;
     }
 
+    /**
+     * Modified connectWithLatencies to use LocationManager for determining parent-child relationships
+     * based on proximity for user devices
+     */
     protected void connectWithLatencies() {
-        for (FogDevice fogDevice : fogDevices) {
-            if (fogDevice.getParentId() >= 0) {
-                FogDevice parent = (FogDevice) CloudSim.getEntity(fogDevice.getParentId());
-                if (parent == null)
-                    continue;
-                double latency = fogDevice.getUplinkLatency();
-                parent.getChildToLatencyMap().put(fogDevice.getId(), latency);
-                parent.getChildrenIds().add(fogDevice.getId());
+        // If location data hasn't been initialized yet, fall back to default behavior
+        if (!locationDataInitialized) {
+            System.out.println("WARNING: Location data not initialized. Using default parent-child relationships.");
+            for (FogDevice fogDevice : fogDevices) {
+                if (fogDevice.getParentId() >= 0) {
+                    FogDevice parent = getFogDeviceById(fogDevice.getParentId());
+                    if (parent == null)
+                        continue;
+                    double latency = fogDevice.getUplinkLatency();
+                    parent.getChildToLatencyMap().put(fogDevice.getId(), latency);
+                    parent.getChildrenIds().add(fogDevice.getId());
+                }
+            }
+            return;
+        }
+        
+        for (FogDevice device : fogDevices) {
+            MyFogDevice fogDevice = (MyFogDevice) device;
+            String deviceType = fogDevice.getDeviceType();
+            // Connect non-user devices using existing parent IDs
+            if (!(deviceType.equals(MyFogDevice.GENERIC_USER) ||
+                deviceType.equals(MyFogDevice.AMBULANCE_USER) ||
+                deviceType.equals(MyFogDevice.OPERA_USER))
+            ) {
+                if (fogDevice.getParentId() >= 0) {
+                    FogDevice parent = getFogDeviceById(fogDevice.getParentId());
+                    if (parent == null) continue;
+                    
+                    double latency = fogDevice.getUplinkLatency();
+                    parent.getChildToLatencyMap().put(fogDevice.getId(), latency);
+                    parent.getChildrenIds().add(fogDevice.getId());
+                    System.out.println("Connected device " + fogDevice.getName() + " to parent " + parent.getName());
+                }
+            }
+            // Connect user devices based on proximity
+            else {
+                // Find the nearest parent for this user device
+                int parentId = locationManager.determineParentByProximity(fogDevice.getId(), fogDevices);
+
+                if (parentId > -1) {
+                    FogDevice parent = getFogDeviceById(parentId);
+                    fogDevice.setParentId(parentId);
+
+                    // Calculate latency based on distance
+                    double latency = locationManager.calculateNetworkLatency(fogDevice.getId(), parentId);
+                    fogDevice.setUplinkLatency(latency);
+
+                    parent.getChildToLatencyMap().put(fogDevice.getId(), latency);
+                    parent.getChildrenIds().add(fogDevice.getId());
+
+                    System.out.println("Connected user device " + fogDevice.getName() +
+                            " to parent " + parent.getName() +
+                            " with latency " + latency);
+                }
+                else {
+                    System.out.println("WARNING: Could not find a parent for user device " + fogDevice.getName());
+                }
             }
         }
     }
@@ -684,11 +809,7 @@ public class MyMicroservicesController extends SimEntity {
                     connected.add(device);
                     if (!fogDevices.contains(device)) {
                         MyFogDevice mfd = (MyFogDevice) device;
-//                        Only add FCN devices if this is the cloud
-//                        if (!isCloud || mfd.getDeviceType().equals(MyFogDevice.FCN)) {
                         fogDevices.add(mfd);
-                        // NOTE Simon (020425) says regardless of devices are added,
-                        //  ALL devices in simulation must have FON id information
                         mfd.setFonID(f.getId());
                         changed = true;
                     }
@@ -712,75 +833,4 @@ public class MyMicroservicesController extends SimEntity {
     public Map<Integer, Map<String, Double>> getUserResourceAvailability() {
         return userResourceAvailability;
     }
-
-//    protected static void createClusterConnections(int levelIdentifier, List<FogDevice> fogDevices, Double clusterLatency) {
-//        Map<Integer, List<FogDevice>> fogDevicesByParent = new HashMap<>();
-//        for (FogDevice fogDevice : fogDevices) {
-//            if (fogDevice.getLevel() == levelIdentifier) {
-//                if (fogDevicesByParent.containsKey(fogDevice.getParentId())) {
-//                    fogDevicesByParent.get(fogDevice.getParentId()).add(fogDevice);
-//                } else {
-//                    List<FogDevice> sameParentList = new ArrayList<>();
-//                    sameParentList.add(fogDevice);
-//                    fogDevicesByParent.put(fogDevice.getParentId(), sameParentList);
-//                }
-//            }
-//        }
-//
-//        for (int parentId : fogDevicesByParent.keySet()) {
-//            List<Integer> clusterNodeIds = new ArrayList<>();
-//            for (FogDevice fogdevice : fogDevicesByParent.get(parentId)) {
-//                clusterNodeIds.add(fogdevice.getId());
-//            }
-//            for (FogDevice fogDevice : fogDevicesByParent.get(parentId)) {
-//                List<Integer> clusterNodeIdsTemp = new ArrayList<>(clusterNodeIds);
-//                clusterNodeIds.remove((Object) fogDevice.getId());
-//                ((MyFogDevice) fogDevice).setClusterMembers(clusterNodeIds);
-//                Map<Integer, Double> latencyMap = new HashMap<>();
-//                for (int id : clusterNodeIds) {
-//                    latencyMap.put(id, clusterLatency);
-//                }
-//                ((MyFogDevice) fogDevice).setClusterMembersToLatencyMap(latencyMap);
-//                ((MyFogDevice) fogDevice).setIsInCluster(true);
-//                clusterNodeIds = clusterNodeIdsTemp;
-//
-//            }
-//        }
-//    }
-
-//    protected void printClusterConnections() {
-//        StringBuilder clusterString = new StringBuilder();
-//        clusterString.append("Cluster formation : ");
-//        // <ParentNode,ClusterNodes> Assuming than clusters are formed among nodes with same parent
-//        HashMap<String, List<MyFogDevice>> clusters = new HashMap<>();
-//        for (FogDevice f : fogDevices) {
-//            MyFogDevice cDevice = (MyFogDevice) f;
-//            if (cDevice.getIsInCluster()) {
-//                FogDevice parent = getFogDeviceById(cDevice.getParentId());
-//                if (clusters.containsKey(parent.getName()))
-//                    clusters.get(parent.getName()).add(cDevice);
-//                else
-//                    clusters.put(parent.getName(), new ArrayList<>(Arrays.asList(cDevice)));
-//            }
-//        }
-//        for (String parent : clusters.keySet()) {
-//            List<MyFogDevice> clusterNodes = clusters.get(parent);
-//            clusterString.append("Parent node : " + parent + " -> cluster Nodes : ");
-//            for (MyFogDevice device : clusterNodes) {
-//                int count = device.getClusterMembers().size();
-//                clusterString.append(device.getName() + ", ");
-//                for (Integer deviceId : device.getClusterMembers()) {
-//                    if (!clusterNodes.contains(getFogDeviceById(deviceId))) {
-//                        Logger.error("Cluster formation Error", "Error : " + getFogDeviceById(deviceId).getName() + " is added as a cluster node of " + device.getName());
-//                    }
-//                }
-//                if (count + 1 != clusterNodes.size())
-//                    Logger.error("Cluster formation Error", "Error : number of cluster nodes does not match");
-//            }
-//
-//            clusterString.append("\n");
-//        }
-//        System.out.println(clusterString);
-//    }
-
 }
