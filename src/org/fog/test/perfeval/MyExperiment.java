@@ -18,7 +18,7 @@ import org.fog.application.selectivity.FractionalSelectivity;
 import org.fog.entities.*;
 import org.fog.mobilitydata.Location;
 import org.fog.mobilitydata.References;
-import org.fog.placement.MyMicroservicesMobilityController;
+import org.fog.placement.MyMicroservicesController;
 import org.fog.placement.PlacementLogicFactory;
 import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.utils.*;
@@ -245,7 +245,7 @@ public class MyExperiment {
             List<Application> appList = new ArrayList<>();
             appList.add(application);
 
-            MyMicroservicesMobilityController microservicesController = new MyMicroservicesMobilityController(
+            MyMicroservicesController microservicesController = new MyMicroservicesController(
                 "controller", fogDevices, sensors, appList, placementLogicType);
                 
             // Initialize location data from CSV files

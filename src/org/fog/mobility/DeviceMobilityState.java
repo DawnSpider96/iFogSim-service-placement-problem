@@ -2,6 +2,9 @@ package org.fog.mobility;
 
 import org.fog.mobilitydata.Location;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Holds the device's current location and path.
  * Tracks the device's mobility strategy and pause strategy.
@@ -16,6 +19,8 @@ public abstract class DeviceMobilityState {
      */
     protected Location currentLocation;
 
+    protected Map<Double, Location> journey;
+
     /**
      * A structure that holds the upcoming waypoints for the device.
      * This could be a queue (FIFO) so that we can pop the next WayPoint easily.
@@ -25,7 +30,7 @@ public abstract class DeviceMobilityState {
     /**
      * The mobility strategy used to generate paths from the current location to an attraction point.
      */
-    protected MobilityStrategy strategy;
+    protected PathingStrategy strategy;
 
     /**
      * The current point of attraction or destination.
@@ -52,12 +57,13 @@ public abstract class DeviceMobilityState {
      * @param strategy mobility strategy to use
      * @param speed travel speed
      */
-    public DeviceMobilityState(Location location, MobilityStrategy strategy, double speed) {
+    public DeviceMobilityState(Location location, PathingStrategy strategy, double speed) {
         this.currentLocation = location;
         this.strategy = strategy;
         this.speed = speed;
         this.path = new WayPointPath();
         this.currentAttractor = null;
+        this.journey = new HashMap<>();
     }
     
     /**
@@ -141,6 +147,8 @@ public abstract class DeviceMobilityState {
         return status;
     }
 
+    public Map<Double, Location> getJourney() {return journey;}
+
     /**
      * Initiates movement for the device, changing the status from PAUSED (or WAITING) 
      * to a traveling/active state. 
@@ -170,7 +178,7 @@ public abstract class DeviceMobilityState {
      * Subclasses may override to consider current status.
      * Updates the attractionPoint field.
      */
-    public abstract void createAttractionPoint(Attractor currentAttractionPoint);
+    public abstract void updateAttractionPoint(Attractor currentAttractionPoint);
 
     /**
      * Determines how long the device should pause after reaching its final WayPoint.

@@ -1,14 +1,10 @@
 package org.fog.test.mobility;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
@@ -23,26 +19,25 @@ import org.cloudbus.cloudsim.sdn.overbooking.PeProvisionerOverbooking;
 import org.fog.entities.FogDevice;
 import org.fog.entities.FogDeviceCharacteristics;
 import org.fog.entities.MyFogDevice;
-import org.fog.mobility.Attractor;
-import org.fog.mobility.BeelineMobilityStrategy;
-import org.fog.mobility.GenericUserMobilityState;
-import org.fog.mobility.PauseTimeStrategy;
+import org.fog.mobility.*;
 import org.fog.mobilitydata.Location;
-import org.fog.mobilitydata.References;
-import org.fog.placement.MyMicroservicesMobilityController;
+import org.fog.placement.MyMicroservicesController;
 import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.utils.FogEvents;
 import org.fog.utils.FogLinearPowerModel;
 import org.fog.utils.FogUtils;
+import org.fog.utils.Logger;
 
 /**
  * A proof of concept (POC) that demonstrates how to use the mobility framework
  * in iFogSim-placement. This POC shows how to:
  * 
- * 1. Create a mobility strategy (BeelineMobilityStrategy)
+ * 1. Create a mobility strategy (BeelinePathingStrategy)
  * 2. Create mobility states for different user device types
  * 3. Register devices with a mobility controller
  * 4. Trigger and handle mobility events without placement requests
+ * 
+ * This version uses the Strategy Pattern to enable mobility in the base controller.
  */
 public class MobilityPOC {
     
@@ -60,13 +55,15 @@ public class MobilityPOC {
             int num_user = 1;
             Calendar calendar = Calendar.getInstance();
             boolean trace_flag = false;
+            Log.enable();
+            Logger.ENABLED = true;
             CloudSim.init(num_user, calendar, trace_flag);
             
             // Create the fog devices
             List<FogDevice> fogDevices = createFogDevices();
             
-            // Create a mobility controller without sensors and applications
-            MyMicroservicesMobilityController controller = new MyMicroservicesMobilityController(
+            // Create a base controller without sensors and applications
+            MyMicroservicesController controller = new MyMicroservicesController(
                 "MobilityController", 
                 fogDevices, 
                 new ArrayList<>(), // no sensors
@@ -74,7 +71,6 @@ public class MobilityPOC {
                 0 // placementLogic
             );
             
-            // Initialize location data from CSV files
             try {
                 controller.initializeLocationData(
                     RESOURCES_CSV_PATH,
@@ -83,64 +79,48 @@ public class MobilityPOC {
                     NUM_USERS
                 );
                 Log.printLine("Successfully initialized location data from CSV files.");
-                
+
+                // Enable mobility by activating the full mobility strategy\
+                controller.enableMobility();
+                Log.printLine("Mobility enabled using the Strategy Pattern.");
+
                 // Complete initialization now that location data is loaded
                 controller.completeInitialization();
                 Log.printLine("Controller initialization completed with proximity-based connections.");
+                
+
+
             } catch (IOException e) {
                 Log.printLine("Failed to initialize location data: " + e.getMessage());
                 return;
             }
+
+//            for (int deviceId : controller.getDeviceMobilityStates().keySet()) {
+//                DeviceMobilityState mobilityState = controller.getDeviceMobilityState(deviceId);
+//
+//                if (mobilityState != null) {
+//                    // Create an initial attraction point template
+//                    Location currentLocation = mobilityState.getCurrentLocation();
+//                    Attractor initialAttraction = new Attractor(
+//                            currentLocation, // Initial location (will be replaced with random by createAttractionPoint)
+//                            "Initial Destination",
+//                            0.1, // min pause time
+//                            3.0, // max pause time
+//                            new PauseTimeStrategy()
+//                    );
+//
+//                    mobilityState.updateAttractionPoint(initialAttraction);
+//                    controller.startDeviceMobility(deviceId);
+//
+////                    CloudSim.send(controller.getId(), deviceId, 100, FogEvents.MOBILITY_MANAGEMENT, device);
+//
+//                    System.out.println("Started mobility for device: " + CloudSim.getEntityName(deviceId) +
+//                            " at location: " + currentLocation.latitude + ", " + currentLocation.longitude);
+//                } else {
+//                    System.out.println("WARNING: No mobility state found for device " + CloudSim.getEntityName(deviceId));
+//                }
+//            }
             
-            // Create a mobility strategy
-            BeelineMobilityStrategy mobilityStrategy = new BeelineMobilityStrategy();
-            
-            // For each mobile device, create attraction points and start mobility
-            for (FogDevice device : fogDevices) {
-                if (device instanceof MyFogDevice) {
-                    MyFogDevice myDevice = (MyFogDevice) device;
-                    String deviceType = myDevice.getDeviceType();
-                    
-                    // Check if this is a user device type
-                    if (deviceType.equals(MyFogDevice.GENERIC_USER) || 
-                        deviceType.equals(MyFogDevice.AMBULANCE_USER) || 
-                        deviceType.equals(MyFogDevice.OPERA_USER)) {
-                        
-                        // Get the device's current mobility state
-                        GenericUserMobilityState mobilityState = 
-                            (GenericUserMobilityState) controller.getDeviceMobilityState(device.getId());
-                        
-                        if (mobilityState != null) {
-                            // Create an initial attraction point template
-                            Location currentLocation = mobilityState.getCurrentLocation();
-                            Attractor initialAttraction = new Attractor(
-                                currentLocation, // Initial location (will be replaced with random by createAttractionPoint)
-                                "Initial Destination",
-                                0.1, // min pause time
-                                3.0, // max pause time
-                                new PauseTimeStrategy()
-                            );
-                            
-                            // Set initial attraction point
-                            mobilityState.createAttractionPoint(initialAttraction);
-                            
-                            // Start device mobility
-                            controller.startDeviceMobility(device.getId());
-                            
-                            // Schedule some future mobility events for demonstration
-                            CloudSim.send(controller.getId(), device.getId(), 100, FogEvents.MOBILITY_MANAGEMENT, device);
-                            
-                            System.out.println("Started mobility for device: " + device.getName() + 
-                                              " (Type: " + deviceType + ") at location: " + 
-                                              currentLocation.latitude + ", " + currentLocation.longitude);
-                        } else {
-                            System.out.println("WARNING: No mobility state found for device " + device.getName());
-                        }
-                    }
-                }
-            }
-            
-            // Start the simulation
             CloudSim.startSimulation();
             
             Log.printLine("Mobility Proof of Concept finished!");
@@ -170,36 +150,24 @@ public class MobilityPOC {
             gateway.setParentId(cloud.getId());
             gateway.setUplinkLatency(100); // ms
             devices.add(gateway);
+        }
             
-            // Calculate how many users to assign to this gateway
-            int usersPerGateway = NUM_USERS / NUM_GATEWAYS;
-            int extraUsers = (i < NUM_USERS % NUM_GATEWAYS) ? 1 : 0;
-            int numUsers = usersPerGateway + extraUsers;
-            
-            // Calculate starting index for users assigned to this gateway
-            int startIndex = i * usersPerGateway + Math.min(i, NUM_USERS % NUM_GATEWAYS);
-            
-            // Create user devices connected to each gateway
-            for (int j = 0; j < numUsers; j++) {
-                int userIndex = startIndex + j;
-                if (userIndex < NUM_USERS) {
-                    MyFogDevice userDevice = createFogDevice(
-                        "user_" + i + "_" + j, 
-                        1000, 
-                        1000, 
-                        10000, 
-                        270, 
-                        2, 
-                        0.0, 
-                        87.53, 
-                        82.44,
-                        getRandomUserType()
-                    );
-                    userDevice.setParentId(gateway.getId());
-                    userDevice.setUplinkLatency(2); // ms
-                    devices.add(userDevice);
-                }
-            }
+        // Create user devices connected to each gateway
+        for (int j = 0; j < NUM_USERS; j++) {
+            MyFogDevice userDevice = createFogDevice(
+                    "user_" + j,
+                    1000,
+                    1000,
+                    10000,
+                    270,
+                    2,
+                    0.0,
+                    87.53,
+                    82.44,
+                    getRandomUserType() // Only returns generic user for now
+            );
+            userDevice.setUplinkLatency(2); // ms
+            devices.add(userDevice);
         }
         
         return devices;

@@ -27,6 +27,11 @@ public class Location {
 		this.block = block;
 	}
 
+	@Override
+	public String toString() {
+		return "Location{Latitude=" + latitude + ", Longitude=" + longitude + "}";
+	}
+
 	public double calculateDistance(Location loc2) {
 
 		final int R = 6371; // Radius of the earth in Kilometers

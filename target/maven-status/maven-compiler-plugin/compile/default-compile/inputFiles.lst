@@ -24,6 +24,7 @@
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/core/FutureQueue.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/test/perfeval/SimulationConfig.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/utils/CanBeSentResult.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/mobility/BeelinePathingStrategy.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/network/FloydWarshall_Float.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/core/predicates/PredicateFrom.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/util/MathUtil.java
@@ -42,6 +43,7 @@
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/example/SimpleNetworkOperatingSystem.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/mobilitydata/Clustering.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/utils/TimeKeeper.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/entities/UselessLoadBalancer.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/gui/dialog/AddSensor.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/placement/MyClosestFitHeuristic.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/VmAllocationPolicySimple.java
@@ -51,11 +53,13 @@
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/ResCloudlet.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/placement/MyRandomHeuristic.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/graph/core/Bridge.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/placement/LocationManager.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/gui/core/GraphView.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/Middlebox.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/gui/core/VmNode.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/lists/PeList.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/utils/Logger.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/mobility/WayPointPath.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/test/perfeval/OnlinePOC_DistanceLatency.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/overbooking/VmAllocationPolicyOverbooking.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/util/Check.java
@@ -72,6 +76,7 @@
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/power/PowerVmAllocationPolicyMigrationMedianAbsoluteDeviation.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/gui/core/ActuatorGui.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/mobilitydata/Location.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/test/mobility/MobilityPOC.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/power/models/PowerModelSpecPower.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/policy/AppModuleAllocationPolicy.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/SDNHost.java
@@ -88,6 +93,7 @@
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/power/models/PowerModelLinear.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/test/perfeval/TranslationServiceFog_RandomMobility.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/core/CloudSim.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/test/unit/btrplaceLoggerTest.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/HostDynamicWorkload.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/VmSchedulerTimeSharedOverSubscription.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/CloudletScheduler.java
@@ -102,6 +108,7 @@
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/power/PowerVmSelectionPolicyRandomSelection.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/lists/HostList.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/gui/core/NodeCellRenderer.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/mobility/PathingStrategy.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/gui/core/Coordinates.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/gui/dialog/AddActuatorModule.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/placement/MyACO.java
@@ -117,6 +124,7 @@
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/power/PowerVmAllocationPolicyAbstract.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/power/lists/PowerVmList.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/utils/MetricUtils.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/mobility/DeviceMobilityState.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/utils/GeoLocation.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/distributions/ParetoDistr.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/AggregationSwitch.java
@@ -157,6 +165,7 @@
 /home/dawn/repos/iFogSim-placement/src/org/fog/utils/ModuleLaunchConfig.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/entities/FogDevice.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/network/datacenter/NetworkCloudlet.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/mobility/AmbulanceUserMobilityState.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/test/perfeval/CardiovascularHealthMonitoringApplication.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/power/PowerVmAllocationPolicyMigrationInterQuartileRange.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/example/topogenerators/VirtualTopologyGeneratorVmTypes.java
@@ -165,6 +174,7 @@
 /home/dawn/repos/iFogSim-placement/src/org/fog/utils/JsonToTopology.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/gui/dialog/AddApplicationModule.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/distributions/WeibullDistr.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/mobility/NoMobilityStrategy.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/test/perfeval/CrowdSensing_Microservices_RandomMobility_Clustering.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/utils/Config.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/power/PowerUtilizationMaxHostInterface.java
@@ -175,6 +185,7 @@
 /home/dawn/repos/iFogSim-placement/src/org/fog/placement/MyMicroservicePlacementLogic.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/graph/core/VmNode.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/network/datacenter/NetworkVm.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/mobility/WayPoint.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/gui/core/Bridge.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/CloudletSchedulerSpaceShared.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/power/models/PowerModelSpecPowerIbmX3550XeonX5670.java
@@ -187,6 +198,7 @@
 /home/dawn/repos/iFogSim-placement/src/org/fog/gui/example/FogGui.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/example/VmAllocationPolicyCombinedLeastFullFirst.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/distributions/ContinuousDistribution.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/mobility/GenericUserMobilityState.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/test/CleanFromJson.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/graph/dialog/AddVirtualEdge.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/application/DAG.java
@@ -204,7 +216,7 @@
 /home/dawn/repos/iFogSim-placement/src/org/fog/placement/ModulePlacementMobileEdgewards.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/Datacenter.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/application/selectivity/SelectivityModel.java
-/home/dawn/repos/iFogSim-placement/src/org/fog/test/btrplaceLoggerTest.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/mobility/Attractor.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/power/PowerVmAllocationPolicyMigrationStaticThreshold.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/placement/ClusteringController.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/utils/distribution/UniformDistribution.java
@@ -238,6 +250,7 @@
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/power/models/PowerModel.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/EdgeSwitch.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/power/models/PowerModelSqrt.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/placement/DataLoader.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/utils/ResourceUsageDetails.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/graph/core/Node.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/VmStateHistoryEntry.java
@@ -257,6 +270,7 @@
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/distributions/ExponentialDistr.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/power/PowerVmAllocationPolicySimple.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/entities/ControllerComponent.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/mobility/FullMobilityStrategy.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/gui/core/Graph.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/lists/CloudletList.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/overbooking/VmSchedulerTimeSharedOverbookingEnergy.java
@@ -272,9 +286,11 @@
 /home/dawn/repos/iFogSim-placement/src/org/fog/utils/NetworkUsageMonitor.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/core/CloudSimShutdown.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/example/policies/VmSchedulerTimeSharedEnergy.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/mobility/MobilityStrategy.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/test/perfeval/TranslationServiceFog_Clustering.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/core/predicates/Predicate.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/Log.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/mobility/PauseTimeStrategy.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/DatacenterCharacteristics.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/distributions/GammaDistr.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/Pe.java
@@ -339,6 +355,7 @@
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/network/datacenter/NetworkCloudletSpaceSharedScheduler.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/SDNDatacenter.java
 /home/dawn/repos/iFogSim-placement/src/org/fog/gui/dialog/AddPhysicalNode.java
+/home/dawn/repos/iFogSim-placement/src/org/fog/test/unit/randomLocationInArea.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/VmSchedulerTimeShared.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/network/datacenter/NetworkConstants.java
 /home/dawn/repos/iFogSim-placement/src/org/cloudbus/cloudsim/sdn/TimedVm.java

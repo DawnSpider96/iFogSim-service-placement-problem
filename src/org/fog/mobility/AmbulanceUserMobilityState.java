@@ -1,7 +1,7 @@
 package org.fog.mobility;
 
 import org.fog.mobilitydata.Location;
-import org.fog.mobility.MobilityStrategy;
+import org.fog.mobility.PathingStrategy;
 import org.fog.utils.Logger;
 
 
@@ -13,14 +13,14 @@ public class AmbulanceUserMobilityState extends DeviceMobilityState {
         PAUSED
     }
     
-    public AmbulanceUserMobilityState(Location location, MobilityStrategy strategy, double speed) {
+    public AmbulanceUserMobilityState(Location location, PathingStrategy strategy, double speed) {
         // TODO Make sure start at hospital
         super(Location.HOSPITAL1, strategy, speed);
         this.status = AmbulanceUserStatus.PAUSED;        
     }
 
     @Override
-    public void createAttractionPoint(Attractor currentAttractionPoint) {
+    public void updateAttractionPoint(Attractor currentAttractionPoint) {
         Location randomPoint = Location.getRandomLocation();
         this.currentAttractor = new Attractor(
             randomPoint,

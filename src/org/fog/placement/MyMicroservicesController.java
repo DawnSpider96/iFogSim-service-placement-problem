@@ -7,12 +7,9 @@ import org.fog.application.AppLoop;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.entities.*;
-import org.fog.mobility.AmbulanceUserMobilityState;
+import org.fog.mobility.*;
 import org.fog.utils.*;
 import org.json.simple.JSONObject;
-import org.fog.mobility.BeelineMobilityStrategy;
-import org.fog.mobility.DeviceMobilityState;
-import org.fog.mobility.GenericUserMobilityState;
 import org.fog.mobilitydata.Location;
 
 import java.io.IOException;
@@ -50,6 +47,9 @@ public class MyMicroservicesController extends SimEntity {
     private Map<Integer, DeviceMobilityState> deviceMobilityStates = new HashMap<>();
     private boolean locationDataInitialized = false;
     
+    // Mobility strategy
+    protected MobilityStrategy mobilityStrategy;
+    
     /**
      * @param name
      * @param fogDevices
@@ -68,6 +68,9 @@ public class MyMicroservicesController extends SimEntity {
         // Initialize the location management components
         initializeLocationComponents();
         
+        // Initialize with the no-op mobility strategy by default
+        this.mobilityStrategy = new NoMobilityStrategy();
+        
         // Note: init() is no longer called automatically
         // It will be called after location data is loaded via completeInitialization()
     }
@@ -83,6 +86,9 @@ public class MyMicroservicesController extends SimEntity {
         
         // Initialize the location management components
         initializeLocationComponents();
+        
+        // Initialize with the no-op mobility strategy by default
+        this.mobilityStrategy = new NoMobilityStrategy();
         
         // Note: init(monitored) is no longer called automatically
         // It will be called after location data is loaded via completeInitialization(monitored)
@@ -107,6 +113,14 @@ public class MyMicroservicesController extends SimEntity {
      */
     public void completeInitialization() {
         init();
+        
+        // Initialize parent references for mobility strategy
+        Map<Integer, Integer> initialParentReferences = new HashMap<>();
+        for (FogDevice device : fogDevices) {
+            initialParentReferences.put(device.getId(), device.getParentId());
+        }
+        // FullMobilityStrategy's temporary parent reference state is SEPARATE from controller's.
+        mobilityStrategy.initialize(fogDevices, initialParentReferences);
     }
 
     /**
@@ -116,8 +130,16 @@ public class MyMicroservicesController extends SimEntity {
      * 
      * @param monitored map of monitored devices
      */
+    // Simon (100425) says not used for now.
     public void completeInitialization(Map<Integer, List<FogDevice>> monitored) {
         init(monitored);
+        
+        // Initialize parent references for mobility strategy
+        Map<Integer, Integer> initialParentReferences = new HashMap<>();
+        for (FogDevice device : fogDevices) {
+            initialParentReferences.put(device.getId(), device.getParentId());
+        }
+        mobilityStrategy.initialize(fogDevices, initialParentReferences);
     }
 
     protected void init() {
@@ -198,7 +220,114 @@ public class MyMicroservicesController extends SimEntity {
                 printQoSDetails();
                 System.exit(0);
                 break;
+            // Handle mobility events
+            case FogEvents.SCHEDULER_NEXT_MOVEMENT_UPDATE:
+                handleMovementUpdate((int) ev.getData());
+                break;
+            case FogEvents.MAKE_PATH:
+                makePath((int) ev.getData());
+                break;
         }
+    }
+
+    /**
+     * Enables mobility functionality by switching to the FullMobilityStrategy
+     * Call in main Sim file after location data is loaded
+     */
+    public void enableMobility() {
+        this.mobilityStrategy = new FullMobilityStrategy();
+        
+        // Initialize the strategy with current state
+//        Map<Integer, Integer> initialParentReferences = new HashMap<>();
+//        for (FogDevice device : fogDevices) {
+//            initialParentReferences.put(device.getId(), device.getParentId());
+//        }
+//        mobilityStrategy.initialize(fogDevices, initialParentReferences);
+    }
+    
+    /**
+     * Handles a movement update event for a device
+     * 
+     * @param deviceId the device ID
+     */
+    protected void handleMovementUpdate(int deviceId) {
+        DeviceMobilityState mobilityState = getDeviceMobilityState(deviceId);
+        if (mobilityState == null) {
+            Logger.error("Mobility Error", "No mobility state found for device " + deviceId);
+            return;
+        }
+        
+        double nextEventDelay = mobilityStrategy.handleMovementUpdate(deviceId, mobilityState, locationManager);
+        
+        if (nextEventDelay > 0) {
+            // If there are more waypoints, schedule the next movement update
+            if (!mobilityState.getPath().isEmpty()) {
+                send(getId(), nextEventDelay, FogEvents.SCHEDULER_NEXT_MOVEMENT_UPDATE, deviceId);
+            } else {
+                // If the device reached its destination, schedule the next path creation
+                send(getId(), nextEventDelay, FogEvents.MAKE_PATH, deviceId);
+            }
+        }
+        else {
+            throw new NullPointerException("Negative delay time");
+        }
+    }
+    
+    /**
+     * Creates a new path for a device to follow
+     * 
+     * @param deviceId the device ID
+     */
+    protected void makePath(int deviceId) {
+        DeviceMobilityState mobilityState = getDeviceMobilityState(deviceId);
+        if (mobilityState == null) {
+            Logger.error("Mobility Error", "No mobility state found for device " + deviceId);
+            return;
+        }
+        
+        double delay = mobilityStrategy.makePath(deviceId, mobilityState);
+        
+        if (delay > 0) {
+            send(getId(), delay, FogEvents.SCHEDULER_NEXT_MOVEMENT_UPDATE, deviceId);
+        }
+    }
+    
+    /**
+     * Starts mobility for a device by creating an initial path
+     * 
+     * @param deviceId the device to start moving
+     */
+    public void startDeviceMobility(int deviceId) {
+        DeviceMobilityState mobilityState = getDeviceMobilityState(deviceId);
+        if (mobilityState == null) {
+            throw new NullPointerException("CRITICAL ERROR: No device mobility state found for device " + deviceId);
+        }
+        
+        // Get the delay for the first movement from the strategy
+        double delay = mobilityStrategy.startDeviceMobility(deviceId, mobilityState);
+        
+        // Schedule the movement update event if a valid delay was returned
+        if (delay > 0) {
+            send(getId(), delay, FogEvents.SCHEDULER_NEXT_MOVEMENT_UPDATE, deviceId);
+        }
+    }
+    
+    /**
+     * Adds a landmark (point of interest) to the simulation
+     * 
+     * @param landmark the landmark to add
+     */
+    public void addLandmark(Attractor landmark) {
+        mobilityStrategy.addLandmark(landmark);
+    }
+    
+    /**
+     * Gets all landmarks in the simulation
+     * 
+     * @return list of landmarks
+     */
+    public List<Attractor> getLandmarks() {
+        return mobilityStrategy.getLandmarks();
     }
 
     /**
@@ -221,6 +350,10 @@ public class MyMicroservicesController extends SimEntity {
         return deviceMobilityStates.get(deviceId);
     }
 
+    public Map<Integer, DeviceMobilityState> getDeviceMobilityStates() {
+        return deviceMobilityStates;
+    }
+
     /**
      * Initializes location data from CSV files
      * 
@@ -237,7 +370,7 @@ public class MyMicroservicesController extends SimEntity {
         
         // Reproducible random for mobility generation
         Random random = new Random(33);
-        BeelineMobilityStrategy beelineMobilityStrategy = new BeelineMobilityStrategy();
+        BeelinePathingStrategy beelinePathingStrategy = new BeelinePathingStrategy();
 
         // Separate resource and user devices
         List<MyFogDevice> resourceDevices = new ArrayList<>();
@@ -293,7 +426,7 @@ public class MyMicroservicesController extends SimEntity {
                 if (fogDevice.getDeviceType().equals(MyFogDevice.GENERIC_USER)) {
                     DeviceMobilityState mobilityState = new GenericUserMobilityState(
                             userLocations.get(csvIndex),
-                            beelineMobilityStrategy,
+                            beelinePathingStrategy,
                             random.nextDouble() * 50
                     );
                     registerDeviceMobilityState(fogDevice.getId(), mobilityState);
@@ -301,7 +434,7 @@ public class MyMicroservicesController extends SimEntity {
                 else if (fogDevice.getDeviceType().equals(MyFogDevice.AMBULANCE_USER)) {
                     DeviceMobilityState mobilityState = new AmbulanceUserMobilityState(
                             userLocations.get(csvIndex), // We don't use this, instead spawn user at hospital.
-                            beelineMobilityStrategy,
+                            beelinePathingStrategy,
                             random.nextDouble() * 50
                     );
                     registerDeviceMobilityState(fogDevice.getId(), mobilityState);
@@ -325,6 +458,30 @@ public class MyMicroservicesController extends SimEntity {
     }
 
     public void startEntity() {
+        for (int deviceId : deviceMobilityStates.keySet()) {
+            DeviceMobilityState mobilityState = deviceMobilityStates.get(deviceId);
+
+            if (mobilityState != null) {
+                // Create an initial attraction point template
+                Location currentLocation = mobilityState.getCurrentLocation();
+                Attractor initialAttraction = new Attractor(
+                        currentLocation, // Initial location (will be replaced with random by createAttractionPoint)
+                        "Initial Destination",
+                        0.1, // min pause time
+                        3.0, // max pause time
+                        new PauseTimeStrategy()
+                );
+
+                mobilityState.updateAttractionPoint(initialAttraction);
+                startDeviceMobility(deviceId);
+
+                System.out.println("Started mobility for device: " + CloudSim.getEntityName(deviceId) +
+                        " at location: " + currentLocation.latitude + ", " + currentLocation.longitude);
+            } else {
+                System.out.println("WARNING: No mobility state found for device " + CloudSim.getEntityName(deviceId));
+            }
+        }
+
         // Keep track of user resources, then 
         // schedule first periodic PR generation
         initializeUserResources();

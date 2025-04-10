@@ -1,20 +1,108 @@
 package org.fog.mobility;
 
-import org.fog.mobilitydata.Location;
+import org.cloudbus.cloudsim.core.SimEntity;
+import org.fog.entities.FogDevice;
+import org.fog.entities.MyFogDevice;
+import org.fog.placement.LocationManager;
+import org.fog.mobility.WayPoint;
+import org.fog.mobility.Attractor;
+
+import java.util.List;
+import java.util.Map;
 
 /**
- * Given the current location, speed, and an attraction point, this strategy builds 
- * a new WaypointPath that the device should follow to reach that point.
+ * Interface defining strategy for handling device mobility in the fog network.
+ * Implementations of this interface determine how device movement is handled.
  */
 public interface MobilityStrategy {
-
     /**
-     * Builds and returns a WaypointPath from the current location to the attraction point.
+     * Initialize the mobility strategy with necessary components
      * 
-     * @param attractionPoint the final destination or point of interest
-     * @param speed           the device's travel speed
-     * @param currentLocation the starting location
-     * @return a WaypointPath from currentLocation to attractionPoint
+     * @param fogDevices List of all fog devices in the simulation
+     * @param initialParentReferences Initial parent-child relationships
      */
-    WayPointPath makePath(Attractor attractionPoint, double speed, Location currentLocation);
+    void initialize(List<FogDevice> fogDevices, Map<Integer, Integer> initialParentReferences);
+    
+    /**
+     * Handles device movement updates
+     * 
+     * @param deviceId The ID of the device being updated
+     * @param mobilityState The device's mobility state
+     * @param locationManager The location manager for the simulation
+     * @return The time until the next scheduled movement (if any)
+     */
+    double handleMovementUpdate(int deviceId, DeviceMobilityState mobilityState, LocationManager locationManager);
+    
+    /**
+     * Creates a new path for a device
+     * 
+     * @param deviceId The ID of the device
+     * @param mobilityState The device's mobility state
+     * @return The time until the first movement on the new path
+     */
+    double makePath(int deviceId, DeviceMobilityState mobilityState);
+    
+    /**
+     * Starts mobility for a device
+     * 
+     * @param deviceId The ID of the device
+     * @param mobilityState The device's mobility state
+     * @return The time delay until the first movement, or -1 if no path was created
+     */
+    double startDeviceMobility(int deviceId, DeviceMobilityState mobilityState);
+    
+    /**
+     * Determines pause time at a destination
+     * 
+     * @param deviceId The ID of the device
+     * @param mobilityState The device's mobility state
+     * @return The pause time in simulation time units
+     */
+    double determinePauseTime(int deviceId, DeviceMobilityState mobilityState);
+    
+    /**
+     * Updates device parent and connections when location changes
+     * 
+     * @param fogDevice The device that's moving
+     * @param newParent The new parent device
+     * @param prevParent The previous parent device
+     * @param locationManager The location manager
+     */
+    void updateDeviceParent(FogDevice fogDevice, FogDevice newParent, FogDevice prevParent, LocationManager locationManager);
+    
+    /**
+     * Adds a landmark (point of interest) to the simulation
+     * 
+     * @param landmark The landmark to add
+     */
+    void addLandmark(Attractor landmark);
+    
+    /**
+     * Gets all landmarks in the simulation
+     * 
+     * @return List of landmarks
+     */
+    List<Attractor> getLandmarks();
+    
+    /**
+     * Updates the routing tables when a device's parent changes
+     * 
+     * @param fogDevice The device whose parent has changed
+     */
+    void updateRoutingTable(FogDevice fogDevice);
+    
+    /**
+     * Updates the orchestrator node for a device
+     * 
+     * @param fogDevice The device to update
+     * @param newParent The new parent device
+     */
+    void setNewOrchestratorNode(FogDevice fogDevice, FogDevice newParent);
+    
+    /**
+     * Gets the parent references map
+     * 
+     * @return Map of device IDs to parent IDs
+     */
+    Map<Integer, Integer> getParentReferences();
 } 

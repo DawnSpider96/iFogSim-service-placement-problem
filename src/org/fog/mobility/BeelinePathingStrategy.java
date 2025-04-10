@@ -5,9 +5,9 @@ import java.util.Random;
 import org.cloudbus.cloudsim.core.CloudSim;
 
 
-public class BeelineMobilityStrategy implements MobilityStrategy {
+public class BeelinePathingStrategy implements PathingStrategy {
 
-    public BeelineMobilityStrategy() {
+    public BeelinePathingStrategy() {
         // No state this class is behavioural
     }
 

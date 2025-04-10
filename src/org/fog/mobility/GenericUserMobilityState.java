@@ -2,7 +2,7 @@ package org.fog.mobility;
 
 import java.util.Random;
 import org.fog.mobilitydata.Location;
-import org.fog.mobility.MobilityStrategy;
+import org.fog.mobility.PathingStrategy;
 import org.fog.utils.Logger;
 
 /**
@@ -25,14 +25,14 @@ public class GenericUserMobilityState extends DeviceMobilityState {
      * @param strategy the mobility strategy to use
      * @param speed the travel speed (e.g., meters/second)
      */
-    public GenericUserMobilityState(Location location, MobilityStrategy strategy, 
+    public GenericUserMobilityState(Location location, PathingStrategy strategy, 
                                   double speed) {
         super(location, strategy, speed);
         this.status = GenericUserStatus.PAUSED;        
     }
 
     @Override
-    public void createAttractionPoint(Attractor currentAttractionPoint) {
+    public void updateAttractionPoint(Attractor currentAttractionPoint) {
         Location randomPoint = Location.getRandomLocation();
         this.currentAttractor = new Attractor(
             randomPoint,
@@ -45,8 +45,8 @@ public class GenericUserMobilityState extends DeviceMobilityState {
 
     @Override
     public void reachedDestination() {
-        if (this.status == GenericUserStatus.PAUSED) {
-            this.status = GenericUserStatus.WALKING;
+        if (this.status == GenericUserStatus.WALKING) {
+            this.status = GenericUserStatus.PAUSED;
         }
         else {
             Logger.error("Entity Status Error", "Invalid for reachedDestination");
