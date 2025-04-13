@@ -91,31 +91,26 @@ public class DataLoader {
     public Map<Integer, Location> loadUserLocations(String fileName, int numberOfUsers) throws IOException {
         Map<Integer, Location> userLocations = new HashMap<>();
         
-        int MAX_NUMBER_OF_USERS = 196;
-        int stepsize = MAX_NUMBER_OF_USERS / numberOfUsers;
+        if (numberOfUsers > 196) {
+            throw new NullPointerException("Number of users cannot be greater than 196");
+        }
         
         BufferedReader csvReader = new BufferedReader(new FileReader(fileName));
         System.out.println("Reading user positions from: " + fileName);
         
-        int i = 1;
-        int rowToRead = stepsize;
-        int currentRow = 1;
+        int userIndex = 1;
         String row;
         
-        while ((row = csvReader.readLine()) != null && i <= numberOfUsers) {
-            if (currentRow == rowToRead) {
-                String[] data = row.split(",");
-                Location location = new Location(
-                    Double.parseDouble(data[0]), 
-                    Double.parseDouble(data[1]), 
-                    -1  // Default block value
-                );
-                
-                userLocations.put(i, location);
-                i++;
-                rowToRead += stepsize;
-            }
-            currentRow++;
+        while ((row = csvReader.readLine()) != null && userIndex <= numberOfUsers) {
+            String[] data = row.split(",");
+            Location location = new Location(
+                Double.parseDouble(data[0]), 
+                Double.parseDouble(data[1]), 
+                -1  // Default block value
+            );
+            
+            userLocations.put(userIndex, location);
+            userIndex++;
         }
         
         csvReader.close();

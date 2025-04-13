@@ -25,6 +25,7 @@ public class MyMicroservicesController extends SimEntity {
     protected Map<String, Application> applications = new HashMap<>();
     protected PlacementLogicFactory placementLogicFactory = new PlacementLogicFactory();
     protected int placementLogic;
+    private boolean mobilityEnabled = false;
     //    protected List<Integer> clustering_levels;
     /**
      * A permanent set of Placement Requests, initialized with one per user device.
@@ -235,6 +236,7 @@ public class MyMicroservicesController extends SimEntity {
      * Call in main Sim file after location data is loaded
      */
     public void enableMobility() {
+        this.mobilityEnabled = true;
         this.mobilityStrategy = new FullMobilityStrategy();
         
         // Initialize the strategy with current state
@@ -458,27 +460,29 @@ public class MyMicroservicesController extends SimEntity {
     }
 
     public void startEntity() {
-        for (int deviceId : deviceMobilityStates.keySet()) {
-            DeviceMobilityState mobilityState = deviceMobilityStates.get(deviceId);
+        if (mobilityEnabled) {
+            for (int deviceId : deviceMobilityStates.keySet()) {
+                DeviceMobilityState mobilityState = deviceMobilityStates.get(deviceId);
 
-            if (mobilityState != null) {
-                // Create an initial attraction point template
-                Location currentLocation = mobilityState.getCurrentLocation();
-                Attractor initialAttraction = new Attractor(
-                        currentLocation, // Initial location (will be replaced with random by createAttractionPoint)
-                        "Initial Destination",
-                        0.1, // min pause time
-                        3.0, // max pause time
-                        new PauseTimeStrategy()
-                );
+                if (mobilityState != null) {
+                    // Create an initial attraction point template
+                    Location currentLocation = mobilityState.getCurrentLocation();
+                    Attractor initialAttraction = new Attractor(
+                            currentLocation, // Initial location (will be replaced with random by createAttractionPoint)
+                            "Initial Destination",
+                            0.1, // min pause time
+                            3.0, // max pause time
+                            new PauseTimeStrategy()
+                    );
 
-                mobilityState.updateAttractionPoint(initialAttraction);
-                startDeviceMobility(deviceId);
+                    mobilityState.updateAttractionPoint(initialAttraction);
+                    startDeviceMobility(deviceId);
 
-                System.out.println("Started mobility for device: " + CloudSim.getEntityName(deviceId) +
-                        " at location: " + currentLocation.latitude + ", " + currentLocation.longitude);
-            } else {
-                System.out.println("WARNING: No mobility state found for device " + CloudSim.getEntityName(deviceId));
+                    System.out.println("Started mobility for device: " + CloudSim.getEntityName(deviceId) +
+                            " at location: " + currentLocation.latitude + ", " + currentLocation.longitude);
+                } else {
+                    System.out.println("WARNING: No mobility state found for device " + CloudSim.getEntityName(deviceId));
+                }
             }
         }
 
@@ -639,6 +643,7 @@ public class MyMicroservicesController extends SimEntity {
      */
     public MyPlacementRequest createSubsequentPlacementRequest(MyPlacementRequest previousRequest) {
         int sequenceNumber = getNextSequenceNumber(previousRequest.getSensorId());
+//        int newRequester = ((MyFogDevice) CloudSim.getEntity(previousRequest.getRequester())).getParentId();
 
         return new MyPlacementRequest(
                 previousRequest.getApplicationId(),
@@ -670,8 +675,7 @@ public class MyMicroservicesController extends SimEntity {
     public void generatePeriodicPlacementRequests() {
         for (MyFogDevice userDevice : userDevices) {
             // TODO Simon says this wrong.
-            //  We should be checking by sensorId, not requester
-            //  And also update requester according to the current parent.
+            //  Update requester according to the current parent.
             MyPlacementRequest existingPR = null;
             for (PlacementRequest pr : placementRequestDelayMap.keySet()) {
                 if (pr.getRequester() == userDevice.getId()) {
@@ -695,6 +699,9 @@ public class MyMicroservicesController extends SimEntity {
                     MyMonitor.getInstance().recordFailedPR(newPR, reason);
                 }
             }
+            else{
+                throw new NullPointerException("PR doesn't exist");
+            }
         }
         
         send(getId(), prGenerationInterval, FogEvents.GENERATE_PERIODIC_PR);
@@ -709,6 +716,9 @@ public class MyMicroservicesController extends SimEntity {
                     sendNow(f.getId(), FogEvents.PROCESS_PRS);
                 }
             }
+        }
+        else {
+            throw new NullPointerException("(100425) Only have implementation for periodic Microservice placement");
         }
     }
 

@@ -60,6 +60,8 @@ public class FullMobilityStrategy implements MobilityStrategy {
         FogDevice prevParent = getDeviceById(parentReferences.get(deviceId));
         
         // Use LocationManager to determine new parent based on proximity
+        // IRL a device wouldn't have full knowledge of the other devices (fogDevices state)
+        //  but we don't have a good representation of physically connecting to the nearest edge server.
         int newParentId = locationManager.determineParentByProximity(deviceId, fogDevices);
         FogDevice newParent = getDeviceById(newParentId);
         
@@ -168,12 +170,16 @@ public class FullMobilityStrategy implements MobilityStrategy {
     
     @Override
     public void updateRoutingTable(FogDevice fogDevice) {
+        // TODO Currently NO communication overhead between fog devices and controller.
+        //  Is ok in general, but not ok for THIS functionality.
+        //  Because irl there will have to be some communication, between each other (routing protocol)
+        //  OR an external entity, before routing tables can be updated.
         for (FogDevice f : fogDevices) {
             if (f.getId() != fogDevice.getId()) {
-                // NO communication overhead.
+
                 ((MyFogDevice) fogDevice).updateRoutingTable(f.getId(), fogDevice.getParentId());
 
-                //For other, update route to mobile based on route to parent
+                //For othe((MyFogDevice) f).getRoutingTable()r, update route to mobile based on route to parent
                 int nextId = ((MyFogDevice) f).getRoutingTable().get(fogDevice.getParentId());
                 if (f.getId() != nextId)
                     ((MyFogDevice) f).updateRoutingTable(fogDevice.getId(), nextId);
@@ -209,7 +215,8 @@ public class FullMobilityStrategy implements MobilityStrategy {
     public Map<Integer, Integer> getParentReferences() {
         return parentReferences;
     }
-    
+
+    // With this function, we assume that MobilityController has access to ALL devices.
     private FogDevice getDeviceById(int id) {
         for (FogDevice device : fogDevices) {
             if (device.getId() == id) {

@@ -150,10 +150,6 @@ public class MyExperiment {
         MyMonitor mm = MyMonitor.getInstance();
 
         try {
-//            List<Map<String, Map<Double, Double>>> resourceData =
-//                    MyMonitor.getInstance().getAllSnapshots().stream()
-//                    .map(MetricUtils::handleSimulationResource)
-//                    .collect(Collectors.toList());
             List<List<Double>> resourceData =
                     mm.getAllSnapshots().stream()
                             .map(MetricUtils::handleSimulationResource)

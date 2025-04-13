@@ -81,7 +81,7 @@ public class MobilityPOC {
                 Log.printLine("Successfully initialized location data from CSV files.");
 
                 // Enable mobility by activating the full mobility strategy\
-                controller.enableMobility();
+//                controller.enableMobility();
                 Log.printLine("Mobility enabled using the Strategy Pattern.");
 
                 // Complete initialization now that location data is loaded

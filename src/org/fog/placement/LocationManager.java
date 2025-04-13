@@ -120,7 +120,7 @@ public class LocationManager {
         if (parentLevel < 0) {
             System.out.println("WARNING: Device " + deviceId + " is already at the top level");
             return -1;
-        }
+        } // Population of parent level is not very thorough
         
         // Find the closest fog device at parent level
         double minDistance = Double.MAX_VALUE;

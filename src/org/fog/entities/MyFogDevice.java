@@ -18,7 +18,7 @@ import org.json.simple.JSONObject;
 import java.util.*;
 
 /**
- * Created by Samodha Pallewatta
+ * Created by Joseph Poon.
  */
 public class MyFogDevice extends FogDevice {
 
@@ -696,7 +696,7 @@ public class MyFogDevice extends FogDevice {
 	 * Handles the {@code UPDATE_SERVICE_DISCOVERY} event by updating the service discovery
 	 * information for a Fog Node.
 	 * <p>
-	 * This method is strictly called by Fog Nodes in response to the
+	 * This function is strictly called by Fog Nodes in response to the
 	 * {@code UPDATE_SERVICE_DISCOVERY} event. It retrieves the associated service data
 	 * and action from the event payload and accordingly updates the controller's service
 	 * discovery information.
@@ -919,12 +919,12 @@ public class MyFogDevice extends FogDevice {
 	}
 
 	private void transmitPR(PlacementRequest placementRequest, Integer fonID) {
-		// todo Simon says this might be the part where edge server (gateway device connected to sensor) forwards the PR to cloud!!!
-		// todo NOTE delay between self and the cloud is taken into account using the ManagementTuple
+		// NOTE delay between self (user) and the cloud is accounted for using the ManagementTuple.
 		ManagementTuple prTuple = new ManagementTuple(placementRequest.getApplicationId(), FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.PLACEMENT_REQUEST);
 		prTuple.setPlacementRequest(placementRequest);
 		prTuple.setDestinationDeviceId(fonID);
 		prTuple.setSourceDeviceId(getId());
+		// Send to self, but the processManagementTuple will see destination device id and forward accordingly.
 		sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, prTuple);
 	}
 
@@ -966,8 +966,7 @@ public class MyFogDevice extends FogDevice {
 		if (tuple.getDestinationDeviceId() == getId()) {
 			switch (tuple.managementTupleType) {
 				case ManagementTuple.PLACEMENT_REQUEST:
-					// TODO Simon says we might have to change things such that RECEIVE_PR is sent to cloud straight
-					// todo Especially since this (management tuple) simulates the request travelling up physically through the network
+					// Simon says this travelled through network from USER (requester) to CLOUD.
 					sendNow(getId(), FogEvents.RECEIVE_PR, tuple.getPlacementRequest());
 					break;
 
