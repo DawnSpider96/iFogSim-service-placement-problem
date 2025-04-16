@@ -76,7 +76,7 @@ public class CloudletSchedulerDynamicWorkload extends CloudletSchedulerTimeShare
 		List<ResCloudlet> cloudletsToFinish = new ArrayList<ResCloudlet>();
 
 		for (ResCloudlet rcl : getCloudletExecList()) {
-			rcl.updateCloudletFinishedSoFar((long) (timeSpan
+			rcl.updateCloudletFinishedSoFar((long) (timeSpan / Consts.SECOND
 					* getTotalCurrentAllocatedMipsForCloudlet(rcl, getPreviousTime()) * Consts.MILLION));
 			
 			if (rcl.getRemainingCloudletLength() == 0) { // finished: remove from the list

@@ -1,6 +1,7 @@
 package org.fog.scheduler;
 
 import org.cloudbus.cloudsim.CloudletSchedulerTimeShared;
+import org.cloudbus.cloudsim.Consts;
 import org.cloudbus.cloudsim.ResCloudlet;
 
 public class TupleScheduler extends CloudletSchedulerTimeShared{
@@ -26,7 +27,7 @@ public class TupleScheduler extends CloudletSchedulerTimeShared{
 		
 		System.out.println("ALLOCATED MIPS FOR CLOUDLET = "+getTotalCurrentAllocatedMipsForCloudlet(rcl, time));
 		return time
-				+ ((rcl.getRemainingCloudletLength()) / getTotalCurrentAllocatedMipsForCloudlet(rcl, time));
+				+ ((rcl.getRemainingCloudletLength()) / (getTotalCurrentAllocatedMipsForCloudlet(rcl, time) * Consts.SECOND));
 		
 		
 				

@@ -63,7 +63,8 @@ public class CloudSim {
 	private static double terminateAt = -1;
 
 	/** The minimal time between events. Events within shorter periods after the last event are discarded. */
-	private static double minTimeBetweenEvents = 0.1;
+	// Simon (160425) says 1 millisecond instead of 0.1
+	private static double minTimeBetweenEvents = 1;
 
 	// Simon (140125)
 	private static int FogBrokerId;
