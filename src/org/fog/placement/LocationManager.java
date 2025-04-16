@@ -148,7 +148,7 @@ public class LocationManager {
      * 
      * @param device1 first device ID
      * @param device2 second device ID
-     * @return latency in milliseconds
+     * @return latency in seconds
      */
     public double calculateNetworkLatency(int device1, int device2) {
         boolean isUserDevice1 = deviceMobilityStates.containsKey(device1);

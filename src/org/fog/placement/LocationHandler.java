@@ -30,10 +30,6 @@ public class LocationHandler {
 	public DataParser dataObject;
 	
 	public Map<Integer, String> instanceToDataId;
-	private final double baseServerLatency = 1 * Consts.MILLISECOND;
-	private final double baseWifiLatency = 2 * Consts.MILLISECOND;
-	private final double latencyPerKilometer = 10 * Consts.MICROSECOND;
-	
 	/** Maps deviceId to its mobility state for dynamic location tracking */
 	private Map<Integer, DeviceMobilityState> deviceMobilityStates;
 
@@ -129,10 +125,10 @@ public class LocationHandler {
 		double latency;
 		if (getDataObject().resourceAndUserToLevel.get(getDataIdByInstanceID(entity1)) == getDataObject().levelID.get("User") ||
 				getDataObject().resourceAndUserToLevel.get(getDataIdByInstanceID(entity2)) == getDataObject().levelID.get("User")) {
-			latency = baseWifiLatency + (calculateDistance(entity1, entity2) * latencyPerKilometer);
+			latency = Config.baseWifiLatency + (calculateDistance(entity1, entity2) * Config.latencyPerKilometer);
 		}
 		else {
-			latency = baseServerLatency + (calculateDistance(entity1, entity2) * latencyPerKilometer);
+			latency = Config.baseServerLatency + (calculateDistance(entity1, entity2) * Config.latencyPerKilometer);
 		}
 		System.out.println(entity1 + " " + entity2 + " " + latency);
 		return latency;

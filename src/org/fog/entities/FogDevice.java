@@ -106,7 +106,7 @@ public class FogDevice extends PowerDatacenter {
         setSchedulingInterval(schedulingInterval);
         setUplinkBandwidth(uplinkBandwidth);
         setDownlinkBandwidth(downlinkBandwidth);
-        setUplinkLatency(uplinkLatency);
+        setUplinkLatency(uplinkLatency * Consts.MILLISECOND);
         setRatePerMips(ratePerMips);
         setAssociatedActuatorIds(new ArrayList<Pair<Integer, Double>>());
         for (Host host : getCharacteristics().getHostList()) {
@@ -195,7 +195,7 @@ public class FogDevice extends PowerDatacenter {
         setVmList(new ArrayList<Vm>());
         setUplinkBandwidth(uplinkBandwidth);
         setDownlinkBandwidth(downlinkBandwidth);
-        setUplinkLatency(uplinkLatency);
+        uplinkLatency = -1;
         setAssociatedActuatorIds(new ArrayList<Pair<Integer, Double>>());
         for (Host host1 : getCharacteristics().getHostList()) {
             host1.setDatacenter(this);

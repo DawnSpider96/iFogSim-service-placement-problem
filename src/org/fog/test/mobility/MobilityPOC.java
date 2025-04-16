@@ -6,6 +6,7 @@ import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.cloudbus.cloudsim.Consts;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Pe;
@@ -166,7 +167,7 @@ public class MobilityPOC {
                     82.44,
                     getRandomUserType() // Only returns generic user for now
             );
-            userDevice.setUplinkLatency(2); // ms
+            userDevice.setUplinkLatency(-1);
             devices.add(userDevice);
         }
         

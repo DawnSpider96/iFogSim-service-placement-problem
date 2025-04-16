@@ -1,9 +1,6 @@
 package org.fog.test.perfeval;
 
-import org.cloudbus.cloudsim.Host;
-import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.Pe;
-import org.cloudbus.cloudsim.Storage;
+import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.power.PowerHost;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
