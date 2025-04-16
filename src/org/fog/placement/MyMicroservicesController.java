@@ -429,7 +429,7 @@ public class MyMicroservicesController extends SimEntity {
                     DeviceMobilityState mobilityState = new GenericUserMobilityState(
                             userLocations.get(csvIndex),
                             beelinePathingStrategy,
-                            random.nextDouble() * 50
+                            random.nextDouble() * 0.001 // TODO Is this in km/timestep??? And is each timestep 1 millisecond???
                     );
                     registerDeviceMobilityState(fogDevice.getId(), mobilityState);
                 }
@@ -437,7 +437,7 @@ public class MyMicroservicesController extends SimEntity {
                     DeviceMobilityState mobilityState = new AmbulanceUserMobilityState(
                             userLocations.get(csvIndex), // We don't use this, instead spawn user at hospital.
                             beelinePathingStrategy,
-                            random.nextDouble() * 50
+                            random.nextDouble() * 0.003
                     );
                     registerDeviceMobilityState(fogDevice.getId(), mobilityState);
                 } // TODO Add for Opera user
@@ -498,7 +498,7 @@ public class MyMicroservicesController extends SimEntity {
         if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC")
             initiatePlacementRequestProcessingDynamic();
 
-        send(getId(), Config.RESOURCE_MANAGE_INTERVAL, FogEvents.CONTROLLER_RESOURCE_MANAGE);
+        send(getId(), Config.CONTROLLER_RESOURCE_MANAGE_INTERVAL, FogEvents.CONTROLLER_RESOURCE_MANAGE);
         send(getId(), Config.MAX_SIMULATION_TIME, FogEvents.STOP_SIMULATION);
     }
 
@@ -749,6 +749,7 @@ public class MyMicroservicesController extends SimEntity {
         System.out.println("=========================================");
         double success = 0;
         double total = 0;
+        // TODO simon says make this work or remove completely
         for (Integer loopId : TimeKeeper.getInstance().getLoopIdToLatencyQoSSuccessCount().keySet()) {
             success += TimeKeeper.getInstance().getLoopIdToLatencyQoSSuccessCount().get(loopId);
             total += TimeKeeper.getInstance().getLoopIdToCurrentNum().get(loopId);
@@ -768,7 +769,7 @@ public class MyMicroservicesController extends SimEntity {
 
     protected void manageResources() {
         // todo Simon says this does nothing, doesnt it???
-        send(getId(), Config.RESOURCE_MANAGE_INTERVAL, FogEvents.CONTROLLER_RESOURCE_MANAGE);
+        send(getId(), Config.CONTROLLER_RESOURCE_MANAGE_INTERVAL, FogEvents.CONTROLLER_RESOURCE_MANAGE);
     }
 
     protected void printNetworkUsageDetails() {

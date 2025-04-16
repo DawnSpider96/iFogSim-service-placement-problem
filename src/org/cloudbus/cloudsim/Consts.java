@@ -16,6 +16,7 @@ public final class Consts {
     
     public static int MILLION = 1000000;
     // Simon (020225) says time is measured in Milliseconds
+    public static double SECOND = 1000;
     public static double MILLISECOND = 1;
     public static double MICROSECOND = 0.001;
 }

@@ -110,22 +110,19 @@ public class OnlinePOC {
                     placementAlgo
             );
 
-            // Initialize location data from CSV files
             try {
                 System.out.println("Initializing location data from CSV files...");
                 microservicesController.initializeLocationData(
                     RESOURCES_LOCATION_PATH,
                     USERS_LOCATION_PATH,
-                    numberOfUser, // Number of edge devices
-                    numberOfUser  // Number of user devices
+                    numberOfUser,
+                    numberOfUser
                 );
                 System.out.println("Location data initialization complete.");
                 
-                // Enable mobility if needed (even for immobile users, this initializes the mobility framework)
-                microservicesController.enableMobility();
-                System.out.println("Mobility enabled using the Strategy Pattern.");
+//                microservicesController.enableMobility();
+//                System.out.println("Mobility enabled using the Strategy Pattern.");
                 
-                // Complete initialization now that location data is loaded
                 microservicesController.completeInitialization();
                 System.out.println("Controller initialization completed with proximity-based connections.");
             } catch (IOException e) {
@@ -134,7 +131,6 @@ public class OnlinePOC {
                 return;
             }
 
-            // Simon (010425) says we use the new PlacementRequest with prIndex field
             List<PlacementRequest> placementRequests = new ArrayList<>();
             for (Sensor sensor : sensors) {
                 Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();
@@ -176,7 +172,6 @@ public class OnlinePOC {
         cloud.setLevel(0);
         fogDevices.add(cloud);
 
-        // Create gateway devices
         for (int i = 0; i < numberOfUser; i++) {
             MyFogDevice gateway = createFogDevice("gateway_" + i, 2800, 4000, 10000, 10000, 0.0, 107.339, 83.4333, MyFogDevice.FCN);
             gateway.setParentId(cloud.getId());
@@ -186,7 +181,6 @@ public class OnlinePOC {
             fogDevices.add(gateway);
         }
 
-        // Create user devices
         for (int i = 0; i < numberOfUser; i++) {
             FogDevice mobile = addImmobile("immobile_" + i, userId, app, References.NOT_SET);
             // Don't set uplink latency, it will be set by LocationManager based on distance
@@ -291,7 +285,7 @@ public class OnlinePOC {
         /*
          * Adding modules (vertices) to the application model (directed graph)
          */
-        application.addAppModule("clientModule", 128, 150, 100);
+        application.addAppModule("clientModule", 4, 4, 100);
         application.addAppModule("mService1", 128, 250, 200);
         application.addAppModule("mService2", 128, 350, 500);
         application.addAppModule("mService3", 128, 450, 1000);

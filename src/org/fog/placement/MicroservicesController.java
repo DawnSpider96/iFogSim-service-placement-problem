@@ -143,7 +143,7 @@ public class MicroservicesController extends SimEntity {
             shareResourceDataAmongClusterNodes();
         }
 
-        send(getId(), Config.RESOURCE_MANAGE_INTERVAL, FogEvents.CONTROLLER_RESOURCE_MANAGE);
+        send(getId(), Config.CONTROLLER_RESOURCE_MANAGE_INTERVAL, FogEvents.CONTROLLER_RESOURCE_MANAGE);
 
         send(getId(), Config.MAX_SIMULATION_TIME, FogEvents.STOP_SIMULATION);
     }
@@ -258,7 +258,7 @@ public class MicroservicesController extends SimEntity {
 
     protected void manageResources() {
         // todo Simon says this does nothing, doesnt it???
-        send(getId(), Config.RESOURCE_MANAGE_INTERVAL, FogEvents.CONTROLLER_RESOURCE_MANAGE);
+        send(getId(), Config.CONTROLLER_RESOURCE_MANAGE_INTERVAL, FogEvents.CONTROLLER_RESOURCE_MANAGE);
     }
 
     protected void printNetworkUsageDetails() {

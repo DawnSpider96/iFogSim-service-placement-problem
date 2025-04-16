@@ -419,7 +419,7 @@ public class FogDevice extends PowerDatacenter {
      *
      * @return the double
      */
-    protected double updateCloudetProcessingWithoutSchedulingFutureEventsForce() {
+    protected double updateCloudletProcessingWithoutSchedulingFutureEventsForce() {
         double currentTime = CloudSim.clock();
         double minTime = Double.MAX_VALUE;
         double timeDiff = currentTime - getLastProcessTime();

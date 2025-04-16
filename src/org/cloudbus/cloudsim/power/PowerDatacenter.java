@@ -96,7 +96,7 @@ public class PowerDatacenter extends Datacenter {
 		// if some time passed since last processing
 		if (currentTime > getLastProcessTime()) {
 			
-			double minTime = updateCloudetProcessingWithoutSchedulingFutureEventsForce();
+			double minTime = updateCloudletProcessingWithoutSchedulingFutureEventsForce();
 			if (!isDisableMigrations()) {
 				List<Map<String, Object>> migrationMap = getVmAllocationPolicy().optimizeAllocation(
 						getVmList());
@@ -155,7 +155,7 @@ public class PowerDatacenter extends Datacenter {
 	 */
 	protected double updateCloudetProcessingWithoutSchedulingFutureEvents() {
 		if (CloudSim.clock() > getLastProcessTime()) {
-			return updateCloudetProcessingWithoutSchedulingFutureEventsForce();
+			return updateCloudletProcessingWithoutSchedulingFutureEventsForce();
 		}
 		return 0;
 	}
@@ -165,7 +165,7 @@ public class PowerDatacenter extends Datacenter {
 	 * 
 	 * @return the double
 	 */
-	protected double updateCloudetProcessingWithoutSchedulingFutureEventsForce() {
+	protected double updateCloudletProcessingWithoutSchedulingFutureEventsForce() {
 		double currentTime = CloudSim.clock();
 		double minTime = Double.MAX_VALUE;
 		double timeDiff = currentTime - getLastProcessTime();
@@ -256,7 +256,7 @@ public class PowerDatacenter extends Datacenter {
 		super.processVmMigrate(ev, ack);
 		SimEvent event = CloudSim.findFirstDeferred(getId(), new PredicateType(CloudSimTags.VM_MIGRATE));
 		if (event == null || event.eventTime() > CloudSim.clock()) {
-			updateCloudetProcessingWithoutSchedulingFutureEventsForce();
+			updateCloudletProcessingWithoutSchedulingFutureEventsForce();
 		}
 	}
 

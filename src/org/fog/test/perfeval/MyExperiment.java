@@ -242,9 +242,13 @@ public class MyExperiment {
             appList.add(application);
 
             MyMicroservicesController microservicesController = new MyMicroservicesController(
-                "controller", fogDevices, sensors, appList, placementLogicType);
+                "controller",
+                    fogDevices,
+                    sensors,
+                    appList,
+                    placementLogicType
+            );
                 
-            // Initialize location data from CSV files
             try {
                 System.out.println("Initializing location data from CSV files...");
                 microservicesController.initializeLocationData(
@@ -254,8 +258,10 @@ public class MyExperiment {
                     numberOfUser
                 );
                 System.out.println("Location data initialization complete.");
+
+//                microservicesController.enableMobility();
+//                System.out.println("Mobility enabled using the Strategy Pattern.");
                 
-                // Complete initialization now that location data is loaded
                 microservicesController.completeInitialization();
                 System.out.println("Controller initialization completed with proximity-based connections.");
             } catch (IOException e) {
@@ -264,17 +270,6 @@ public class MyExperiment {
                 return;
             }
 
-            // todo Simon (100425) says we do this in controller.connectWithLatencies instead
-//            for (FogDevice device : fogDevices) {
-//                if (((MyFogDevice)device).getDeviceType().equals(MyFogDevice.GENERIC_USER) ||
-//                        ((MyFogDevice)device).getDeviceType().equals(MyFogDevice.AMBULANCE_USER) ||
-//                        ((MyFogDevice)device).getDeviceType().equals(MyFogDevice.OPERA_USER)) {
-//                    microservicesController.registerUserDevice((MyFogDevice)device);
-//                    ((MyFogDevice)device).setMicroservicesControllerId(microservicesController.getId());
-//                }
-//            }
-
-            // generate placement requests
             List<PlacementRequest> placementRequests = new ArrayList<>();
             for (Sensor sensor : sensors) {
                 Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();

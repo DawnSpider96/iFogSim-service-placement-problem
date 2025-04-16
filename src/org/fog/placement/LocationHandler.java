@@ -170,7 +170,7 @@ public class LocationHandler {
 		}
 		else
 		{
-			double minmumDistance = Config.MAX_VALUE;
+			double minmumDistance = Double.MAX_VALUE; //Used to be config.max_value
 			for(int i=0; i<getLevelWiseResources(parentLevel).size();i++){
 				Location potentialParentLoc = getResourceLocationInfo(getLevelWiseResources(parentLevel).get(i));
 				
