@@ -198,7 +198,8 @@ public class MyFogDevice extends FogDevice {
 
 		Tuple tuple = (Tuple) ev.getData();
 		Logger.debug(getName(), "Received tuple " + tuple.getCloudletId() + " with tupleType = " + tuple.getTupleType() + "\t| Source : " +
-				CloudSim.getEntityName(ev.getSource()) + " | Dest : " + CloudSim.getEntityName(ev.getDestination()));
+				CloudSim.getEntityName(ev.getSource()) + " | Dest : " + CloudSim.getEntityName(ev.getDestination()) +
+				" | sensorId : " + tuple.getSensorId() + " | prIndex : " + tuple.getPrIndex());
 
 		// Simon (030425) says the cloud traffic might be worth capturing as metric
 		//  Especially since our network is flower-shaped.

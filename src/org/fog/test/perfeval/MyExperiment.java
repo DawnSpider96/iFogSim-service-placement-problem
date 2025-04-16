@@ -46,6 +46,8 @@ import java.util.stream.Collectors;
  * DYNAMIC_CLUSTERING -> true (for clustered) and false (for not clustered) * (also compatible with static clustering)
  */
 public class MyExperiment {
+    private static final String outputFile = "./output/resourceDist_Comfortable_U100.csv";
+
     static List<FogDevice> fogDevices = new ArrayList<FogDevice>();
     static List<Sensor> sensors = new ArrayList<Sensor>();
     static List<Actuator> actuators = new ArrayList<Actuator>();
@@ -155,7 +157,7 @@ public class MyExperiment {
                     mm.getAllLatencies().stream()
                             .map(MetricUtils::handleSimulationLatency)
                             .collect(Collectors.toList());
-            MetricUtils.writeResourceDistributionToCSV(resourceData, latencyData, configs, "./output/resourceDist_Crowded_U00.csv");
+            MetricUtils.writeResourceDistributionToCSV(resourceData, latencyData, configs, outputFile);
             System.out.println("CSV file has been created successfully.");
         } catch (IOException e) {
             System.err.println("An error occurred while writing to the CSV file.");
@@ -444,7 +446,7 @@ public class MyExperiment {
 
         application.addAppModule("clientModule", 4, 4, 50);
         for (int i = 1; i <= numServices; i++) {
-            // Use consistent MIPS for all services (as seen in existing implementations)
+            // TODO Make mips/ram not uniform
             application.addAppModule("mService" + i, 100, 100, 500);
         }
 

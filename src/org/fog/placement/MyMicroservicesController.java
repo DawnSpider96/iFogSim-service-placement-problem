@@ -219,7 +219,8 @@ public class MyMicroservicesController extends SimEntity {
                 printCostDetails();
                 printNetworkUsageDetails();
                 printQoSDetails();
-                System.exit(0);
+                // TODO Simon says don't System.exit, see what happens
+//                System.exit(0);
                 break;
             // Handle mobility events
             case FogEvents.SCHEDULER_NEXT_MOVEMENT_UPDATE:
