@@ -215,11 +215,13 @@ public class MyMicroservicesController extends SimEntity {
                 System.out.println("============== METRICS ==================");
                 System.out.println("=========================================");
                 printTimeDetails();
+//                printResourceConsumptionDetails();
                 printPowerDetails();
                 printCostDetails();
                 printNetworkUsageDetails();
                 printQoSDetails();
-                // TODO Simon says don't System.exit, see what happens
+                endSimulation();
+                // TODO Simon says don't System.exit
 //                System.exit(0);
                 break;
             // Handle mobility events
@@ -230,6 +232,11 @@ public class MyMicroservicesController extends SimEntity {
                 makePath((int) ev.getData());
                 break;
         }
+    }
+
+    public void endSimulation() {
+        CloudSim.stopSimulation();  // Stops the simulation internally
+        CloudSim.clearQueues();  // A hypothetical method to clear static variables if implemented
     }
 
     /**
@@ -826,15 +833,15 @@ public class MyMicroservicesController extends SimEntity {
         System.out.println("=========================================");
     }
 
-    protected void printResourceConsumptionDetails() {
-        // TODO Simon (040225) says print something useful instead of the device IDs
-        //  Like utilisation? Standard deviation of utilisation? Ask Dr Cabrera
-        //  Also NOTE that the entries are not sorted in key (timestamp) order, annoying
-        //  Maybe need TreeMap
-        Map<Double, List<MyHeuristic.DeviceState>> ss = MyMonitor.getInstance().getSnapshots();
-        ss.forEach((key, value) ->
-                value.forEach((deviceState) -> System.out.println(key + ": " + deviceState.getId())));
-    }
+//    protected void printResourceConsumptionDetails() {
+//        // TODO Simon (040225) says print something useful instead of the device IDs
+//        //  Like utilisation? Standard deviation of utilisation? Ask Dr Cabrera
+//        //  Also NOTE that the entries are not sorted in key (timestamp) order, annoying
+//        //  Maybe need TreeMap
+//        Map<Double, List<MyHeuristic.DeviceState>> ss = MyMonitor.getInstance().getSnapshots();
+//        ss.forEach((key, value) ->
+//                value.forEach((deviceState) -> System.out.println(key + ": " + deviceState.getId())));
+//    }
 
     /**
      * Extracts and returns resource availability information (CPU, RAM, Storage)
