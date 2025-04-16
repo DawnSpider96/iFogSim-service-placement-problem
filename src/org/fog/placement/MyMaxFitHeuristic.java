@@ -105,23 +105,16 @@ public class MyMaxFitHeuristic extends MyHeuristic implements MicroservicePlacem
     }
 
     @Override
-    protected int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
-        // Initialize temporary state
-//        final double[] cpusum = new double[1];
-//        Consumer<Double> addToCpu = (value) -> cpusum[0] += value;
-//        final int[] ramsum = new int[1];
-//        Consumer<Integer> addToRam = (value) -> ramsum[0] += value;
-//        final long[] storagesum = new long[1];
-//        Consumer<Long> addToStorage = (value) -> storagesum[0] += value;
+    protected List<DeviceState> getCurrentDeviceStates() {
+        return DeviceStates;
+    }
+
+    @Override
+    protected int doTryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
         int[] placed = new int[microservices.size()];
         for (int i = 0 ; i < microservices.size() ; i++) {
             placed[i] = -1;
         }
-//        Consumer<String> markAsPlaced = microservice -> {
-//            if (placed.containsKey(microservice)) {
-//                placed.put(microservice, 1);
-//            }
-//        };
 
         for (int j = 0 ; j < microservices.size() ; j++) {
             String s = microservices.get(j);
@@ -134,11 +127,6 @@ public class MyMaxFitHeuristic extends MyHeuristic implements MicroservicePlacem
                 if (DeviceStates.get(i).canFit(service.getMips(), service.getRam(), service.getSize())) {
 
                     DeviceStates.get(i).allocate(service.getMips(), service.getRam(), service.getSize());
-//                    addToCpu.accept(getModule(microservice, app).getMips());
-//                    addToRam.accept(getModule(microservice, app).getRam());
-//                    addToStorage.accept(getModule(microservice, app).getSize());
-//                    markAsPlaced.accept(microservice);
-
                     // Update temporary state
                     placed[j]  = DeviceStates.get(i).getId();
                     break;

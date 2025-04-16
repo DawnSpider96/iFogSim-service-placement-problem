@@ -115,9 +115,13 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
         return prStatus;
     }
 
+    @Override
+    protected List<DeviceState> getCurrentDeviceStates() {
+        return DeviceStates;
+    }
 
     @Override
-    protected int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
+    protected int doTryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
         // Length of microservices should be equal to length of placement
         int requestReceiver = closestNodes.get(placementRequest);
         MyACOHelper acoHelper = new MyACOHelper(microservices, DeviceStates, app, globalLatencies, indices, antsNumber, tau0, requestReceiver);
@@ -199,18 +203,6 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
 
         if (allPlaced) return -1;
         else return getFonID();
-    }
-
-    private void allocate(int deviceId, double mips, int ram, long size) {
-        getCurrentCpuLoad().put(deviceId, mips + getCurrentCpuLoad().get(deviceId));
-        getCurrentRamLoad().put(deviceId, ram + getCurrentRamLoad().get(deviceId));
-        getCurrentStorageLoad().put(deviceId, size + getCurrentStorageLoad().get(deviceId));
-    }
-
-    private void deallocate(int deviceId, double mips, int ram, long size) {
-        getCurrentCpuLoad().put(deviceId, getCurrentCpuLoad().get(deviceId) - mips);
-        getCurrentRamLoad().put(deviceId, getCurrentRamLoad().get(deviceId) - ram);
-        getCurrentStorageLoad().put(deviceId, getCurrentStorageLoad().get(deviceId) - size);
     }
 
     class MyACOHelper {

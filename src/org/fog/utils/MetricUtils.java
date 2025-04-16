@@ -36,7 +36,7 @@ public class MetricUtils {
      *
      * @return resource utilisation
      */
-    private static double computeResourceUtilisation(List<MyHeuristic.DeviceState> edgeServers) {
+    public static double computeResourceUtilisation(List<MyHeuristic.DeviceState> edgeServers) {
         double resourceUtilisation = 0.0;
         double[] cpuUtil = new double[edgeServers.size()];
         double[] ramUtil = new double[edgeServers.size()];
@@ -97,19 +97,16 @@ public class MetricUtils {
 
     /**
      * For a SINGLE simulation, computes all resource utilization values across all timestamps
-     * @param snapshots A map where each key is a timestamp corresponding to a placement cycle,
-     *                 and each value is a list of DeviceState instances
+     * @param utilizationValues A map where each key is a timestamp corresponding to a placement cycle,
+     *                 and each value is a list of that cycle's utilisation values
      * @return A list of all resource utilization values across all timestamps
      */
-    public static List<Double> handleSimulationResource(Map<Double, List<MyHeuristic.DeviceState>> snapshots) {
-        // Flatten the map and compute resource utilization for each timestamp's device states
+    public static List<Double> handleSimulationResource(Map<Double, Map<PlacementRequest, Double>> utilizationValues) {
+        // Flatten
         List<Double> allUtilizationValues = new ArrayList<>();
-        
-        for (List<MyHeuristic.DeviceState> snapshot : snapshots.values()) {
-            double utilization = computeResourceUtilisation(snapshot);
-            allUtilizationValues.add(utilization);
+        for (Map<PlacementRequest, Double> prUtilizations : utilizationValues.values()) {
+            allUtilizationValues.addAll(prUtilizations.values());
         }
-        
         return allUtilizationValues;
     }
 

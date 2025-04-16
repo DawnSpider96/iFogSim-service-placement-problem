@@ -25,6 +25,9 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
         super(fonID);
     }
 
+    // Add DeviceStates field to match other implementations
+    private List<DeviceState> DeviceStates = new ArrayList<>();
+    private Map<Integer, DeviceState> deviceStateMap = new HashMap<>();
 
     @Override
     public void postProcessing() {
@@ -84,6 +87,21 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
             placementCompleteCount = fillToPlace(placementCompleteCount, toPlace, placementRequests);
         }
 
+        // Initialize DeviceStates similar to other implementations
+        DeviceStates = new ArrayList<>();
+        deviceStateMap = new HashMap<>();
+        for (FogDevice fogDevice : edgeFogDevices) {
+            DeviceState state = new DeviceState(
+                fogDevice.getId(), 
+                resourceAvailability.get(fogDevice.getId()),
+                fogDevice.getHost().getTotalMips(), 
+                fogDevice.getHost().getRam(), 
+                fogDevice.getHost().getStorage()
+            );
+            DeviceStates.add(state);
+            deviceStateMap.put(fogDevice.getId(), state);
+        }
+
         Map<PlacementRequest, Integer> prStatus = new HashMap<>();
         // Process every PR individually
         for (Map.Entry<PlacementRequest, List<String>> entry : toPlace.entrySet()) {
@@ -99,9 +117,13 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
         return prStatus;
     }
 
+    @Override
+    protected List<DeviceState> getCurrentDeviceStates() {
+        return new ArrayList<>(deviceStateMap.values());
+    }
 
     @Override
-    protected int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
+    protected int doTryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
 
         // Simon says the closest node changes with every PR
         // Hence `nodes` needs to be remade repeatedly
@@ -127,11 +149,9 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
 
             for (int i = 0; i < nodes.size(); i++) {
                 int deviceId = nodes.get(i).fogDevice.getId();
-                // Try to place
-                if (canFit(s, deviceId, app)) {
-
-                    // Update temporary state
-                    allocate(deviceId, service.getMips(), service.getRam(), service.getSize());
+                DeviceState deviceState = deviceStateMap.get(deviceId);
+                if (deviceState.canFit(service.getMips(), service.getRam(), service.getSize())) {
+                    deviceState.allocate(service.getMips(), service.getRam(), service.getSize());
                     placed[j] = deviceId;
                     break;
                 }
@@ -145,13 +165,17 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
                         mpr.getPrIndex());
                 System.out.println("Failed placement " + placementRequest.getSensorId());
 
-                // Undo every "placement" recorded in placed. Only deviceStates was changed, so we change it back
+                // Undo every "placement" recorded in placed using DeviceStates
                 for (int i = 0 ; i < placed.length ; i++) {
                     int deviceId = placed[i];
-                    String microservice = microservices.get(i);
                     if (deviceId != -1) {
+                        String microservice = microservices.get(i);
                         AppModule placedService = getModule(microservice, app);
-                        deallocate(deviceId, placedService.getMips(), placedService.getRam(), placedService.getSize());
+                        deviceStateMap.get(deviceId).deallocate(
+                            placedService.getMips(), 
+                            placedService.getRam(), 
+                            placedService.getSize()
+                        );
                     }
                 }
                 break;
@@ -210,27 +234,9 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
         else {
             Logger.error("ClosestFit Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
         }
-//        placements.computeIfAbsent(entry.getKey(), k -> new HashMap<>());
-//        placements.get(entry.getKey()).put(service, deviceState.deviceId);
-//        getCurrentCpuLoad().put(deviceState.deviceId,
-//                getCurrentCpuLoad().get(deviceState.deviceId) + service.getMips());
-//        getCurrentRamLoad().put(deviceState.deviceId,
-//                getCurrentRamLoad().get(deviceState.deviceId) + service.getRam());
 
         if (allPlaced) return -1;
         else return getFonID();
-    }
-
-    private void allocate(int deviceId, double mips, int ram, long size) {
-        getCurrentCpuLoad().put(deviceId, mips + getCurrentCpuLoad().get(deviceId));
-        getCurrentRamLoad().put(deviceId, ram + getCurrentRamLoad().get(deviceId));
-        getCurrentStorageLoad().put(deviceId, size + getCurrentStorageLoad().get(deviceId));
-    }
-
-    private void deallocate(int deviceId, double mips, int ram, long size) {
-        getCurrentCpuLoad().put(deviceId, getCurrentCpuLoad().get(deviceId) - mips);
-        getCurrentRamLoad().put(deviceId, getCurrentRamLoad().get(deviceId) - ram);
-        getCurrentStorageLoad().put(deviceId, getCurrentStorageLoad().get(deviceId) - size);
     }
 }
 

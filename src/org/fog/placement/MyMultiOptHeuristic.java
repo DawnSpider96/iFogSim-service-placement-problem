@@ -128,7 +128,12 @@ public class MyMultiOptHeuristic extends MyHeuristic implements MicroservicePlac
     }
 
     @Override
-    protected int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
+    protected List<DeviceState> getCurrentDeviceStates() {
+        return DeviceStates;
+    }
+
+    @Override
+    protected int doTryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
         // Initialize temporary state
         int[] placed = new int[microservices.size()];
         for (int i = 0 ; i < microservices.size() ; i++) {

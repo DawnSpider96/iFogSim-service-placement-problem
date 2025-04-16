@@ -115,9 +115,13 @@ public class MyILPHeuristic extends MyHeuristic implements MicroservicePlacement
         return prStatus;
     }
 
+    @Override
+    protected List<DeviceState> getCurrentDeviceStates() {
+        return DeviceStates; // Already has DeviceStates field
+    }
 
     @Override
-    protected int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
+    protected int doTryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
 
         int containers = microservices.size();
 
@@ -267,6 +271,7 @@ public class MyILPHeuristic extends MyHeuristic implements MicroservicePlacement
         if (allPlaced) return -1;
         else return getFonID();
     }
+    
 }
 
 

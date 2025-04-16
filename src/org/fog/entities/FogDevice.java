@@ -629,18 +629,17 @@ public class FogDevice extends PowerDatacenter {
         setTotalCost(newcost);
 
         lastUtilization = Math.min(1, totalMipsAllocated / getHost().getTotalMips());
-        if (lastUtilization > 0) {
-            System.out.println("------------------------");
-            System.out.println("Device ID: " + getId());
-            System.out.println("Device Name: " + getName());
-            System.out.println("Utilization = " + lastUtilization);
-            System.out.println("Power = " + getHost().getPowerModel().getPower(lastUtilization));
-            System.out.println("Time passed: " + (timeNow - lastUtilizationUpdateTime));
-            System.out.println("Time passed: " + (timeNow - lastUtilizationUpdateTime));
-            for (Map.Entry<String, List<Double>> entry : getHost().getVmScheduler().getMipsMap().entrySet()) {
-                System.out.println("Key: " + entry.getKey() + ", Value: " + entry.getValue());
-            }
-        }
+//        if (lastUtilization > 0) {
+//            System.out.println("------------------------");
+//            System.out.println("Device ID: " + getId());
+//            System.out.println("Device Name: " + getName());
+//            System.out.println("Utilization = " + lastUtilization);
+//            System.out.println("Power = " + getHost().getPowerModel().getPower(lastUtilization));
+//            System.out.println("Time passed: " + (timeNow - lastUtilizationUpdateTime));
+//            for (Map.Entry<String, List<Double>> entry : getHost().getVmScheduler().getMipsMap().entrySet()) {
+//                System.out.println("Key: " + entry.getKey() + ", Value: " + entry.getValue());
+//            }
+//        }
         lastUtilizationUpdateTime = timeNow;
     }
 
@@ -972,8 +971,9 @@ public class FogDevice extends PowerDatacenter {
         return uplinkLatency;
     }
 
+    // in MILLISECONDS
     public void setUplinkLatency(double uplinkLatency) {
-        this.uplinkLatency = uplinkLatency;
+        this.uplinkLatency = uplinkLatency * Consts.MILLISECOND;
     }
 
     public boolean isSouthLinkBusy() {

@@ -26,6 +26,10 @@ public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacem
         super(fonID);
     }
 
+    // Add DeviceStates field to match other implementations
+    private List<DeviceState> DeviceStates = new ArrayList<>();
+    private Map<Integer, DeviceState> deviceStateMap = new HashMap<>();
+
     private int cloudIndex = -1;
     // Maps DeviceId to index (on latencies and `fogDevices` state)
     @Override
@@ -82,6 +86,21 @@ public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacem
             placementCompleteCount = fillToPlace(placementCompleteCount, toPlace, placementRequests);
         }
 
+        // Initialize DeviceStates similar to other implementations
+        DeviceStates = new ArrayList<>();
+        deviceStateMap = new HashMap<>();
+        for (FogDevice fogDevice : edgeFogDevices) {
+            DeviceState state = new DeviceState(
+                fogDevice.getId(), 
+                resourceAvailability.get(fogDevice.getId()),
+                fogDevice.getHost().getTotalMips(), 
+                fogDevice.getHost().getRam(), 
+                fogDevice.getHost().getStorage()
+            );
+            DeviceStates.add(state);
+            deviceStateMap.put(fogDevice.getId(), state);
+        }
+
         Map<PlacementRequest, Integer> prStatus = new HashMap<>();
         // Process every PR individually
         for (Map.Entry<PlacementRequest, List<String>> entry : toPlace.entrySet()) {
@@ -97,9 +116,13 @@ public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacem
         return prStatus;
     }
 
+    @Override
+    protected List<DeviceState> getCurrentDeviceStates() {
+        return new ArrayList<>(deviceStateMap.values());
+    }
 
     @Override
-    protected int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
+    protected int doTryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
 
         // Initialize temporary state
         int[] placed = new int[microservices.size()];
@@ -117,8 +140,9 @@ public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacem
             String s = microservices.get(j);
             AppModule service = getModule(s, app);
 
-            if (canFit(s, deviceId, app)) {
-                allocate(deviceId, service.getMips(), service.getRam(), service.getSize());
+            DeviceState deviceState = deviceStateMap.get(deviceId);
+            if (deviceState.canFit(service.getMips(), service.getRam(), service.getSize())) {
+                deviceState.allocate(service.getMips(), service.getRam(), service.getSize());
                 placed[j] = deviceId;
             }
 
@@ -128,13 +152,17 @@ public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacem
                 System.out.println("Failed to place module " + s + " on PR " + placementRequest.getSensorId());
                 System.out.println("Failed placement " + placementRequest.getSensorId());
 
-                // Undo every "placement" recorded in placed. Only deviceStates was changed, so we change it back
+                // Undo every "placement" recorded in placed
                 for (int i = 0 ; i < placed.length ; i++) {
                     int placedDeviceId = placed[i];
-                    String microservice = microservices.get(i);
                     if (placedDeviceId != -1) {
+                        String microservice = microservices.get(i);
                         AppModule placedService = getModule(microservice, app);
-                        deallocate(placedDeviceId, placedService.getMips(), placedService.getRam(), placedService.getSize());
+                        deviceStateMap.get(placedDeviceId).deallocate(
+                            placedService.getMips(), 
+                            placedService.getRam(), 
+                            placedService.getSize()
+                        );
                     }
                 }
                 break;
@@ -197,21 +225,4 @@ public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacem
         if (allPlaced) return -1;
         else return getFonID();
     }
-
-    private void allocate(int deviceId, double mips, int ram, long size) {
-        getCurrentCpuLoad().put(deviceId, mips + getCurrentCpuLoad().get(deviceId));
-        getCurrentRamLoad().put(deviceId, ram + getCurrentRamLoad().get(deviceId));
-        getCurrentStorageLoad().put(deviceId, size + getCurrentStorageLoad().get(deviceId));
-    }
-
-    private void deallocate(int deviceId, double mips, int ram, long size) {
-        getCurrentCpuLoad().put(deviceId, getCurrentCpuLoad().get(deviceId) - mips);
-        getCurrentRamLoad().put(deviceId, getCurrentRamLoad().get(deviceId) - ram);
-        getCurrentStorageLoad().put(deviceId, getCurrentStorageLoad().get(deviceId) - size);
-    }
-
-    // determineTargets implementation removed as it's now in the parent class MyHeuristic
 }
-
-
-

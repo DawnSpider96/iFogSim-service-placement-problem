@@ -150,7 +150,7 @@ public class MyExperiment {
 
         try {
             List<List<Double>> resourceData =
-                    mm.getAllSnapshots().stream()
+                    mm.getAllUtilizations().stream()
                             .map(MetricUtils::handleSimulationResource)
                             .collect(Collectors.toList());
             List<List<Double>> latencyData =
@@ -314,17 +314,17 @@ public class MyExperiment {
      */
     private static void createFogDevices(int userId, Application app, int numberOfEdge, int numberOfUser) {
         // Create cloud device at the top of the hierarchy
-        MyFogDevice cloud = createFogDevice("cloud", 44800, 40000, 100, 10000, 0.01, 16 * 103, 16 * 83.25, MyFogDevice.CLOUD);
+        MyFogDevice cloud = createFogDevice("cloud", 44800, -1, 40000, 100, 10000, 0.01, 16 * 103, 16 * 83.25, MyFogDevice.CLOUD);
         cloud.setParentId(References.NOT_SET);
         cloud.setLevel(0);
         fogDevices.add(cloud);
 
         // Create gateway devices
         for (int i = 0; i < numberOfEdge; i++) {
-            MyFogDevice gateway = createFogDevice("gateway_" + i, 2800, 4000, 10000, 10000, 0.0, 107.339, 83.4333, MyFogDevice.FCN);
+            MyFogDevice gateway = createFogDevice("gateway_" + i, 2800, 30, 4000, 10000, 10000, 0.0, 107.339, 83.4333, MyFogDevice.FCN);
             gateway.setParentId(cloud.getId());
             // Let latency be set by LocationManager in connectWithLatencies
-            gateway.setUplinkLatency(100); // Default latency, will be updated by LocationManager
+            gateway.setUplinkLatency(30); // Default latency, will be updated by LocationManager
             gateway.setLevel(1);
             fogDevices.add(gateway);
         }
@@ -338,9 +338,8 @@ public class MyExperiment {
             int usersToCreate = usersPerGateway + (i < remainingUsers ? 1 : 0);
             
             for (int j = 0; j < usersToCreate && userCount < numberOfUser; j++) {
-                FogDevice mobile = addImmobile("immobile_" + userCount, userId, app, References.NOT_SET);
                 // Don't set uplink latency, it will be set by LocationManager based on distance
-                mobile.setUplinkLatency(-1);
+                FogDevice mobile = addImmobile("immobile_" + userCount, userId, app, References.NOT_SET);
                 mobile.setLevel(2);
                 
                 fogDevices.add(mobile);
@@ -362,7 +361,7 @@ public class MyExperiment {
      * @param idlePower
      * @return
      */
-    private static MyFogDevice createFogDevice(String nodeName, long mips,
+    private static MyFogDevice createFogDevice(String nodeName, long mips, double upLinkLatency,
                                                int ram, long upBw, long downBw, double ratePerMips, double busyPower, double idlePower, String deviceType) {
 
         // Debug: Print entity ID before creating device
@@ -410,8 +409,19 @@ public class MyExperiment {
 
         MyFogDevice fogdevice = null;
         try {
-            fogdevice = new MyFogDevice(nodeName, characteristics,
-                    new AppModuleAllocationPolicy(hostList), storageList, 10, upBw, downBw, 10000, 0, ratePerMips, deviceType);
+            fogdevice = new MyFogDevice(
+                    nodeName,
+                    characteristics,
+                    new AppModuleAllocationPolicy(hostList),
+                    storageList,
+                    10,
+                    upBw,
+                    downBw,
+                    10000,
+                    upLinkLatency,
+                    ratePerMips,
+                    deviceType
+            );
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -420,7 +430,7 @@ public class MyExperiment {
     }
 
     private static FogDevice addImmobile(String name, int userId, Application app, int parentId) {
-        MyFogDevice mobile = createFogDevice(name, 200, 200, 10000, 270, 0, 87.53, 82.44, MyFogDevice.GENERIC_USER);
+        MyFogDevice mobile = createFogDevice(name, 200, -1, 200, 10000, 270, 0, 87.53, 82.44, MyFogDevice.GENERIC_USER);
         mobile.setParentId(parentId);
         
         Sensor mobileSensor = new MySensor("s-" + name, "SENSOR", userId, app.getAppId(), new DeterministicDistribution(SENSOR_TRANSMISSION_TIME));

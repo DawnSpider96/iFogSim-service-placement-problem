@@ -10,6 +10,7 @@ import org.fog.utils.Logger;
 import org.fog.utils.MicroservicePlacementConfig;
 import org.fog.utils.ModuleLaunchConfig;
 import org.fog.utils.MyMonitor;
+import org.fog.utils.MetricUtils;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -180,8 +181,6 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             onPlaced.accept(microservice);
         }
     }
-
-    protected abstract int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest);
 
     /**
      * Prunes mappedMicroservices and updates placementRequests such that their entries reflect the modules placed in THIS cycle only.
@@ -354,16 +353,44 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         // Update resource consumption metrics
         //  currentModuleInstanceNum contains deviceID -> module name (String) -> instance count (int)
         //  Total resources are found in PowerHost of FogDevice: fogDevice.getHost().getTotalMips()
-        List<DeviceState> snapshots = new ArrayList<>();
-        for (FogDevice fd : edgeFogDevices) {
-            int deviceId = fd.getId();
-            snapshots.add(new DeviceState(deviceId, resourceAvailability.get(deviceId),
-                    fd.getHost().getTotalMips(), fd.getHost().getRam(), fd.getHost().getStorage()));
-        }
-        MyMonitor.getInstance().getSnapshots().put(CloudSim.clock(), snapshots);
+//        List<DeviceState> snapshots = new ArrayList<>();
+//        for (FogDevice fd : edgeFogDevices) {
+//            int deviceId = fd.getId();
+//            snapshots.add(new DeviceState(deviceId, resourceAvailability.get(deviceId),
+//                    fd.getHost().getTotalMips(), fd.getHost().getRam(), fd.getHost().getStorage()));
+//        }
+//        MyMonitor.getInstance().getSnapshots().put(CloudSim.clock(), snapshots);
         // FogBroker.getBatchNumber()
 
     }
+
+    // In MyHeuristic.java
+    protected void captureResourceMetricsAfterSuccessfulPlacement(
+            PlacementRequest pr,
+            List<DeviceState> currentDeviceStates,
+            double timestamp) {
+
+        double utilization = MetricUtils.computeResourceUtilisation(currentDeviceStates);
+
+        MyMonitor.getInstance().recordUtilizationForPR(pr, timestamp, utilization);
+    }
+
+    /**
+     * Template method for placing a PR and capturing metrics
+     * Child classes implement doTryPlacingOnePr with their placement logic
+     */
+    protected final int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
+        int result = doTryPlacingOnePr(microservices, app, placementRequest);
+        if (result == -1) {
+            List<DeviceState> currentStates = getCurrentDeviceStates();
+            captureResourceMetricsAfterSuccessfulPlacement(placementRequest, currentStates, CloudSim.clock());
+        }
+        return result;
+    }
+
+    protected abstract int doTryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest);
+
+    protected abstract List<DeviceState> getCurrentDeviceStates();
 
     /**
      * Prunes mappedMicroservices and updates placementRequests such that their entries reflect the modules placed in THIS cycle only.

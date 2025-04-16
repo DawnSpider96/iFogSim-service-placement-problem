@@ -23,10 +23,15 @@ public class MyOnlinePOCPlacementLogicCopy extends MyHeuristic implements Micros
     }
 
     @Override
-    protected int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
+    protected int doTryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
         // Not used in this heuristic.
         // -1 means success, so return -2 just in case
         return -2;
+    }
+
+    @Override
+    protected List<DeviceState> getCurrentDeviceStates() {
+        throw new NullPointerException("Shouldn't be called");
     }
 
     @Override

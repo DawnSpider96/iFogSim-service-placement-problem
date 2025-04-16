@@ -194,9 +194,13 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
         return true;
     }
 
+    @Override
+    protected List<DeviceState> getCurrentDeviceStates() {
+        return new ArrayList<>(deviceStateMap.values()); // Use the deviceStateMap for efficiency
+    }
 
     @Override
-    protected int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
+    protected int doTryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
 
         if (!isPlacementFeasible(microservices, app)) {
             Logger.debug("Simulated Annealing Placement Problem", "Early termination - no feasible placement exists");

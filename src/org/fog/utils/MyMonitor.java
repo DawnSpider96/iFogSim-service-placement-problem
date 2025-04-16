@@ -1,9 +1,7 @@
 package org.fog.utils;
 
-import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.entities.PlacementRequest;
-import org.fog.placement.MyHeuristic;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,14 +13,13 @@ public class MyMonitor {
     // TODO Simon says we want the CPU and RAM usage of EVERY FogDevice after EVERY Placement-execution cycle
 
     private int simulationRoundNumber = 0;
-    // device -> (time -> Amount used)
-    private static List<Map<Integer, Map<Double, Cloudlet>>> cpuUsages = new ArrayList<>();
-    // timestamp -> List<DeviceState> (DeviceState snapshot at that time)
-    private static List<Map<Double, List<MyHeuristic.DeviceState>>> snapshots = new ArrayList<>();
+    // timestamp -> List of utilization's for that cycle
+    private static List<Map<Double, Map<PlacementRequest, Double>>> utilizations = new ArrayList<>();
     // timestamp -> (PR -> latency of that PR)
     private static List<Map<Double, Map<PlacementRequest, Double>>> latencies = new ArrayList<>();
     // timestamp -> (PR -> reason for failure)
     private static List<Map<Double, Map<PlacementRequest, String>>> failedPRs = new ArrayList<>();
+
 
     //    private static Map<> ramUsages = new HashMap<>();
 
@@ -37,26 +34,38 @@ public class MyMonitor {
         return MyMonitorHolder.INSTANCE;
     }
 
-    public Map getCpuUsages() {
-        while (cpuUsages.size() <= getInstance().simulationRoundNumber) {
-            cpuUsages.add(new HashMap<>()); // Simon (170225) says it should only add 1
-        }
-        return cpuUsages.get(getInstance().simulationRoundNumber);
-    }
-
 //    public static void setCpuUsages(Map cpuUsages) {
 //        MyMonitor.cpuUsages = cpuUsages;
 //    }
 
-    public Map<Double, List<MyHeuristic.DeviceState>> getSnapshots() {
-        while (snapshots.size() <= getInstance().simulationRoundNumber) {
-            snapshots.add(new HashMap<>()); // Simon (170225) says it should only add 1
+//    public Map<Double, List<MyHeuristic.DeviceState>> getSnapshots() {
+//        while (snapshots.size() <= getInstance().simulationRoundNumber) {
+//            snapshots.add(new HashMap<>()); // Simon (170225) says it should only add 1
+//        }
+//        return snapshots.get(getInstance().simulationRoundNumber);
+//    }
+//
+//    public List<Map<Double, List<MyHeuristic.DeviceState>>> getAllSnapshots() {
+//        return snapshots;
+//    }
+
+    public Map<Double, Map<PlacementRequest, Double>> getUtilizations() {
+        while (utilizations.size() <= getInstance().simulationRoundNumber) {
+            utilizations.add(new HashMap<>()); // Simon (170225) says it should only add 1
         }
-        return snapshots.get(getInstance().simulationRoundNumber);
+        return utilizations.get(getInstance().simulationRoundNumber);
     }
 
-    public List<Map<Double, List<MyHeuristic.DeviceState>>> getAllSnapshots() {
-        return snapshots;
+    public void recordUtilizationForPR(PlacementRequest pr, double timestamp, double utilization) {
+        Map<Double, Map<PlacementRequest, Double>> currentUtilizations = getUtilizations();
+        if (!currentUtilizations.containsKey(timestamp)) {
+            currentUtilizations.put(timestamp, new HashMap<>());
+        }
+        currentUtilizations.get(timestamp).put(pr, utilization);
+    }
+
+    public List<Map<Double, Map<PlacementRequest, Double>>> getAllUtilizations() {
+        return utilizations;
     }
 
     public Map<Double, Map<PlacementRequest, Double>> getLatencies() {
