@@ -44,8 +44,12 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
     protected Map<Integer, List<String>> currentModuleMap = new HashMap<>();
     protected Map<Integer, Map<String, Double>> currentModuleLoadMap = new HashMap<>();
     protected Map<Integer, Map<String, Integer>> currentModuleInstanceNum = new HashMap<>();
-    
-    // New composite key class for placement requests
+
+    // For quick lookup in getModule method
+    private final Map<String, Map<String, AppModule>> moduleCache = new HashMap<>();
+
+    // Composite key class for placement requests
+    // sensorId (sensor that created PR), prIndex (index of PR made by this sensor)
     protected static class PlacementRequestKey {
         private final int sensorId;
         private final int prIndex;
@@ -340,7 +344,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             Map<String, Integer> moduleCount = currentModuleInstanceNum.get(deviceId);
             for (String moduleName : moduleCount.keySet()) {
                 Application app = applicationInfo.get(moduleToApp.get(moduleName));
-                AppModule module = app.getModuleByName(moduleName);
+                AppModule module = getModule(moduleName, app);
                 double mips = resourceAvailability.get(deviceId).get(ControllerComponent.CPU) - (module.getMips() * moduleCount.get(moduleName));
                 resourceAvailability.get(deviceId).put(ControllerComponent.CPU, mips);
                 double ram = resourceAvailability.get(deviceId).get(ControllerComponent.RAM) - (module.getRam() * moduleCount.get(moduleName));
@@ -711,11 +715,18 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
      * @return The relevant appModule belonging to `app` with the name `moduleName`
      */
     protected AppModule getModule(String moduleName, Application app) {
-        for (AppModule appModule : app.getModules()) {
-            if (appModule.getName().equals(moduleName))
-                return appModule;
+        Map<String, AppModule> appModules = moduleCache.computeIfAbsent(
+                app.getAppId(), k -> new HashMap<>()
+        );
+        if (appModules.containsKey(moduleName)) return appModules.get(moduleName);
+        AppModule module = app.getModuleByName(moduleName);
+        if (module != null) {
+            appModules.put(moduleName, module);
         }
-        return null;
+        else {
+            throw new NullPointerException("Module not found");
+        }
+        return module;
     }
 
     protected FogDevice getDevice(int deviceId) {
@@ -848,6 +859,18 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             double totalRAM = this.totalResources.get("ram");
             double availableRAM = this.remainingResources.get("ram");
             return (totalRAM - availableRAM);
+        }
+
+        // For efficiency, in the pooling optimisation in SimulatedAnnealing heuristic
+        // Alternative is copy constructor, this should take less time
+        public void resetTo(DeviceState other) {
+            if (!Objects.equals(deviceId, other.getId())) throw new NullPointerException("DeviceStates don't match id in reset call");
+
+            this.remainingResources.clear();
+            this.remainingResources.putAll(other.remainingResources);
+
+            this.totalResources.clear();
+            this.totalResources.putAll(other.totalResources);
         }
 
         @Override

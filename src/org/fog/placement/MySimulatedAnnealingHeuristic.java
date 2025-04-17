@@ -26,12 +26,16 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
         super(fonID);
     }
 
-    private List<DeviceState> DeviceStates = new ArrayList<>();
-    private Map<Integer, DeviceState> deviceStateMap = new HashMap<>();
+    private SortedMap<Integer, DeviceState> deviceStateMap = new TreeMap<>();
+    List<DeviceState> baseStates;
+    // For quick lookup with id as key
+    private Map<Integer, FogDevice> deviceIdMap = new HashMap<>();
+    private Map<String, Double> latencyCache = new HashMap<>();
 
     // Simulated Annealing parameters
     private static double temperature = 1000;
     private static double coolingFactor = 0.995;
+
 
     @Override
     public void postProcessing() {
@@ -90,14 +94,22 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
         // Simon says in the algorithm itself, copies of these DeviceStates will be made.
         //  This initialisation occurs only once, capturing the state of resourceAvailability (and fogDevices) at this point in time
         // However, everytime a placement is made (for one PR), DeviceStates will be updated.
-        DeviceStates = new ArrayList<>();
-        deviceStateMap = new HashMap<>();
+        deviceStateMap = new TreeMap<>();
+        deviceIdMap = new HashMap<>();
         for (FogDevice fogDevice : edgeFogDevices) {
-            DeviceState state = new DeviceState(fogDevice.getId(), resourceAvailability.get(fogDevice.getId()),
-                    fogDevice.getHost().getTotalMips(), fogDevice.getHost().getRam(), fogDevice.getHost().getStorage());
-            DeviceStates.add(state);
-            deviceStateMap.put(fogDevice.getId(), state);
+            // SHARED object in both states
+            DeviceState deviceState = new DeviceState(
+                    fogDevice.getId(),
+                    resourceAvailability.get(fogDevice.getId()),
+                    fogDevice.getHost().getTotalMips(),
+                    fogDevice.getHost().getRam(),
+                    fogDevice.getHost().getStorage()
+            );
+            deviceStateMap.put(fogDevice.getId(), deviceState);
+            deviceIdMap.put(fogDevice.getId(), fogDevice);
         }
+        // For indexability.
+        baseStates = new ArrayList<>(deviceStateMap.values());
 
 
         Map<PlacementRequest, Integer> prStatus = new HashMap<>();
@@ -115,6 +127,10 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
         return prStatus;
     }
 
+    private String getLatencyCacheKey(int deviceId, int closestNodeId) {
+        return deviceId + "-" + closestNodeId;
+    }
+
     /**
      * Calculates cumulative latency of all placements to the users closest host
      *
@@ -122,23 +138,32 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
      * @return
      */
     private double placementLatencySum(int[] placement, FogDevice closestNode) {
-
-        List<FogDevice> servers = this.edgeFogDevices;
         double totalLatency = 0.0;
-        // create list with calculated user relative latency
+        int closestNodeId = closestNode.getId();
+
         for (int j = 0; j < placement.length; j++) {
-            for (int i = 0; i < servers.size(); i++) {
+            int deviceId = placement[j];
 
-                if (servers.get(i).getId() == placement[j]) {
+            String cacheKey = getLatencyCacheKey(deviceId, closestNodeId);
+            // Check if latency is in cache
+            Double cachedLatency = latencyCache.get(cacheKey);
 
-                    RelativeLatencyDeviceState relativeEdgeNode = new RelativeLatencyDeviceState(servers.get(i), closestNode, this.globalLatencies);
-
-                    totalLatency = totalLatency + relativeEdgeNode.latencyToClosestHost;
-                    break;
+            if (cachedLatency != null) {
+                totalLatency += cachedLatency;
+            } else {
+                FogDevice device = deviceIdMap.get(deviceId);
+                if (device != null) {
+                    RelativeLatencyDeviceState relativeEdgeNode = new RelativeLatencyDeviceState(
+                            device,
+                            closestNode,
+                            this.globalLatencies
+                    );
+                    latencyCache.put(cacheKey, relativeEdgeNode.latencyToClosestHost);
+                    totalLatency += relativeEdgeNode.latencyToClosestHost;
                 }
-
             }
         }
+
         return totalLatency;
     }
 
@@ -148,12 +173,10 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
      * @return
      */
     private List<DeviceState> getEdgeNodesListClone(List<DeviceState> nodes) {
-
         List<DeviceState> listClone = new ArrayList<>();
         for (DeviceState server : nodes) {
             listClone.add(new DeviceState(server));
         }
-
         return listClone;
     }
 
@@ -177,7 +200,7 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
             boolean canBePlaced = false;
 
             // Check if at least one device has enough resources
-            for (DeviceState deviceState : DeviceStates) {
+            for (DeviceState deviceState : deviceStateMap.values()) {
                 if (deviceState.canFit(service.getMips(), service.getRam(), service.getSize())) {
                     canBePlaced = true;
                     break;
@@ -196,7 +219,9 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
 
     @Override
     protected List<DeviceState> getCurrentDeviceStates() {
-        return new ArrayList<>(deviceStateMap.values()); // Use the deviceStateMap for efficiency
+        // Use the deviceStateMap for efficiency
+        // Definitely ordered according to deviceId
+        return new ArrayList<>(deviceStateMap.values());
     }
 
     @Override
@@ -213,9 +238,9 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
         int[] placements = new int[microservices.size()];
         Arrays.fill(placements, -1);
 
-        // duplicate to not use original values
+        // duplicates to not use original values
         int[] bestPlacement = placements.clone();
-        List<DeviceState> nodesBestPlacement = getEdgeNodesListClone(DeviceStates);
+        List<DeviceState> nodesBestPlacement = getEdgeNodesListClone(baseStates);
 
         // use FirstFit for an initial "best" placement generation
         boolean firstFitSuccessful = true;
@@ -248,11 +273,11 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
         // iterate while reducing temperature by a cooling factor (step)
         for (double t = temperature; t > 1; t *= coolingFactor) {
             int[] neighbourPlacement = currentPlacement.clone();
-            // also need a copy of nodes as we would update these as we book
-            // resources
-            List<DeviceState> nodesNeighborPlacement = getEdgeNodesListClone(DeviceStates);
+            // also need a copy of nodes as we would update these as we book resources
+            // NOTE We take a copy of the ORIGINAL device states
+            List<DeviceState> nodesNeighborPlacement = getEdgeNodesListClone(baseStates);
 
-            // for each service function find a random node with sufficient ram and cpu
+            // for each service find a random node with sufficient ram and cpu
             for (int i = 0; i < microservices.size(); i++) {
                 // pre-select only fitting nodes for random selection
                 List<DeviceState> onlyFittingNodesSubset = new ArrayList<DeviceState>();
@@ -351,12 +376,6 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
             //  If one service fails to place, all cannot be placed, hence state is unchanged.
             Logger.debug("Simulated Annealing Placement Failure", "But temporary state not affected");
         }
-//        placements.computeIfAbsent(entry.getKey(), k -> new HashMap<>());
-//        placements.get(entry.getKey()).put(service, deviceState.deviceId);
-//        getCurrentCpuLoad().put(deviceState.deviceId,
-//                getCurrentCpuLoad().get(deviceState.deviceId) + service.getMips());
-//        getCurrentRamLoad().put(deviceState.deviceId,
-//                getCurrentRamLoad().get(deviceState.deviceId) + service.getRam());
 
         if (allPlaced) return -1;
         else return getFonID();
