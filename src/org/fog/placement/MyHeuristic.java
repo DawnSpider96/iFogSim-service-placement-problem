@@ -1,6 +1,4 @@
 package org.fog.placement;
-
-import org.apache.commons.math3.util.Pair;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.application.AppEdge;
 import org.fog.application.AppModule;

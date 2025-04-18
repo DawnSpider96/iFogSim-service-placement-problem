@@ -3,15 +3,12 @@ package org.fog.placement;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
-import org.fog.entities.FogBroker;
 import org.fog.entities.FogDevice;
 import org.fog.entities.PlacementRequest;
 import org.fog.entities.MyPlacementRequest;
 import org.fog.utils.Logger;
-import org.fog.utils.ModuleLaunchConfig;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class MySimulatedAnnealingHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
     @Override
@@ -30,6 +27,7 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
     List<DeviceState> baseStates;
     // For quick lookup with id as key
     private Map<Integer, FogDevice> deviceIdMap = new HashMap<>();
+    Map<Integer,Integer> devToIdx = new HashMap<>();
     private Map<String, Double> latencyCache = new HashMap<>();
 
     // Simulated Annealing parameters
@@ -110,6 +108,9 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
         }
         // For indexability.
         baseStates = new ArrayList<>(deviceStateMap.values());
+        for (int i = 0; i < baseStates.size(); i++) {
+            devToIdx.put(baseStates.get(i).getId(), i);
+        }
 
 
         Map<PlacementRequest, Integer> prStatus = new HashMap<>();
@@ -167,19 +168,6 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
         return totalLatency;
     }
 
-    /**
-     * Makes a copy of DeviceStates. DeviceStates is updated after every placement.
-     *.
-     * @return
-     */
-    private List<DeviceState> getEdgeNodesListClone(List<DeviceState> nodes) {
-        List<DeviceState> listClone = new ArrayList<>();
-        for (DeviceState server : nodes) {
-            listClone.add(new DeviceState(server));
-        }
-        return listClone;
-    }
-
     public static double probabilityOfAcceptance(double currentLatency, double neighborLatency, double temp) {
         // neighbour is smaller, we accept always
         if (neighborLatency < currentLatency)
@@ -200,7 +188,7 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
             boolean canBePlaced = false;
 
             // Check if at least one device has enough resources
-            for (DeviceState deviceState : deviceStateMap.values()) {
+            for (DeviceState deviceState : baseStates) {
                 if (deviceState.canFit(service.getMips(), service.getRam(), service.getSize())) {
                     canBePlaced = true;
                     break;
@@ -219,15 +207,15 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
 
     @Override
     protected List<DeviceState> getCurrentDeviceStates() {
-        // Use the deviceStateMap for efficiency
+        // For metrics collection
         // Definitely ordered according to deviceId
         return new ArrayList<>(deviceStateMap.values());
     }
 
     @Override
-    protected int doTryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
+    protected int doTryPlacingOnePr(List<String> services, Application app, PlacementRequest placementRequest) {
 
-        if (!isPlacementFeasible(microservices, app)) {
+        if (!isPlacementFeasible(services, app)) {
             Logger.debug("Simulated Annealing Placement Problem", "Early termination - no feasible placement exists");
             return getFonID();
         }
@@ -235,19 +223,23 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
         FogDevice closestFogDevice = getDevice(closestNodes.get(placementRequest));
 
         // create empty placement list
-        int[] placements = new int[microservices.size()];
+        int[] placements = new int[services.size()];
         Arrays.fill(placements, -1);
 
         // duplicates to not use original values
         int[] bestPlacement = placements.clone();
-        List<DeviceState> nodesBestPlacement = getEdgeNodesListClone(baseStates);
+        List<DeviceState> nodesBestPlacement = new ArrayList<>(baseStates);
 
         // use FirstFit for an initial "best" placement generation
         boolean firstFitSuccessful = true;
-        for (int i = 0; i < microservices.size(); i++) {
+        for (int i = 0; i < services.size(); i++) {
             boolean placedThisService = false;
             for (int j = 0; j < nodesBestPlacement.size(); j++) {
-                AppModule service = getModule(microservices.get(i), app);
+                AppModule service = getModule(services.get(i), app);
+                // Ensure that DeviceState j is a PRIVATE, DEEP copy
+                if (nodesBestPlacement.get(j) == baseStates.get(j)) {
+                    nodesBestPlacement.set(j, new DeviceState(baseStates.get(j)));
+                }
                 if (nodesBestPlacement.get(j).canFit(service.getMips(), service.getRam(), service.getSize())) {
                     nodesBestPlacement.get(j).allocate(service.getMips(), service.getRam(), service.getSize());
                     bestPlacement[i] = nodesBestPlacement.get(j).getId();
@@ -273,15 +265,15 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
         // iterate while reducing temperature by a cooling factor (step)
         for (double t = temperature; t > 1; t *= coolingFactor) {
             int[] neighbourPlacement = currentPlacement.clone();
-            // also need a copy of nodes as we would update these as we book resources
+            // also need a SHALLOW copy of nodes as we would update these as we book resources
             // NOTE We take a copy of the ORIGINAL device states
-            List<DeviceState> nodesNeighborPlacement = getEdgeNodesListClone(baseStates);
+            List<DeviceState> nodesNeighborPlacement = new ArrayList<>(baseStates);
 
             // for each service find a random node with sufficient ram and cpu
-            for (int i = 0; i < microservices.size(); i++) {
+            for (int i = 0; i < services.size(); i++) {
                 // pre-select only fitting nodes for random selection
                 List<DeviceState> onlyFittingNodesSubset = new ArrayList<DeviceState>();
-                AppModule service = getModule(microservices.get(i), app);
+                AppModule service = getModule(services.get(i), app);
 
                 for (DeviceState node : nodesNeighborPlacement) {
                     if (node.canFit(service.getMips(), service.getRam(), service.getSize())) {
@@ -295,9 +287,20 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
                 } else {
                     // get random fitting node
                     int j = (int) (onlyFittingNodesSubset.size() * Math.random());
-                    // Update the node resources
-                    onlyFittingNodesSubset.get(j).allocate(service.getMips(), service.getRam(), service.getSize());
-                    // add to placement
+                    int j_Idx = devToIdx.get(onlyFittingNodesSubset.get(j).getId());
+                    // check if DeviceState at j_Inx is ALREADY a private copy
+                    //  (private copy would have been made if a previous service was placed on DeviceState j)
+                    if (nodesNeighborPlacement.get(j_Idx) == baseStates.get(j_Idx)) {
+                        // DeviceState j is not private, so make a private DEEP COPY
+                        nodesNeighborPlacement.set(
+                                j_Idx,
+                                new DeviceState(baseStates.get(j_Idx))
+                        );
+                    }
+                    // NOTE DeviceState j will definitely be in onlyFittingNodesSubset
+                    // nodesNeighbourPlacement will disappear after the SA iteration,
+                    //  However we still allocate to prevent overallocation WITHIN the iteration.
+                    nodesNeighborPlacement.get(j_Idx).allocate(service.getMips(), service.getRam(), service.getSize());
                     neighbourPlacement[i] = onlyFittingNodesSubset.get(j).getId();
                 }
             }
@@ -337,8 +340,8 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
                 mappedMicroservices.put(prKey, new LinkedHashMap<>());
             }
             
-            for (int i = 0 ; i < microservices.size(); i++) {
-                String s = microservices.get(i);
+            for (int i = 0 ; i < services.size(); i++) {
+                String s = services.get(i);
                 AppModule service = getModule(s, app);
                 int deviceId = bestPlacement[i];
 
