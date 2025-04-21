@@ -320,6 +320,7 @@ public class MyMicroservicesController extends SimEntity {
         if (delay > 0) {
             send(getId(), delay, FogEvents.SCHEDULER_NEXT_MOVEMENT_UPDATE, deviceId);
         }
+        else throw new NullPointerException("Invalid delay.");
     }
     
     /**
@@ -381,6 +382,7 @@ public class MyMicroservicesController extends SimEntity {
         // Reproducible random for mobility generation
         Random random = new Random(33);
         BeelinePathingStrategy beelinePathingStrategy = new BeelinePathingStrategy();
+        GraphHopperPathingStrategy graphHopperPathingStrategy = new GraphHopperPathingStrategy();
 
         // Separate resource and user devices
         List<MyFogDevice> resourceDevices = new ArrayList<>();
@@ -437,15 +439,15 @@ public class MyMicroservicesController extends SimEntity {
                     DeviceMobilityState mobilityState = new GenericUserMobilityState(
                             userLocations.get(csvIndex),
                             beelinePathingStrategy,
-                            random.nextDouble() * 0.001 // TODO Is this in km/timestep??? And is each timestep 1 millisecond???
+                            random.nextDouble() * 2 // TODO Is this in m/timestep??? And is each timestep 1 second???
                     );
                     registerDeviceMobilityState(fogDevice.getId(), mobilityState);
                 }
                 else if (fogDevice.getDeviceType().equals(MyFogDevice.AMBULANCE_USER)) {
                     DeviceMobilityState mobilityState = new AmbulanceUserMobilityState(
                             userLocations.get(csvIndex), // We don't use this, instead spawn user at hospital.
-                            beelinePathingStrategy,
-                            random.nextDouble() * 0.003
+                            graphHopperPathingStrategy,
+                            random.nextDouble() * 20 + 10 // 10 to 30 m/s
                     );
                     registerDeviceMobilityState(fogDevice.getId(), mobilityState);
                 } // TODO Add for Opera user
@@ -473,17 +475,42 @@ public class MyMicroservicesController extends SimEntity {
                 DeviceMobilityState mobilityState = deviceMobilityStates.get(deviceId);
 
                 if (mobilityState != null) {
-                    // Create an initial attraction point template
                     Location currentLocation = mobilityState.getCurrentLocation();
-                    Attractor initialAttraction = new Attractor(
-                            currentLocation, // Initial location (will be replaced with random by createAttractionPoint)
-                            "Initial Destination",
-                            0.1, // min pause time
-                            3.0, // max pause time
-                            new PauseTimeStrategy()
-                    );
 
-                    mobilityState.updateAttractionPoint(initialAttraction);
+//                    if (mobilityState.getClass().getName().equals("org.fog.mobility.GenericUserMobilityState")) {
+//                        // Create an initial attraction point template
+//                        initialAttraction = new Attractor(
+//                                currentLocation, // Initial location (will be replaced with random by createAttractionPoint)
+//                                "Initial Generic estination",
+//                                0.1, // min pause time
+//                                3.0, // max pause time
+//                                new PauseTimeStrategy()
+//                        );
+//                    }
+//                    else if (mobilityState.getClass().getName().equals("org.fog.mobility.AmbulanceUserMobilityState")) {
+//                        // Create an initial attraction point template
+//                        initialAttraction = new Attractor(
+//                                currentLocation, // Initial location (will be replaced with random by createAttractionPoint)
+//                                "Initial Ambulance Destination",
+//                                30, // min pause time
+//                                300, // max pause time
+//                                new PauseTimeStrategy()
+//                        );
+//                    }
+//                    else if (mobilityState.getClass().getName().equals("org.fog.mobility.OperaUserMobilityState")) {
+//                        // Create an initial attraction point template
+//                        initialAttraction = new Attractor(
+//                                currentLocation, // Initial location (will be replaced with random by createAttractionPoint)
+//                                "Opera House Destination",
+//                                7200, // min pause time
+//                                7200, // max pause time
+//                                // TODO We have to make them all stop pausing at the same timestamp (when show ends)
+//                                new PauseTimeStrategy()
+//                        );
+//                    }
+//                    else throw new NullPointerException("Invalid user type");
+//                    mobilityState.updateAttractionPoint(initialAttraction);
+
                     startDeviceMobility(deviceId);
 
                     System.out.println("Started mobility for device: " + CloudSim.getEntityName(deviceId) +
@@ -681,6 +708,11 @@ public class MyMicroservicesController extends SimEntity {
      * be varied per-request by using the delay values from {@code placementRequestDelayMap}.
      */
     public void generatePeriodicPlacementRequests() {
+        if (placementRequestDelayMap.isEmpty()) {
+            Logger.debug("WARNING: placementRequestDelayMap", "No placements were initialized in Sim file! Ensure that this is intentional.");
+            return;
+        }
+
         for (MyFogDevice userDevice : userDevices) {
             // TODO Simon says this wrong.
             //  Update requester according to the current parent.

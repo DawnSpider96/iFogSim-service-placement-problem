@@ -144,6 +144,9 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
 
         for (int j = 0; j < placement.length; j++) {
             int deviceId = placement[j];
+            if (deviceId == -1) {
+                throw new NullPointerException("Placement should be populated!");
+            }
 
             String cacheKey = getLatencyCacheKey(deviceId, closestNodeId);
             // Check if latency is in cache
@@ -181,28 +184,29 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
      * Quickly checks if placement is possible at all before running expensive SA algorithm
      * Returns true if placement might be feasible, false if definitely not feasible
      */
-    private boolean isPlacementFeasible(List<String> microservices, Application app) {
-        // For each microservice, check if there's at least one device that can host it
-        for (String microservice : microservices) {
-            AppModule service = getModule(microservice, app);
-            boolean canBePlaced = false;
-
-            // Check if at least one device has enough resources
-            for (DeviceState deviceState : baseStates) {
-                if (deviceState.canFit(service.getMips(), service.getRam(), service.getSize())) {
-                    canBePlaced = true;
+    private boolean isPlacementFeasible(List<String> services, Application app) {
+        boolean firstFitSuccessful = true;
+        List<DeviceState> nodesBestPlacement = new ArrayList<>(baseStates);
+        for (int i = 0; i < services.size(); i++) {
+            boolean placedThisService = false;
+            for (int j = 0; j < nodesBestPlacement.size(); j++) {
+                AppModule service = getModule(services.get(i), app);
+                // Ensure that DeviceState j is a PRIVATE, DEEP copy
+                if (nodesBestPlacement.get(j) == baseStates.get(j)) {
+                    nodesBestPlacement.set(j, new DeviceState(baseStates.get(j)));
+                }
+                if (nodesBestPlacement.get(j).canFit(service.getMips(), service.getRam(), service.getSize())) {
+                    nodesBestPlacement.get(j).allocate(service.getMips(), service.getRam(), service.getSize());
+                    placedThisService = true;
                     break;
                 }
             }
-
-            // If this microservice can't be placed anywhere, the whole placement fails
-            if (!canBePlaced) {
-                return false;
+            if (!placedThisService) {
+                firstFitSuccessful = false;
+                break;
             }
         }
-
-        // If we get here, each microservice has at least one potential host
-        return true;
+        return firstFitSuccessful;
     }
 
     @Override
@@ -215,10 +219,10 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
     @Override
     protected int doTryPlacingOnePr(List<String> services, Application app, PlacementRequest placementRequest) {
 
-        if (!isPlacementFeasible(services, app)) {
-            Logger.debug("Simulated Annealing Placement Problem", "Early termination - no feasible placement exists");
-            return getFonID();
-        }
+//        if (!isPlacementFeasible(services, app)) {
+//            Logger.debug("Simulated Annealing Placement Problem", "Early termination - no feasible placement exists");
+//            return getFonID();
+//        }
 
         FogDevice closestFogDevice = getDevice(closestNodes.get(placementRequest));
 
@@ -253,9 +257,9 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
             }
         }
 
-        // If FirstFit failed, no need to run SA
+        // If first fit failed, no need to run SA
         if (!firstFitSuccessful) {
-            Logger.debug("Simulated Annealing Placement", "First-fit initialization failed - skipping SA");
+            Logger.debug("Simulated Annealing Placement Problem", "Early termination - no feasible placement exists");
             return getFonID();
         }
 
@@ -264,10 +268,12 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
 
         // iterate while reducing temperature by a cooling factor (step)
         for (double t = temperature; t > 1; t *= coolingFactor) {
-            int[] neighbourPlacement = currentPlacement.clone();
+            int[] neighbourPlacement = new int[services.size()];
+            Arrays.fill(neighbourPlacement, -1);
             // also need a SHALLOW copy of nodes as we would update these as we book resources
             // NOTE We take a copy of the ORIGINAL device states
             List<DeviceState> nodesNeighborPlacement = new ArrayList<>(baseStates);
+            boolean placementStillPossible = true;
 
             // for each service find a random node with sufficient ram and cpu
             for (int i = 0; i < services.size(); i++) {
@@ -283,7 +289,8 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
 
                 // if no candidates was found set placement to -1
                 if (onlyFittingNodesSubset.isEmpty()) {
-                    neighbourPlacement[i] = -1;
+                    placementStillPossible = false;
+                    break; // Do nothing, already -1
                 } else {
                     // get random fitting node
                     int j = (int) (onlyFittingNodesSubset.size() * Math.random());
@@ -305,6 +312,15 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
                 }
             }
 
+            if (!placementStillPossible) {
+//                Logger.error(
+//                        "Simulation Limitation Problem",
+//                        "All DeviceStates have no resources for ONE of the services! Check the biggest one."
+//                );
+                continue;
+                // rationale: At least one of the values in the placement is -1
+                //  So there is no point continuing with this SA iteration.
+            }
             double currentLatency = placementLatencySum(currentPlacement, closestFogDevice);
             double neighborLatency = placementLatencySum(neighbourPlacement, closestFogDevice);
 

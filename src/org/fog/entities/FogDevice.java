@@ -106,6 +106,7 @@ public class FogDevice extends PowerDatacenter {
         setSchedulingInterval(schedulingInterval);
         setUplinkBandwidth(uplinkBandwidth);
         setDownlinkBandwidth(downlinkBandwidth);
+        // Simon says we convert to milliseconds in constructor call.
         setUplinkLatency(uplinkLatency * Consts.MILLISECOND);
         setRatePerMips(ratePerMips);
         setAssociatedActuatorIds(new ArrayList<Pair<Integer, Double>>());

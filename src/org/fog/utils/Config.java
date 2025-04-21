@@ -19,7 +19,8 @@ public class Config {
 	public static double FOG_DEVICE_COST_PER_BW = 0.0;
 //	public static double MAX_VALUE = 1000000.0;
 
-	public static final Location HOSPITAL1 = new Location(-37.81192, 144.95807, -1);
+	public static final Location HOSPITAL1 = new Location(-37.81192, 144.95807, -1); // Top left-ish
+	public static final Location OPERA_HOUSE = new Location(-37.81501, 144.97388, -1); // Around bottom right
 
 	// NOTE Hardcoded values
 	public static final double[][] BOUNDARY = {

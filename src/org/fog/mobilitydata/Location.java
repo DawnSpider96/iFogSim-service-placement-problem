@@ -27,11 +27,17 @@ public class Location {
 		this.block = block;
 	}
 
+	// KM
 	@Override
 	public String toString() {
 		return "Location{Latitude=" + latitude + ", Longitude=" + longitude + "}";
 	}
 
+	/*
+	* Haversine calculation of distance.
+	* Determines DIRECT distance from one point to another.
+	* Units: Kilometers
+	* */
 	public double calculateDistance(Location loc2) {
 
 		final int R = 6371; // Radius of the earth in Kilometers
@@ -42,15 +48,15 @@ public class Location {
 				+ Math.cos(Math.toRadians(this.latitude)) * Math.cos(Math.toRadians(loc2.latitude))
 				* Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
 		double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-		double distance = R * c; // kms
 
+//		distance = Math.pow(distance, 2);
+//		Simon says they used to square distance and then return the sqrt, not sure why.
 
-		distance = Math.pow(distance, 2);
-
-		return Math.sqrt(distance);
+		return R * c;
 	}
 
 	public Location movedTowards(Location endLocation, double distance) {
+		// km
 		double dist = this.calculateDistance(endLocation);
 		double ratio = distance / dist;
 		if (ratio > 1) {
@@ -61,6 +67,13 @@ public class Location {
 		return new Location(newLatitude, newLongitude, this.block);
 	}
 
+	public double getLatitude() {
+		return latitude;
+	}
+
+	public double getLongitude() {
+		return longitude;
+	}
 
 	@Deprecated
 	public static Location getRandomLocationSmallbox() {
@@ -85,6 +98,28 @@ public class Location {
 			}
 		}
 	}
+
+	public static Location getRandomLocationWithinRadius(double centerLat, double centerLon, double radiusInMeters) {
+		Random rand = new Random();
+		final double radiusInDegrees = radiusInMeters / 111_000.0;
+
+		while (true) {
+			double distance = radiusInDegrees * Math.sqrt(rand.nextDouble());
+			double angle = rand.nextDouble() * 2 * Math.PI;
+
+			// Offset from center point
+			double offsetLat = distance * Math.cos(angle);
+			double offsetLon = distance * Math.sin(angle) / Math.cos(Math.toRadians(centerLat));
+
+			double newLat = centerLat + offsetLat;
+			double newLon = centerLon + offsetLon;
+
+			if (isPointInPolygon(newLat, newLon, BOUNDARY)) {
+				return new Location(newLat, newLon, -1);
+			}
+		}
+	}
+
 
 	public static boolean isPointInPolygon(double testLat, double testLon, double[][] polygon) {
 		int intersections = 0;

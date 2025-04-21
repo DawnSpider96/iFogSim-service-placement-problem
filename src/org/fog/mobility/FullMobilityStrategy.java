@@ -80,16 +80,16 @@ public class FullMobilityStrategy implements MobilityStrategy {
             WayPoint nextNextWaypoint = path.getNextWayPoint();
             double nextArrivalTime = nextNextWaypoint.getArrivalTime();
             double delay = nextArrivalTime - CloudSim.clock();
-            System.out.println("Scheduled next movement for device " + deviceId + " at time " + nextArrivalTime);
+            System.out.println("Scheduled next movement for device " + CloudSim.getEntityName(deviceId) + " at time " + nextArrivalTime);
             return delay;
         } else {
             // No more waypoints, device reached destination
+            System.out.println(CloudSim.getEntityName(deviceId) + " reached destination");
             dms.reachedDestination();
-            System.out.println("Device " + deviceId + " reached destination");
             
             // Calculate pause time
             double pauseTime = determinePauseTime(deviceId, dms);
-            System.out.println("Device " + deviceId + " will pause for " + pauseTime + " seconds");
+            System.out.println("Device " + CloudSim.getEntityName(deviceId) + " will pause for " + pauseTime + " seconds");
             return pauseTime;
         }
     }
@@ -98,7 +98,6 @@ public class FullMobilityStrategy implements MobilityStrategy {
     public double makePath(int deviceId, DeviceMobilityState dms) {
         if (dms == null) {
             throw new NullPointerException("CRITICAL ERROR: Device mobility state not found for device " + deviceId);
-            // Spare line
         }
         
         // Status change

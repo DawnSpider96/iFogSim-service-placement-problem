@@ -6,3 +6,5 @@ bin/
 .project
 **/*.class
 out
+melbourne.osm.pbf
+target/

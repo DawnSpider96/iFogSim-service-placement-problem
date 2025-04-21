@@ -33,13 +33,21 @@ public class GenericUserMobilityState extends DeviceMobilityState {
 
     @Override
     public void updateAttractionPoint(Attractor currentAttractionPoint) {
+        PauseTimeStrategy pts;
+        if (currentAttractionPoint == null) {
+            pts = new PauseTimeStrategy();
+        }
+        else {
+            pts = currentAttractionPoint.getPauseTimeStrategy();
+        }
+
         Location randomPoint = Location.getRandomLocation();
         this.currentAttractor = new Attractor(
             randomPoint,
             "Generic User",
-            currentAttractionPoint.getPauseTimeMin(),
-            currentAttractionPoint.getPauseTimeMax(),
-            currentAttractionPoint.getPauseTimeStrategy()
+            10.0,
+            60.0,
+            pts
         );
     }
 

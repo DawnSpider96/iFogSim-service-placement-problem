@@ -1,9 +1,8 @@
 package org.fog.mobility;
+import org.cloudbus.cloudsim.Consts;
 import org.fog.mobilitydata.Location;
 import java.util.Random;
-
 import org.cloudbus.cloudsim.core.CloudSim;
-
 
 public class BeelinePathingStrategy implements PathingStrategy {
 
@@ -27,7 +26,8 @@ public class BeelinePathingStrategy implements PathingStrategy {
         // Random value between 5 and 10 seconds
         double time = rand.nextDouble() * 5 + 5;
 
-        double distance = speed * time;
+        // KM
+        double distance = speed * time * Consts.METERS_TO_KM;
         Location loc = currentLocation.movedTowards(attractionPoint.getAttractionPoint(), distance);
 
         WayPoint w = new WayPoint(loc, CloudSim.clock() + time);

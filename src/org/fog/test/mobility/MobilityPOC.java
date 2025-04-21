@@ -5,8 +5,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
-import org.cloudbus.cloudsim.Consts;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Pe;
@@ -20,11 +21,8 @@ import org.cloudbus.cloudsim.sdn.overbooking.PeProvisionerOverbooking;
 import org.fog.entities.FogDevice;
 import org.fog.entities.FogDeviceCharacteristics;
 import org.fog.entities.MyFogDevice;
-import org.fog.mobility.*;
-import org.fog.mobilitydata.Location;
 import org.fog.placement.MyMicroservicesController;
 import org.fog.policy.AppModuleAllocationPolicy;
-import org.fog.utils.FogEvents;
 import org.fog.utils.FogLinearPowerModel;
 import org.fog.utils.FogUtils;
 import org.fog.utils.Logger;
@@ -50,7 +48,10 @@ public class MobilityPOC {
     
     public static void main(String[] args) {
         Log.printLine("Starting Mobility Proof of Concept...");
-        
+//        System.out.println("Loaded Logback from: " + ch.qos.logback.classic.Logger.class.getProtectionDomain().getCodeSource().getLocation());
+//        System.out.println("SLF4J binding class: " + org.slf4j.LoggerFactory.getILoggerFactory().getClass().getName());
+
+
         try {
             // Initialize the CloudSim library
             int num_user = 1;
@@ -81,8 +82,8 @@ public class MobilityPOC {
                 );
                 Log.printLine("Successfully initialized location data from CSV files.");
 
-                // Enable mobility by activating the full mobility strategy\
-//                controller.enableMobility();
+                // Enable mobility by activating the full mobility strategy
+                controller.enableMobility();
                 Log.printLine("Mobility enabled using the Strategy Pattern.");
 
                 // Complete initialization now that location data is loaded
@@ -152,7 +153,12 @@ public class MobilityPOC {
             gateway.setUplinkLatency(100); // ms
             devices.add(gateway);
         }
-            
+
+        Map<String, Double> userTypeRatios = new LinkedHashMap<>();
+        userTypeRatios.put(MyFogDevice.GENERIC_USER, 0.5);
+        userTypeRatios.put(MyFogDevice.AMBULANCE_USER, 0.5);
+//        userTypeRatios.put(MyFogDevice.OPERA_USER, 0.2);
+
         // Create user devices connected to each gateway
         for (int j = 0; j < NUM_USERS; j++) {
             MyFogDevice userDevice = createFogDevice(
@@ -165,7 +171,7 @@ public class MobilityPOC {
                     0.0,
                     87.53,
                     82.44,
-                    getRandomUserType() // Only returns generic user for now
+                    determineUserType(j, userTypeRatios)
             );
             userDevice.setUplinkLatency(-1);
             devices.add(userDevice);
@@ -175,12 +181,23 @@ public class MobilityPOC {
     }
     
     /**
-     * Randomly selects one of the user device types
+     * 50% Generic, 40% Opera, 10% Ambulance
+     * For now 50-50 Ambulance Generic
      */
-    private static String getRandomUserType() {
-        return MyFogDevice.GENERIC_USER;
+    private static String determineUserType(int j, Map<String, Double> userTypeRatios) {
+        int currentIndex = 0;
+        for (Map.Entry<String, Double> entry : userTypeRatios.entrySet()) {
+            int typeCount = (int) Math.round(entry.getValue() * MobilityPOC.NUM_USERS);
+            if (j < currentIndex + typeCount) {
+                return entry.getKey();
+            }
+            currentIndex += typeCount;
+        }
+        // Fallback in case rounding issues leave out a few users
+        return "generic";
     }
-    
+
+
     /**
      * Creates a fog device with the specified configuration
      */

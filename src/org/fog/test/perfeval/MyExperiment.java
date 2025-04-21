@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
  * DYNAMIC_CLUSTERING -> true (for clustered) and false (for not clustered) * (also compatible with static clustering)
  */
 public class MyExperiment {
-    private static final String outputFile = "./output/resourceDist_Comfortable_U100.csv";
+    private static final String outputFile = "./output/resourceDist_Comfortable_R1.csv";
 
     static List<FogDevice> fogDevices = new ArrayList<FogDevice>();
     static List<Sensor> sensors = new ArrayList<Sensor>();
@@ -59,62 +59,62 @@ public class MyExperiment {
 
     public static void main(String[] args) {
         List<SimulationConfig> configs = Arrays.asList(
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ACO),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ILP),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(100, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ACO),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.BEST_FIT),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ILP),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
+//
+//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.ACO),
+//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.BEST_FIT),
+//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
+//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.ILP),
+//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
+//
+//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.ACO),
+//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.BEST_FIT),
+//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
+//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.ILP),
+//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
+//                //
+//                //
+//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.ACO),
+//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.BEST_FIT),
+//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
+//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.ILP),
+//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
 
-                new SimulationConfig(200, 196, 1, PlacementLogicFactory.ACO),
-                new SimulationConfig(200, 196, 1, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(200, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(200, 196, 1, PlacementLogicFactory.ILP),
-                new SimulationConfig(200, 196, 1, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(200, 196, 1, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(200, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
-
-                new SimulationConfig(300, 196, 1, PlacementLogicFactory.ACO),
-                new SimulationConfig(300, 196, 1, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(300, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(300, 196, 1, PlacementLogicFactory.ILP),
-                new SimulationConfig(300, 196, 1, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(300, 196, 1, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(300, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
+//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.ACO),
+//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.BEST_FIT),
+//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
+//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.ILP),
+//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
+//
+//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.ACO),
+//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.BEST_FIT),
+//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
+//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.ILP),
+//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
                 //
                 //
-                new SimulationConfig(100, 196, 3, PlacementLogicFactory.ACO),
-                new SimulationConfig(100, 196, 3, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(100, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(100, 196, 3, PlacementLogicFactory.ILP),
-                new SimulationConfig(100, 196, 3, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(100, 196, 3, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(100, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
-
-                new SimulationConfig(200, 196, 3, PlacementLogicFactory.ACO),
-                new SimulationConfig(200, 196, 3, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(200, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(200, 196, 3, PlacementLogicFactory.ILP),
-                new SimulationConfig(200, 196, 3, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(200, 196, 3, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(200, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
-
-                new SimulationConfig(300, 196, 3, PlacementLogicFactory.ACO),
-                new SimulationConfig(300, 196, 3, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(300, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(300, 196, 3, PlacementLogicFactory.ILP),
-                new SimulationConfig(300, 196, 3, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(300, 196, 3, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(300, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
-                //
-                //
-                new SimulationConfig(100, 196, 5, PlacementLogicFactory.ACO),
-                new SimulationConfig(100, 196, 5, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(100, 196, 5, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(100, 196, 5, PlacementLogicFactory.ILP),
-                new SimulationConfig(100, 196, 5, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(100, 196, 5, PlacementLogicFactory.MULTI_OPT),
+//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.ACO),
+//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.BEST_FIT),
+//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.CLOSEST_FIT),
+//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.ILP),
+//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.MAX_FIT),
+//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.MULTI_OPT),
                 new SimulationConfig(100, 196, 5, PlacementLogicFactory.SIMULATED_ANNEALING),
 
                 new SimulationConfig(200, 196, 5, PlacementLogicFactory.ACO),
@@ -318,10 +318,23 @@ public class MyExperiment {
         cloud.setParentId(References.NOT_SET);
         cloud.setLevel(0);
         fogDevices.add(cloud);
+        Random random = new Random(33);
 
         // Create gateway devices
         for (int i = 0; i < numberOfEdge; i++) {
-            MyFogDevice gateway = createFogDevice("gateway_" + i, 2800, 30, 4000, 10000, 10000, 0.0, 107.339, 83.4333, MyFogDevice.FCN);
+            // todo 1000-4000 mips, 1000 - 32000 mb ram (mb because value must be int)
+            MyFogDevice gateway = createFogDevice(
+                    "gateway_" + i,
+                    random.nextInt(3001) + 1000,
+                    30, // milliseconds
+                    random.nextInt(31001) + 1000,
+                    10000,
+                    10000,
+                    0.0,
+                    107.339,
+                    83.4333,
+                    MyFogDevice.FCN
+            );
             gateway.setParentId(cloud.getId());
             // Let latency be set by LocationManager in connectWithLatencies
             gateway.setUplinkLatency(30); // Default latency, will be updated by LocationManager
@@ -453,11 +466,12 @@ public class MyExperiment {
 
     private static MyApplication createApplication(String appId, int userId, int numServices) {
         MyApplication application = MyApplication.createMyApplication(appId, userId);
+        Random random = new Random(33);
 
         application.addAppModule("clientModule", 4, 4, 50);
         for (int i = 1; i <= numServices; i++) {
-            // TODO Make mips/ram not uniform
-            application.addAppModule("mService" + i, 100, 100, 500);
+            // Services 250-750 mips, 250-4000 MB ram (MB because values are int)
+            application.addAppModule("mService" + i, random.nextInt(3751) + 250, random.nextInt(501) + 250, 500);
         }
 
         /*
@@ -465,7 +479,9 @@ public class MyExperiment {
          */
         application.addAppEdge("SENSOR", "clientModule", 14, 50, "SENSOR", Tuple.UP, AppEdge.SENSOR);
         // TODO Always make tupleCPULength here same value as below. It determines how long mService1 runs.
-        application.addAppEdge("clientModule", "mService1", 2000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
+        //  Execution time 300 seconds average and 500 mips average => 150000
+        //  We halve it to 100 seconds execution time, for scenario 2. Slowest case 50000/250 = 200 seconds.
+        application.addAppEdge("clientModule", "mService1", 10000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
 
         // Connect microservices in sequence
         for (int i = 1; i < numServices; i++) {
@@ -473,7 +489,7 @@ public class MyExperiment {
             String destModule = "mService" + (i+1);
             String tupleType = "FILTERED_DATA" + i;
 
-            application.addAppEdge(sourceModule, destModule, 2000, 500, tupleType, Tuple.UP, AppEdge.MODULE);
+            application.addAppEdge(sourceModule, destModule, 10000, 500, tupleType, Tuple.UP, AppEdge.MODULE);
         }
 
         application.addAppEdge("mService" + numServices, "clientModule", 4, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);

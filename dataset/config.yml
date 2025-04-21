@@ -1,0 +1,7 @@
+graphhopper:
+  graph.location: graph-cache
+  datareader.file: map.osm.pbf
+  graph.flag_encoders: car
+  graph.encoded_values: max_speed,road_class,surface
+  datareader.preferred_language: en
+  datareader.instructions: true
