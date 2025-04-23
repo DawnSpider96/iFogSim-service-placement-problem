@@ -33,46 +33,6 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
     public void postProcessing() {
     }
 
-    /**
-     * Determines all the modules to place in this cycle.
-     * This implementation traces the AppLoop and compiles ALL modules from the AppLoop.
-     *
-     * @param toPlace           An empty/incomplete map of PlacementRequest to the list of Microservices (String) that require placement.
-     *                          CPU and RAM requirements of each Microservice can be obtained with getModule() method.
-     * @param placementRequests this.placementRequests, ie the list of all PlacementRequest objects
-     * @return A map reflecting the updated entries after cleaning.
-     * @see #getModule
-     */
-    @Override
-    protected int fillToPlace(int placementCompleteCount, Map<PlacementRequest, List<String>> toPlace, List<PlacementRequest> placementRequests) {
-        int f = placementCompleteCount;
-        for (PlacementRequest placementRequest : placementRequests) {
-            Application app = applicationInfo.get(placementRequest.getApplicationId());
-            
-            // Create a key for this placement request
-            PlacementRequestKey prKey = new PlacementRequestKey(
-                placementRequest.getSensorId(), 
-                ((MyPlacementRequest)placementRequest).getPrIndex()
-            );
-            
-            // Skip if this placement request doesn't have an entry in mappedMicroservices yet
-            if (!mappedMicroservices.containsKey(prKey)) {
-                continue;
-            }
-            
-            Set<String> alreadyPlaced = mappedMicroservices.get(prKey).keySet();
-            List<String> completeModuleList = getAllModulesToPlace(new HashSet<>(alreadyPlaced), app);
-
-            if (completeModuleList.isEmpty()) {
-                Logger.error("Flow Control Error", "fillToPlace is called on a completed PR");
-                f++;  // Increment only if no more modules can be placed
-            } else {
-                toPlace.put(placementRequest, completeModuleList);
-            }
-        }
-        return f;
-    }
-
     @Override
     protected Map<PlacementRequest, Integer> mapModules() {
         Map<PlacementRequest, List<String>> toPlace = new HashMap<>();

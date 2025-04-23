@@ -15,12 +15,10 @@ import org.fog.application.selectivity.FractionalSelectivity;
 import org.fog.entities.*;
 import org.fog.mobilitydata.References;
 import org.fog.placement.MyMicroservicesController;
-import org.fog.placement.PlacementLogicFactory;
 import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.utils.*;
 import org.fog.utils.distribution.DeterministicDistribution;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -171,6 +169,7 @@ public class MyExperiment {
         try {
             Log.enable();
             Logger.ENABLED = true;
+            Map<String, Integer> usersPerType = simulationConfig.usersPerType;
             int numberOfEdge = simulationConfig.numberOfEdge;
             int numberOfUser = simulationConfig.numberOfUser;
             int appLoopLength = simulationConfig.appLoopLength;
@@ -184,12 +183,14 @@ public class MyExperiment {
             // Debug: Print entity IDs after CloudSim.init
             System.out.println("After CloudSim.init - ENTITY_ID: " + FogUtils.getCurrentEntityId());
 
-            String appId = "SimonApp"; // identifier of the application
 
             FogBroker broker = new FogBroker("broker");
             CloudSim.setFogBrokerId(broker.getId());
             System.out.println("FogBroker ID: " + broker.getId());
 
+            // TODO Create multiple applications.
+            //  According to usersPerType. Each user type gets an application. The matching is naturally performed here.
+            String appId = "SimonApp"; // identifier of the application
             MyApplication application = createApplication(appId, broker.getId(), appLoopLength);
             application.setUserId(broker.getId());
 
@@ -202,7 +203,7 @@ public class MyExperiment {
             FogBroker.getApplicationToSecondMicroservicesMap().put(application, simonAppSecondMicroservices);
 
             // Create fog devices (cloud, gateways, and mobile devices)
-            createFogDevices(broker.getId(), application, numberOfEdge, numberOfUser);
+            createFogDevices(broker.getId(), application, numberOfEdge, numberOfUser, usersPerType);
 
             /**
              * Central controller for performing preprocessing functions
@@ -282,7 +283,7 @@ public class MyExperiment {
      * @param numberOfEdge Number of edge devices to create
      * @param numberOfUser Number of user devices to create
      */
-    private static void createFogDevices(int userId, Application app, int numberOfEdge, int numberOfUser) {
+    private static void createFogDevices(int userId, Application app, int numberOfEdge, int numberOfUser, Map<String, Integer> usersPerType) {
         // Create cloud device at the top of the hierarchy
         MyFogDevice cloud = createFogDevice("cloud", 44800, -1, 40000, 100, 10000, 0.01, 16 * 103, 16 * 83.25, MyFogDevice.CLOUD);
         cloud.setParentId(References.NOT_SET);
@@ -321,7 +322,8 @@ public class MyExperiment {
             
             for (int j = 0; j < usersToCreate && userCount < numberOfUser; j++) {
                 // Don't set uplink latency, it will be set by LocationManager based on distance
-                FogDevice mobile = addImmobile("immobile_" + userCount, userId, app, References.NOT_SET);
+                // TODO Use usersPerType to send application in as argument
+                FogDevice mobile = addUser("immobile_" + userCount, userId, app, References.NOT_SET);
                 mobile.setLevel(2);
                 
                 fogDevices.add(mobile);
@@ -411,7 +413,7 @@ public class MyExperiment {
         return fogdevice;
     }
 
-    private static FogDevice addImmobile(String name, int userId, Application app, int parentId) {
+    private static FogDevice addUser(String name, int userId, Application app, int parentId) {
         MyFogDevice mobile = createFogDevice(name, 200, -1, 200, 10000, 270, 0, 87.53, 82.44, MyFogDevice.GENERIC_USER);
         mobile.setParentId(parentId);
         

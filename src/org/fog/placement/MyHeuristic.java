@@ -197,7 +197,34 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
      * @param placementRequests this.placementRequests, ie the list of all PlacementRequest objects
      * @return A map reflecting the updated entries after cleaning.
      */
-    protected abstract int fillToPlace(int placementCompleteCount, Map<PlacementRequest, List<String>> toPlace, List<PlacementRequest> placementRequests);
+    protected int fillToPlace(int placementCompleteCount, Map<PlacementRequest, List<String>> toPlace, List<PlacementRequest> placementRequests) {
+        int f = placementCompleteCount;
+        for (PlacementRequest placementRequest : placementRequests) {
+            Application app = applicationInfo.get(placementRequest.getApplicationId());
+            
+            // Create a key for this placement request
+            PlacementRequestKey prKey = new PlacementRequestKey(
+                placementRequest.getSensorId(), 
+                ((MyPlacementRequest)placementRequest).getPrIndex()
+            );
+            
+            // Skip if this placement request doesn't have an entry in mappedMicroservices yet
+            if (!mappedMicroservices.containsKey(prKey)) {
+                continue;
+            }
+            
+            Set<String> alreadyPlaced = mappedMicroservices.get(prKey).keySet();
+            List<String> completeModuleList = getAllModulesToPlace(new HashSet<>(alreadyPlaced), app);
+
+            if (completeModuleList.isEmpty()) {
+                Logger.error("Flow Control Error", "fillToPlace is called on a completed PR");
+                f++;  // Increment only if no more modules can be placed
+            } else {
+                toPlace.put(placementRequest, completeModuleList);
+            }
+        }
+        return f;
+    }
 
     protected List<String> getNextLayerOfModulesToPlace(Set<String> placedModules, Application app) {
         List<String> modulesToPlace_1 = new ArrayList<String>();

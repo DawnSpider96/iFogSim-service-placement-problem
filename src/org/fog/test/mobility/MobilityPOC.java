@@ -158,7 +158,7 @@ public class MobilityPOC {
         userTypeRatios.put(MyFogDevice.AMBULANCE_USER, 0.5);
 //        userTypeRatios.put(MyFogDevice.OPERA_USER, 0.2);
 
-        // Create user devices connected to each gateway
+        // Create user devices connected to each gateway. NO SENSORS/ACTUATORS.
         for (int j = 0; j < NUM_USERS; j++) {
             MyFogDevice userDevice = createFogDevice(
                     "user_" + j,

@@ -2,18 +2,23 @@ package org.fog.test.perfeval;
 
 import org.fog.utils.Logger;
 
-public class SimulationConfig {
-    int numberOfEdge;
-    int numberOfUser;
-    int appLoopLength;
-    int placementLogic;
+import java.util.HashMap;
+import java.util.Map;
 
-    public SimulationConfig(int numberOfEdge, int numberOfUser, int appLoopLength, int placementLogic) {
+public class SimulationConfig {
+    final int numberOfEdge;
+    final int numberOfUser;
+    final int appLoopLength;
+    final int placementLogic;
+    final Map<String, Integer> usersPerType;
+
+    public SimulationConfig(int numberOfEdge, int appLoopLength, int placementLogic, Map<String, Integer> usersPerType) {
+        this.usersPerType = usersPerType;
+        this.numberOfUser = usersPerType.values().stream().mapToInt(Integer::intValue).sum();
         if (numberOfUser >= 196 || numberOfEdge > 300){
             Logger.error("Simulation Parameter error", "Not enough user/edge device location information!");
         }
         this.numberOfEdge = numberOfEdge;
-        this.numberOfUser = numberOfUser;
         this.appLoopLength = appLoopLength;
         this.placementLogic = placementLogic;
     }

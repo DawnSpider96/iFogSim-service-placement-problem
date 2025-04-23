@@ -116,25 +116,28 @@ public class MetricUtils {
                                                                 Map<Double, Integer> totalPRs) {
         Map<String, Object> stats = new HashMap<>();
         int totalFailures = 0;
+        int totalSum = 0;
         Map<MicroservicePlacementConfig.FAILURE_REASON, Integer> failuresByReason = new HashMap<>();
         Map<Integer, Integer> failuresByDeviceId = new HashMap<>();
         Map<Double, Integer> failuresByTimestamp = new HashMap<>();
         Map<Double, Double> ratiosByTimestamp = new HashMap<>();
 
-        for (Map.Entry<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>> timeFailures : failedPRs.entrySet()) {
-            double timestamp = timeFailures.getKey();
-            if (!totalPRs.containsKey(timestamp)) {
-                throw new NullPointerException("Missing totalPRs entry for timestamp: " + timestamp);
-            }
+//        for (Map.Entry<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>> timeFailures : failedPRs.entrySet()) {
+        for (Map.Entry<Double, Integer> times : totalPRs.entrySet()) {
+            double timestamp = times.getKey();
             // int value, cast to double
             double total = totalPRs.get(timestamp);
-            int failuresThisTimestamp = timeFailures.getValue().size();
+            totalSum += (int) total;
+            Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON> m = failedPRs.getOrDefault(
+                    timestamp,
+                    Collections.emptyMap()
+            );
+            int failuresThisTimestamp = m.size();
             failuresByTimestamp.put(timestamp, failuresThisTimestamp);
-            ratiosByTimestamp.put(timestamp, failuresThisTimestamp / total);
+            totalFailures += failuresThisTimestamp;
+            ratiosByTimestamp.put(timestamp, (double) failuresThisTimestamp / total);
 
-            for (Map.Entry<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON> entry : timeFailures.getValue().entrySet()) {
-                totalFailures++;
-
+            for (Map.Entry<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON> entry : m.entrySet()) {
                 // Count failures by reason
                 MicroservicePlacementConfig.FAILURE_REASON reason = entry.getValue();
                 failuresByReason.put(reason, failuresByReason.getOrDefault(reason, 0) + 1);
@@ -146,6 +149,7 @@ public class MetricUtils {
         }
 
         stats.put("totalFailures", totalFailures);
+        stats.put("totalPRs", totalSum);
         stats.put("failuresByReason", failuresByReason);
         stats.put("failuresByDeviceId", failuresByDeviceId);
         stats.put("failuresByTimestamp", failuresByTimestamp);
@@ -199,12 +203,16 @@ public class MetricUtils {
 
     public static double getFailureStats(Map<String, Object> m) {
         // NOTE always handle case of empty map gracefully.
-        Map<Double, Double> failureRatio = (Map<Double, Double>) m.get("failureRatio");
-        double greatestFailureRatio = 0;
-        for (Double ratio : failureRatio.values()) {
-            if (ratio > greatestFailureRatio) greatestFailureRatio = ratio;
-        }
-        return greatestFailureRatio;
+//        Map<Double, Double> failureRatio = (Map<Double, Double>) m.get("failureRatio");
+//        double greatestFailureRatio = 0;
+//        for (Double ratio : failureRatio.values()) {
+//            if (ratio > greatestFailureRatio) greatestFailureRatio = ratio;
+//        }
+//        return greatestFailureRatio;
+        int totalSum = (int) m.get("totalPRs");
+        int totalFailures = (int) m.get("totalFailures");
+        System.out.println("Simulation Total PRs " + totalSum + ", Total Failures " + totalFailures);
+        return (double) totalFailures / totalSum;
     }
 
     /**
