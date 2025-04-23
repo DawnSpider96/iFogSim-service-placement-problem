@@ -34,9 +34,11 @@ public class Config {
 	public static final double minLon = 144.947130;
 	public static final double maxLon = 144.978820;
 
-	public static final double baseServerLatency = Consts.MILLISECOND; // in milliseconds
-	public static final double baseWifiLatency = 2.0 * Consts.MILLISECOND;   // in milliseconds
-	public static final double latencyPerKilometer = 10 * Consts.MICROSECOND; // in milliseconds
+	public static final double baseServerLatency = 31 * Consts.MILLISECOND;
+	public static final double baseWifiLatency = 10 * Consts.MILLISECOND;
+
+	// TODO Maybe make this bigger. My area of interest only has length 2km
+	public static final double latencyPerKilometer = 500 * Consts.MICROSECOND;
 
 	// Create cluster among devices of same level with common parent irrespective of location. Only one of the two clustering modes should be used for clustering
 	public static boolean ENABLE_STATIC_CLUSTERING = false;

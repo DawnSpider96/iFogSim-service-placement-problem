@@ -66,7 +66,7 @@ public class MobilityPOC {
             
             // Create a base controller without sensors and applications
             MyMicroservicesController controller = new MyMicroservicesController(
-                "MobilityController", 
+                "controller",
                 fogDevices, 
                 new ArrayList<>(), // no sensors
                 new ArrayList<>(), // no applications
@@ -77,7 +77,7 @@ public class MobilityPOC {
                 controller.initializeLocationData(
                     RESOURCES_CSV_PATH,
                     LOCATIONS_CSV_PATH,
-                    NUM_GATEWAYS,
+                    NUM_GATEWAYS + 1, // cloud
                     NUM_USERS
                 );
                 Log.printLine("Successfully initialized location data from CSV files.");
@@ -150,7 +150,6 @@ public class MobilityPOC {
         for (int i = 0; i < NUM_GATEWAYS; i++) {
             MyFogDevice gateway = createFogDevice("gateway_" + i, 2800, 4000, 10000, 10000, 1, 0.0, 107.339, 83.4333, MyFogDevice.FCN);
             gateway.setParentId(cloud.getId());
-            gateway.setUplinkLatency(100); // ms
             devices.add(gateway);
         }
 
@@ -173,7 +172,6 @@ public class MobilityPOC {
                     82.44,
                     determineUserType(j, userTypeRatios)
             );
-            userDevice.setUplinkLatency(-1);
             devices.add(userDevice);
         }
         

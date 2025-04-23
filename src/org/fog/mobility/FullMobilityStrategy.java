@@ -139,15 +139,17 @@ public class FullMobilityStrategy implements MobilityStrategy {
     
     @Override
     public void updateDeviceParent(FogDevice fogDevice, FogDevice newParent, FogDevice prevParent, LocationManager locationManager) {
+        int fogDeviceId = fogDevice.getId();
         fogDevice.setParentId(newParent.getId());
         System.out.println("Child " + fogDevice.getName() + " changed from Parent " + prevParent.getName() + " to " + newParent.getName());
         
         // Calculate latency based on distance using the LocationManager
-        double latency = locationManager.calculateNetworkLatency(fogDevice.getId(), newParent.getId());
+        double latency = locationManager.calculateDirectLatency(fogDeviceId, newParent.getId());
         fogDevice.setUplinkLatency(latency);
         
-        newParent.getChildToLatencyMap().put(fogDevice.getId(), latency);
-        newParent.addChild(fogDevice.getId());
+        newParent.getChildToLatencyMap().put(fogDeviceId, latency);
+        prevParent.getChildToLatencyMap().remove(fogDeviceId);
+        newParent.addChild(fogDeviceId);
         prevParent.removeChild(fogDevice.getId());
         
         // Update parent reference

@@ -122,5 +122,12 @@
             <artifactId>commons-math3</artifactId>
             <version>3.5</version>
         </dependency>
+        
+        <!-- YAML configuration parser -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.29</version>
+        </dependency>
     </dependencies>
 </project>

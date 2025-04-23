@@ -268,12 +268,12 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             }
         }
         edgeFogDevices = new ArrayList<>();
-        // Simon (020425) says this filtering feels slightly redundant because
-        //  there is another instance of filtering in MyMicroservicesController.getResourceInfo.
+        // Simon (020425) says there is already filtering for ALL FCNs in MyMicroservicesController.getResourceInfo.
         // TODO consider making additional functionality here to query AVAILABLE FCNs,
         //  instead of all FCNs.
         //  I believe these can be safely stored into edgeFogDevices because it is used in
         //  mapModules as the full pool of Fog Nodes in consideration for placement.
+        // Problem is currently we don't have the concept of FCNs rendering themsevles unavailable.
         for (FogDevice fogDevice : this.fogDevices) {
             if (deviceIdsToInclude.contains(fogDevice.getId())) {
                 edgeFogDevices.add(fogDevice);
@@ -366,7 +366,6 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
 
     }
 
-    // In MyHeuristic.java
     protected void captureResourceMetricsAfterSuccessfulPlacement(
             PlacementRequest pr,
             List<DeviceState> currentDeviceStates,
@@ -404,47 +403,63 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
      * @param mappedMicroservices A map of service IDs to their corresponding microservice details.
      *                            Entries that match the outdated placement requests will be removed.
      *                            End result: Entries will
-     * @return A map reflecting the updated entries after cleaning.
+     * @return A map reflecting the updated entries after cleaning. Should have NO failed PRs.
      * PlacementRequestKey -> Map(microservice name -> target deviceId)
      */
-    protected Map<PlacementRequestKey, Map<String, Integer>> cleanPlacementRequests(List<PlacementRequest> placementRequests, LinkedHashMap<PlacementRequestKey, LinkedHashMap<String, Integer>> mappedMicroservices) {
+    protected Map<PlacementRequestKey, Map<String, Integer>> cleanPlacementRequests(List<PlacementRequest> placementRequests,
+                                                                                    LinkedHashMap<PlacementRequestKey, LinkedHashMap<String, Integer>> mappedMicroservices,
+                                                                                    Map<PlacementRequest, Integer> prStatus) {
         /*
         Returns HashMap containing all the services placed IN THIS CYCLE to each device
         */
+        MicroservicePlacementConfig.FAILURE_REASON failureReason = MicroservicePlacementConfig.FAILURE_REASON.PLACEMENT_FAILED;
         Map<PlacementRequestKey, Map<String, Integer>> placement = new HashMap<>();
         Map<PlacementRequest, Double> latencies = new HashMap<>();
+
+        // Collect Total PRs metric. Failed PRs metric collected below.
+        MyMonitor.getInstance().recordTotalPRs(placementRequests.size(), CloudSim.clock());
+
         for (PlacementRequest placementRequest : placementRequests) {
-            // Create a key for this placement request
-            PlacementRequestKey prKey = new PlacementRequestKey(
-                placementRequest.getSensorId(), 
-                ((MyPlacementRequest)placementRequest).getPrIndex()
-            );
-            
-            // Skip if this placement request has no entries in mappedMicroservices
-            if (!mappedMicroservices.containsKey(prKey)) {
-                continue;
-            }
-            
-            List<String> toRemove = new ArrayList<>();
-            // placement should include newly placed ones
-            for (String microservice : mappedMicroservices.get(prKey).keySet()) {
-                if (placementRequest.getPlacedMicroservices().containsKey(microservice))
-                    toRemove.add(microservice);
-                else
-                    placementRequest.getPlacedMicroservices().put(microservice, mappedMicroservices.get(prKey).get(microservice));
-            }
-            for (String microservice : toRemove)
-                mappedMicroservices.get(prKey).remove(microservice);
+            if (prStatus.get(placementRequest) == -1) {
+                // Create a key for this placement request
+                PlacementRequestKey prKey = new PlacementRequestKey(
+                        placementRequest.getSensorId(),
+                        ((MyPlacementRequest) placementRequest).getPrIndex()
+                );
 
-            // Simon (170225) says update PR to shift first module (always clientModule) to last place
-            // For metric collecting purposes
-            Map.Entry<String, Integer> clientModuleEntry = placementRequest.getPlacedMicroservices().entrySet().iterator().next();
-            placementRequest.getPlacedMicroservices().remove(clientModuleEntry.getKey());
-            placementRequest.getPlacedMicroservices().put(clientModuleEntry.getKey(), clientModuleEntry.getValue());
-            latencies.put(placementRequest,determineLatencyOfDecision(placementRequest));
+                // Skip if this placement request has no entries in mappedMicroservices
+                if (!mappedMicroservices.containsKey(prKey)) {
+                    continue;
+                }
 
-            // Update output - now keyed by PlacementRequestKey rather than just sensorId
-            placement.put(prKey, mappedMicroservices.get(prKey));
+                List<String> toRemove = new ArrayList<>();
+                // placement should include newly placed ones
+                for (String microservice : mappedMicroservices.get(prKey).keySet()) {
+                    if (placementRequest.getPlacedMicroservices().containsKey(microservice))
+                        toRemove.add(microservice);
+                    else
+                        placementRequest.getPlacedMicroservices().put(microservice, mappedMicroservices.get(prKey).get(microservice));
+                }
+                for (String microservice : toRemove)
+                    mappedMicroservices.get(prKey).remove(microservice);
+
+                // Simon (170225) says update PR to shift first module (always clientModule) to last place
+                // For metric collecting purposes
+                Map.Entry<String, Integer> clientModuleEntry = placementRequest.getPlacedMicroservices().entrySet().iterator().next();
+                placementRequest.getPlacedMicroservices().remove(clientModuleEntry.getKey());
+                placementRequest.getPlacedMicroservices().put(clientModuleEntry.getKey(), clientModuleEntry.getValue());
+                latencies.put(placementRequest, determineLatencyOfDecision(placementRequest));
+
+                // Update output - now keyed by PlacementRequestKey rather than just sensorId
+                placement.put(prKey, mappedMicroservices.get(prKey));
+            }
+            else {
+                // Otherwise, do collection of failed PR metrics
+                Logger.error("PR failed because ", failureReason
+                        + ", sensorId " + placementRequest.getSensorId()
+                        + ", prIndex " + ((MyPlacementRequest) placementRequest).getPrIndex());
+                MyMonitor.getInstance().recordFailedPR(placementRequest, failureReason);
+            }
         }
         MyMonitor.getInstance().getLatencies().put(CloudSim.clock(), latencies);
         return placement;
@@ -463,7 +478,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
      */
     protected MyPlacementLogicOutput generatePlacementDecision(Map<PlacementRequest, Integer> prStatus) {
         // placements: PlacementRequestKey -> Map(microservice name -> target deviceId)
-        Map<PlacementRequestKey, Map<String, Integer>> placements = cleanPlacementRequests(placementRequests, mappedMicroservices);
+        Map<PlacementRequestKey, Map<String, Integer>> placements = cleanPlacementRequests(placementRequests, mappedMicroservices, prStatus);
 
         //todo it assumed that modules are not shared among applications.
         // <deviceid, < app, list of modules to deploy > this is to remove deploying same module more than once on a certain device.
@@ -471,7 +486,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         Map<Integer, List<PRContextAwareEntry>> serviceDiscoveryInfo = new HashMap<>();
         if (placements != null) {
             for (PlacementRequestKey prKey : placements.keySet()) {
-                // Use O(1) lookup from the map instead of iterating through all placement requests
+                // placementRequestMap is for O(1) lookup
                 PlacementRequest placementRequest = placementRequestMap.get(prKey);
                 
                 if (placementRequest == null) {
@@ -483,32 +498,33 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
                 int sensorId = myPlacementRequest.getSensorId();
                 int prIndex = myPlacementRequest.getPrIndex();
 
-                // Check if all placementRequest was not a failure.
-                //  Shouldn't be, otherwise mapModules would have "filtered it out".
+                // Check if placementRequest was a failure.
                 if (prStatus.containsKey(placementRequest) && prStatus.get(placementRequest) != -1) {
-                    if (!mappedMicroservices.containsKey(prKey) || !mappedMicroservices.get(prKey).isEmpty()) {
-                        // Only log if we actually have mappings for this placement request
-                        if (mappedMicroservices.containsKey(prKey) && !mappedMicroservices.get(prKey).isEmpty()) {
-                            // Build a string representation of all placed microservices
-                            StringBuilder placedEntries = new StringBuilder();
-                            for (Map.Entry<String, Integer> entry : mappedMicroservices.get(prKey).entrySet()) {
-                                placedEntries.append("\n    - ")
-                                    .append(entry.getKey())
-                                    .append(" -> Device ")
-                                    .append(entry.getValue())
-                                    .append(" (")
-                                    .append(CloudSim.getEntityName(entry.getValue()))
-                                    .append(")");
-                            }
-                            
-                            Logger.error("Service Discovery Integrity Error",
-                                    "Found mappedMicroservices entry for PR " + sensorId + ", prIndex " + prIndex +
-                                    ", but prStatus indicates failure (status: " + prStatus.get(placementRequest) +
-                                    "). This suggests a mismatch between placement success status and service discovery entries." +
-                                    "\nPlaced microservices:" + placedEntries.toString());
-                        }
-                    }
-                    continue;
+                    throw new NullPointerException("There should be no failed PR here");
+                    // If mappedMicroservices state doesn't reflect that it was a failure, we have discrepancy.
+//                    if (!mappedMicroservices.containsKey(prKey) || !mappedMicroservices.get(prKey).isEmpty()) {
+//                        // Only log if we actually have mappings for this placement request
+//                        if (mappedMicroservices.containsKey(prKey) && !mappedMicroservices.get(prKey).isEmpty()) {
+//                            // Build a string representation of all placed microservices
+//                            StringBuilder placedEntries = new StringBuilder();
+//                            for (Map.Entry<String, Integer> entry : mappedMicroservices.get(prKey).entrySet()) {
+//                                placedEntries.append("\n    - ")
+//                                    .append(entry.getKey())
+//                                    .append(" -> Device ")
+//                                    .append(entry.getValue())
+//                                    .append(" (")
+//                                    .append(CloudSim.getEntityName(entry.getValue()))
+//                                    .append(")");
+//                            }
+//
+//                            Logger.error("Service Discovery Integrity Error",
+//                                    "Found mappedMicroservices entry for PR " + sensorId + ", prIndex " + prIndex +
+//                                    ", but prStatus indicates failure (status: " + prStatus.get(placementRequest) +
+//                                    "). This suggests a mismatch between placement success status and service discovery entries." +
+//                                    "\nPlaced microservices:" + placedEntries.toString());
+//                        }
+//                    }
+//                    continue;
                 }
 
                 Application application = applicationInfo.get(placementRequest.getApplicationId());
@@ -777,7 +793,8 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
                     dest.getDeviceType() == MyFogDevice.OPERA_USER:
                     "Destination device must be Mobile User";
             int parentIndex = indices.get(dest.getParentId());
-            // TODO check that uplinklatency in milliseconds
+            // Uplinklatency in milliseconds
+            // BUT fogDevice constructor converts it to seconds (simulation timestep unit)
             return globalLatencies[srcIndex][cloudIndex] + globalLatencies[cloudIndex][parentIndex] + dest.getUplinkLatency();
         }
     }

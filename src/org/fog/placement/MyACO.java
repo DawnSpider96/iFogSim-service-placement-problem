@@ -155,12 +155,12 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
                 AppModule service = getModule(s, app);
                 int deviceId = placement[i];
 
-                System.out.printf("Placement of operator %s on device %s successful. Device id: %d, sensorId: %d, prIndex: %d%n",
+                Logger.debug("Placement Success", String.format("Operator %s on device %s, Device id: %d, sensorId: %d, prIndex: %d%n",
                         s,
                         CloudSim.getEntityName(deviceId),
                         deviceId,
                         placementRequest.getSensorId(),
-                        ((MyPlacementRequest) placementRequest).getPrIndex());
+                        ((MyPlacementRequest) placementRequest).getPrIndex()));
 
                 // DeviceStates will go into future ACOHelper objects
                 // Then all the "copy" DeviceStates will contain the updated resource information

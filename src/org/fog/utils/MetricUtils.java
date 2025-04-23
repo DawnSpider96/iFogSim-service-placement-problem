@@ -1,5 +1,6 @@
 package org.fog.utils;
 
+import com.google.protobuf.MapEntry;
 import org.fog.entities.PlacementRequest;
 import org.fog.placement.MyHeuristic;
 import org.fog.placement.PlacementLogicFactory;
@@ -110,6 +111,49 @@ public class MetricUtils {
         return allUtilizationValues;
     }
 
+
+    public static Map<String, Object> handleSimulationFailedPRs(Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>> failedPRs,
+                                                                Map<Double, Integer> totalPRs) {
+        Map<String, Object> stats = new HashMap<>();
+        int totalFailures = 0;
+        Map<MicroservicePlacementConfig.FAILURE_REASON, Integer> failuresByReason = new HashMap<>();
+        Map<Integer, Integer> failuresByDeviceId = new HashMap<>();
+        Map<Double, Integer> failuresByTimestamp = new HashMap<>();
+        Map<Double, Double> ratiosByTimestamp = new HashMap<>();
+
+        for (Map.Entry<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>> timeFailures : failedPRs.entrySet()) {
+            double timestamp = timeFailures.getKey();
+            if (!totalPRs.containsKey(timestamp)) {
+                throw new NullPointerException("Missing totalPRs entry for timestamp: " + timestamp);
+            }
+            // int value, cast to double
+            double total = totalPRs.get(timestamp);
+            int failuresThisTimestamp = timeFailures.getValue().size();
+            failuresByTimestamp.put(timestamp, failuresThisTimestamp);
+            ratiosByTimestamp.put(timestamp, failuresThisTimestamp / total);
+
+            for (Map.Entry<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON> entry : timeFailures.getValue().entrySet()) {
+                totalFailures++;
+
+                // Count failures by reason
+                MicroservicePlacementConfig.FAILURE_REASON reason = entry.getValue();
+                failuresByReason.put(reason, failuresByReason.getOrDefault(reason, 0) + 1);
+
+                // Count failures by device ID
+                int sensorId = entry.getKey().getSensorId();
+                failuresByDeviceId.put(sensorId, failuresByDeviceId.getOrDefault(sensorId, 0) + 1);
+            }
+        }
+
+        stats.put("totalFailures", totalFailures);
+        stats.put("failuresByReason", failuresByReason);
+        stats.put("failuresByDeviceId", failuresByDeviceId);
+        stats.put("failuresByTimestamp", failuresByTimestamp);
+        stats.put("failureRatio", ratiosByTimestamp);
+
+        return stats;
+    }
+
 //    private static double calculateMapMean(Map<Double, Double> timestampToValue) {
 //        return timestampToValue.values().stream()
 //                .mapToDouble(Double::doubleValue)
@@ -153,6 +197,16 @@ public class MetricUtils {
         return new double[]{mean, stdDev};
     }
 
+    public static double getFailureStats(Map<String, Object> m) {
+        // NOTE always handle case of empty map gracefully.
+        Map<Double, Double> failureRatio = (Map<Double, Double>) m.get("failureRatio");
+        double greatestFailureRatio = 0;
+        for (Double ratio : failureRatio.values()) {
+            if (ratio > greatestFailureRatio) greatestFailureRatio = ratio;
+        }
+        return greatestFailureRatio;
+    }
+
     /**
      * For a SINGLE simulation, extracts all latency values across all timestamps
      * @param latencies A map where each key is a timestamp and each value is a map of placement requests to latencies
@@ -169,15 +223,17 @@ public class MetricUtils {
         return allLatencyValues;
     }
 
-    public static void writeResourceDistributionToCSV(List<List<Double>> resourceData,
-                                                      List<List<Double>> latencyData,
-                                                      List<SimulationConfig> simConfigs,
-                                                      String filePath) throws IOException {
+    public static void writeToCSV(List<List<Double>> resourceData,
+                                  List<List<Double>> latencyData,
+                                  List<Map<String, Object>> failedPRData,
+                                  List<SimulationConfig> simConfigs,
+                                  String filePath) throws IOException {
         if (resourceData.size() != simConfigs.size() || latencyData.size() != simConfigs.size()) {
             throw new IllegalArgumentException(String.format(
-                    "resourceData and latencyData size mismatch: both must have one element per simulation. %d %d %d",
+                    "size mismatch: all must have one element per simulation. %d %d %d %d",
                     resourceData.size(),
                     latencyData.size(),
+                    failedPRData.size(),
                     simConfigs.size()));
         }
 
@@ -189,16 +245,21 @@ public class MetricUtils {
                 .map(MetricUtils::calculateStatistics)
                 .collect(Collectors.toList());
 
+        List<Double> failureStats = failedPRData.stream()
+                .map(MetricUtils::getFailureStats)
+                .collect(Collectors.toList());
+
         try (FileWriter fileWriter = new FileWriter(filePath)) {
-            fileWriter.append("Edge Servers, Users, Services, Placement Logic, Avg Resource, Resource stddev, Avg Latency, Latency stddev\n");
+            fileWriter.append("Edge Servers, Users, Services, Placement Logic, Avg Resource, Resource stddev, Avg Latency, Latency stddev, Peak Failure ratio \n");
 
             for (int i = 0; i < simConfigs.size(); i++) {
                 SimulationConfig sc = simConfigs.get(i);
                 double[] resStats = resourceStats.get(i);
                 double[] latStats = latencyStats.get(i);
+                double failStats = failureStats.get(i);
                 
                 fileWriter.append(String.format(
-                        "%d,%d,%d,%s,%f,%f,%f,%f\n",
+                        "%d,%d,%d,%s,%f,%f,%f,%f,%f\n",
                         sc.getNumberOfEdge(),
                         sc.getNumberOfUser(),
                         sc.getAppLoopLength(),
@@ -206,7 +267,8 @@ public class MetricUtils {
                         resStats[0],  // mean resource utilization
                         resStats[1],  // stddev resource utilization
                         latStats[0],  // mean latency
-                        latStats[1]   // stddev latency
+                        latStats[1],   // stddev latency
+                        failStats
                 ));
             }
         }

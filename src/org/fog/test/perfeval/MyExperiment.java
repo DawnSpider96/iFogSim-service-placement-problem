@@ -13,17 +13,21 @@ import org.fog.application.Application;
 import org.fog.application.MyApplication;
 import org.fog.application.selectivity.FractionalSelectivity;
 import org.fog.entities.*;
-import org.fog.mobilitydata.Location;
 import org.fog.mobilitydata.References;
 import org.fog.placement.MyMicroservicesController;
 import org.fog.placement.PlacementLogicFactory;
 import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.utils.*;
 import org.fog.utils.distribution.DeterministicDistribution;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Platform to run the OnlinePOC simulation under variable parameters:
@@ -46,7 +50,8 @@ import java.util.stream.Collectors;
  * DYNAMIC_CLUSTERING -> true (for clustered) and false (for not clustered) * (also compatible with static clustering)
  */
 public class MyExperiment {
-    private static final String outputFile = "./output/resourceDist_Comfortable_R1.csv";
+    private static final String outputFile = "./output/resourceDist_Comfortable_R_Alpha.csv";
+    private static final String CONFIG_FILE = "./dataset/MyExperimentConfigs.yaml";
 
     static List<FogDevice> fogDevices = new ArrayList<FogDevice>();
     static List<Sensor> sensors = new ArrayList<Sensor>();
@@ -58,82 +63,8 @@ public class MyExperiment {
     static double SENSOR_TRANSMISSION_TIME = 10;
 
     public static void main(String[] args) {
-        List<SimulationConfig> configs = Arrays.asList(
-//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ACO),
-//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.BEST_FIT),
-//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
-//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.ILP),
-//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MAX_FIT),
-//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.MULTI_OPT),
-//                new SimulationConfig(100, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
-//
-//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.ACO),
-//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.BEST_FIT),
-//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
-//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.ILP),
-//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.MAX_FIT),
-//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.MULTI_OPT),
-//                new SimulationConfig(200, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
-//
-//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.ACO),
-//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.BEST_FIT),
-//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.CLOSEST_FIT),
-//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.ILP),
-//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.MAX_FIT),
-//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.MULTI_OPT),
-//                new SimulationConfig(300, 196, 1, PlacementLogicFactory.SIMULATED_ANNEALING),
-//                //
-//                //
-//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.ACO),
-//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.BEST_FIT),
-//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
-//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.ILP),
-//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.MAX_FIT),
-//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.MULTI_OPT),
-//                new SimulationConfig(100, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
-
-//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.ACO),
-//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.BEST_FIT),
-//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
-//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.ILP),
-//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.MAX_FIT),
-//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.MULTI_OPT),
-//                new SimulationConfig(200, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
-//
-//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.ACO),
-//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.BEST_FIT),
-//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.CLOSEST_FIT),
-//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.ILP),
-//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.MAX_FIT),
-//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.MULTI_OPT),
-//                new SimulationConfig(300, 196, 3, PlacementLogicFactory.SIMULATED_ANNEALING),
-                //
-                //
-//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.ACO),
-//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.BEST_FIT),
-//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.CLOSEST_FIT),
-//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.ILP),
-//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.MAX_FIT),
-//                new SimulationConfig(100, 196, 5, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(100, 196, 5, PlacementLogicFactory.SIMULATED_ANNEALING),
-
-                new SimulationConfig(200, 196, 5, PlacementLogicFactory.ACO),
-                new SimulationConfig(200, 196, 5, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(200, 196, 5, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(200, 196, 5, PlacementLogicFactory.ILP),
-                new SimulationConfig(200, 196, 5, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(200, 196, 5, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(200, 196, 5, PlacementLogicFactory.SIMULATED_ANNEALING),
-
-                new SimulationConfig(300, 196, 5, PlacementLogicFactory.ACO),
-                new SimulationConfig(300, 196, 5, PlacementLogicFactory.BEST_FIT),
-                new SimulationConfig(300, 196, 5, PlacementLogicFactory.CLOSEST_FIT),
-                new SimulationConfig(300, 196, 5, PlacementLogicFactory.ILP),
-                new SimulationConfig(300, 196, 5, PlacementLogicFactory.MAX_FIT),
-                new SimulationConfig(300, 196, 5, PlacementLogicFactory.MULTI_OPT),
-                new SimulationConfig(300, 196, 5, PlacementLogicFactory.SIMULATED_ANNEALING)
-        );
-
+        List<SimulationConfig> configs = loadConfigurationsFromYaml(CONFIG_FILE);
+        
         for (SimulationConfig config : configs) {
             run(config);
         }
@@ -157,7 +88,18 @@ public class MyExperiment {
                     mm.getAllLatencies().stream()
                             .map(MetricUtils::handleSimulationLatency)
                             .collect(Collectors.toList());
-            MetricUtils.writeResourceDistributionToCSV(resourceData, latencyData, configs, outputFile);
+
+            List<Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>>> list1 = mm.getAllFailedPRs();
+            List<Map<Double, Integer>> list2 = mm.getAllTotalPRs();
+            List<Map<String, Object>> failedPRData = IntStream.range(0, Math.min(list1.size(), list2.size()))
+                    .mapToObj(i -> {
+                        Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>> map1 = list1.get(i);
+                        Map<Double, Integer> map2 = list2.get(i);
+                        return MetricUtils.handleSimulationFailedPRs(map1, map2);
+                    })
+                    .collect(Collectors.toList());
+
+            MetricUtils.writeToCSV(resourceData, latencyData, failedPRData, configs, outputFile);
             System.out.println("CSV file has been created successfully.");
         } catch (IOException e) {
             System.err.println("An error occurred while writing to the CSV file.");
@@ -165,6 +107,36 @@ public class MyExperiment {
         }
     }
 
+    /**
+     * Loads simulation configurations from a YAML file
+     * 
+     * @param configPath Path to the YAML configuration file
+     * @return List of SimulationConfig objects
+     */
+    private static List<SimulationConfig> loadConfigurationsFromYaml(String configPath) {
+        List<SimulationConfig> configs = new ArrayList<>();
+        
+        try (InputStream inputStream = new FileInputStream(configPath)) {
+            Yaml yaml = new Yaml();
+            List<Map<String, Object>> yamlConfigs = yaml.load(inputStream);
+            
+            for (Map<String, Object> configMap : yamlConfigs) {
+                int numberOfEdge = ((Number) configMap.get("numberOfEdge")).intValue();
+                int numberOfUser = ((Number) configMap.get("numberOfUser")).intValue();
+                int appLoopLength = ((Number) configMap.get("appLoopLength")).intValue();
+                int placementLogic = ((Number) configMap.get("placementLogic")).intValue();
+                
+                configs.add(new SimulationConfig(numberOfEdge, numberOfUser, appLoopLength, placementLogic));
+            }
+            
+            System.out.println("Loaded " + configs.size() + " configurations from " + configPath);
+        } catch (IOException e) {
+            System.err.println("Error loading configurations from " + configPath);
+            e.printStackTrace();
+        }
+        
+        return configs;
+    }
 
     private static void run(SimulationConfig simulationConfig) {
         System.out.println("Starting Simon's Experiment...");
@@ -216,8 +188,6 @@ public class MyExperiment {
 
             FogBroker broker = new FogBroker("broker");
             CloudSim.setFogBrokerId(broker.getId());
-            
-            // Debug: Print broker ID
             System.out.println("FogBroker ID: " + broker.getId());
 
             MyApplication application = createApplication(appId, broker.getId(), appLoopLength);
@@ -253,7 +223,7 @@ public class MyExperiment {
                 microservicesController.initializeLocationData(
                     RESOURCES_LOCATION_PATH,
                     USERS_LOCATION_PATH,
-                    numberOfEdge,
+                    numberOfEdge + 1, // cloud
                     numberOfUser
                 );
                 System.out.println("Location data initialization complete.");
@@ -326,7 +296,7 @@ public class MyExperiment {
             MyFogDevice gateway = createFogDevice(
                     "gateway_" + i,
                     random.nextInt(3001) + 1000,
-                    30, // milliseconds
+                    -1, // Undefined. Let Location Manager determine.
                     random.nextInt(31001) + 1000,
                     10000,
                     10000,
@@ -337,7 +307,6 @@ public class MyExperiment {
             );
             gateway.setParentId(cloud.getId());
             // Let latency be set by LocationManager in connectWithLatencies
-            gateway.setUplinkLatency(30); // Default latency, will be updated by LocationManager
             gateway.setLevel(1);
             fogDevices.add(gateway);
         }

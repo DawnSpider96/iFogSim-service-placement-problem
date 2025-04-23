@@ -101,7 +101,7 @@ public class OnlinePOC {
             List<Application> appList = new ArrayList<>();
             appList.add(application);
 
-            int placementAlgo = PlacementLogicFactory.MAX_FIT;
+            int placementAlgo = PlacementLogicFactory.BEST_FIT;
             MyMicroservicesController microservicesController = new MyMicroservicesController(
                     "controller",
                     fogDevices,
@@ -115,13 +115,13 @@ public class OnlinePOC {
                 microservicesController.initializeLocationData(
                     RESOURCES_LOCATION_PATH,
                     USERS_LOCATION_PATH,
-                    numberOfUser,
+                    6, // 5 edge servers + 1 cloud
                     numberOfUser
                 );
                 System.out.println("Location data initialization complete.");
                 
-//                microservicesController.enableMobility();
-//                System.out.println("Mobility enabled using the Strategy Pattern.");
+                microservicesController.enableMobility();
+                System.out.println("Mobility enabled using the Strategy Pattern.");
                 
                 microservicesController.completeInitialization();
                 System.out.println("Controller initialization completed with proximity-based connections.");
@@ -175,8 +175,6 @@ public class OnlinePOC {
         for (int i = 0; i < numberOfUser; i++) {
             MyFogDevice gateway = createFogDevice("gateway_" + i, 2800, 4000, 10000, 10000, 0.0, 107.339, 83.4333, MyFogDevice.FCN);
             gateway.setParentId(cloud.getId());
-            // Let latency be set by LocationManager in connectWithLatencies
-            gateway.setUplinkLatency(0.1);
             gateway.setLevel(1);
             fogDevices.add(gateway);
         }

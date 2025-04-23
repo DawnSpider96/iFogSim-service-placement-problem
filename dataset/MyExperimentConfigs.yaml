@@ -1,0 +1,326 @@
+# MyExperiment Configuration File
+# Format:
+# - numberOfEdge: int    # Number of edge devices
+#   numberOfUser: int    # Number of user devices
+#   appLoopLength: int   # Length of application loop
+#   placementLogic: int  # Placement logic type (use integers from PlacementLogicFactory)
+
+# Configuration sets with appLoopLength = 1
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 13  # ACO
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 7  # BEST_FIT
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 8  # CLOSEST_FIT
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 14  # ILP
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 9  # MAX_FIT
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 11  # MULTI_OPT
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 12  # SIMULATED_ANNEALING
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 13  # ACO
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 7  # BEST_FIT
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 8  # CLOSEST_FIT
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 14  # ILP
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 9  # MAX_FIT
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 11  # MULTI_OPT
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 12  # SIMULATED_ANNEALING
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 13  # ACO
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 7  # BEST_FIT
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 8  # CLOSEST_FIT
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 14  # ILP
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 9  # MAX_FIT
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 11  # MULTI_OPT
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 1
+  placementLogic: 12  # SIMULATED_ANNEALING
+
+# ----------------------------------------------------------------------------------------------------------------
+# Configuration sets with appLoopLength = 3
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 13  # ACO
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 7  # BEST_FIT
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 8  # CLOSEST_FIT
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 14  # ILP
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 9  # MAX_FIT
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 11  # MULTI_OPT
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 12  # SIMULATED_ANNEALING
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 13  # ACO
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 7  # BEST_FIT
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 8  # CLOSEST_FIT
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 14  # ILP
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 9  # MAX_FIT
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 11  # MULTI_OPT
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 12  # SIMULATED_ANNEALING
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 13  # ACO
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 7  # BEST_FIT
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 8  # CLOSEST_FIT
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 14  # ILP
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 9  # MAX_FIT
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 11  # MULTI_OPT
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 3
+  placementLogic: 12  # SIMULATED_ANNEALING
+
+# ----------------------------------------------------------------------------------------------------------------
+# Configuration sets with appLoopLength = 5
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 13  # ACO
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 7  # BEST_FIT
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 8  # CLOSEST_FIT
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 14  # ILP
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 9  # MAX_FIT
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 11  # MULTI_OPT
+
+- numberOfEdge: 100
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 12  # SIMULATED_ANNEALING
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 13  # ACO
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 7  # BEST_FIT
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 8  # CLOSEST_FIT
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 14  # ILP
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 9  # MAX_FIT
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 11  # MULTI_OPT
+
+- numberOfEdge: 200
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 12  # SIMULATED_ANNEALING
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 13  # ACO
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 7  # BEST_FIT
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 8  # CLOSEST_FIT
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 14  # ILP
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 9  # MAX_FIT
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 11  # MULTI_OPT
+
+- numberOfEdge: 300
+  numberOfUser: 196
+  appLoopLength: 5
+  placementLogic: 12  # SIMULATED_ANNEALING

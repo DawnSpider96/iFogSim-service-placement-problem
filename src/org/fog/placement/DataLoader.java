@@ -31,11 +31,11 @@ public class DataLoader {
      * Loads resource data (like fog nodes, gateways, etc.) from CSV file
      * 
      * @param filename the filename for resource locations
-     * @param numberOfEdge the number of edge nodes to load
+     * @param numberOfResource the number of edge nodes to load
      * @return a map of resource IDs to their locations
      * @throws IOException if there's an error reading the file
      */
-    public Map<String, Location> loadResourceLocations(String filename, int numberOfEdge) throws IOException {
+    public Map<String, Location> loadResourceLocations(String filename, int numberOfResource) throws IOException {
         Map<String, Location> resourceLocationData = new HashMap<>();
         Map<String, Integer> resourceToLevel = new HashMap<>();
         
@@ -49,7 +49,7 @@ public class DataLoader {
         }
         
         int edgesPut = 0;
-        while ((row = csvReader.readLine()) != null && edgesPut < numberOfEdge) {
+        while ((row = csvReader.readLine()) != null && edgesPut < numberOfResource) {
             String[] data = row.split(",");
             if (data.length > 6 && data[6].equals("VIC")) {
                 Location location = new Location(

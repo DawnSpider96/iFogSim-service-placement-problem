@@ -18,7 +18,9 @@ public class MyMonitor {
     // timestamp -> (PR -> latency of that PR)
     private static List<Map<Double, Map<PlacementRequest, Double>>> latencies = new ArrayList<>();
     // timestamp -> (PR -> reason for failure)
-    private static List<Map<Double, Map<PlacementRequest, String>>> failedPRs = new ArrayList<>();
+    // Either "Insufficient resources on User Device" or "Placement Failed"
+    private static List<Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>>> failedPRs = new ArrayList<>();
+    private static List<Map<Double, Integer>> totalPRs = new ArrayList<>();
 
 
     //    private static Map<> ramUsages = new HashMap<>();
@@ -79,15 +81,23 @@ public class MyMonitor {
         return latencies;
     }
 
-    public Map<Double, Map<PlacementRequest, String>> getFailedPRs() {
+    public Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>> getFailedPRs() {
         while (failedPRs.size() <= getInstance().simulationRoundNumber) {
-            failedPRs.add(new HashMap<>()); // Simon (310325) says it should only add 1
+            failedPRs.add(new HashMap<>());
         }
         return failedPRs.get(getInstance().simulationRoundNumber);
     }
 
-    public List<Map<Double, Map<PlacementRequest, String>>> getAllFailedPRs() {
+    public List<Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>>> getAllFailedPRs() {
+        // Case: Last few simulations have no failed PRs. Note the strictly less than operator.
+        while (failedPRs.size() < getInstance().simulationRoundNumber) {
+            failedPRs.add(new HashMap<>());
+        }
         return failedPRs;
+    }
+
+    public List<Map<Double, Integer>> getAllTotalPRs() {
+        return totalPRs;
     }
 
     /**
@@ -96,8 +106,8 @@ public class MyMonitor {
      * @param pr The placement request that failed
      * @param reason A string describing the reason for failure
      */
-    public void recordFailedPR(PlacementRequest pr, String reason) {
-        Map<Double, Map<PlacementRequest, String>> currentFailedPRs = getFailedPRs();
+    public void recordFailedPR(PlacementRequest pr, MicroservicePlacementConfig.FAILURE_REASON reason) {
+        Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>> currentFailedPRs = getFailedPRs();
 
         double currentTime = CloudSim.clock();
         if (!currentFailedPRs.containsKey(currentTime)) {
@@ -107,39 +117,14 @@ public class MyMonitor {
         currentFailedPRs.get(currentTime).put(pr, reason);
     }
 
-    /**
-     * Provides statistics about failed placement requests
-     *
-     * @return A map containing various statistics about failed PRs
-     */
-    public Map<String, Object> getFailedPRStatistics() {
-        Map<String, Object> stats = new HashMap<>();
-        int totalFailures = 0;
-        Map<String, Integer> failuresByReason = new HashMap<>();
-        Map<Integer, Integer> failuresByDeviceId = new HashMap<>();
-
-        for (Map<Double, Map<PlacementRequest, String>> roundFailures : failedPRs) {
-            for (Map<PlacementRequest, String> timeFailures : roundFailures.values()) {
-                for (Map.Entry<PlacementRequest, String> entry : timeFailures.entrySet()) {
-                    totalFailures++;
-
-                    // Count failures by reason
-                    String reason = entry.getValue();
-                    failuresByReason.put(reason, failuresByReason.getOrDefault(reason, 0) + 1);
-
-                    // Count failures by device ID
-                    int deviceId = entry.getKey().getRequester();
-                    failuresByDeviceId.put(deviceId, failuresByDeviceId.getOrDefault(deviceId, 0) + 1);
-                }
-            }
+    public void recordTotalPRs(int total, double timestamp) {
+        while (totalPRs.size() <= getInstance().simulationRoundNumber) {
+            totalPRs.add(new HashMap<>()); // Simon (170225) says it should only add 1
         }
-
-        stats.put("totalFailures", totalFailures);
-        stats.put("failuresByReason", failuresByReason);
-        stats.put("failuresByDeviceId", failuresByDeviceId);
-
-        return stats;
+        totalPRs.get(getInstance().simulationRoundNumber).put(timestamp, total);
     }
+
+
 
     public void incrementSimulationRoundNumber() {
         simulationRoundNumber++;

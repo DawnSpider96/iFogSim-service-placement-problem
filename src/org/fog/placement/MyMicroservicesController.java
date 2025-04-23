@@ -370,13 +370,13 @@ public class MyMicroservicesController extends SimEntity {
      * 
      * @param resourceFilename the filename for resource locations
      * @param userFilename the filename for user locations
-     * @param numberOfEdge the number of edge nodes
+     * @param numberOfResources the number of edge nodes
      * @param numberOfUsers the number of users
      * @throws IOException if there's an error reading the files
      */
     public void initializeLocationData(String resourceFilename, String userFilename, 
-                                      int numberOfEdge, int numberOfUsers) throws IOException {
-        Map<String, Location> resourceLocations = dataLoader.loadResourceLocations(resourceFilename, numberOfEdge);
+                                      int numberOfResources, int numberOfUsers) throws IOException {
+        Map<String, Location> resourceLocations = dataLoader.loadResourceLocations(resourceFilename, numberOfResources);
         Map<Integer, Location> userLocations = dataLoader.loadInitialUserLocations(userFilename, numberOfUsers);
         
         // Reproducible random for mobility generation
@@ -386,7 +386,7 @@ public class MyMicroservicesController extends SimEntity {
 
         // Separate resource and user devices
         List<MyFogDevice> resourceDevices = new ArrayList<>();
-        List<MyFogDevice> sortedUserDevices = new ArrayList<>();
+        List<MyFogDevice> userDevices = new ArrayList<>();
         
         for (FogDevice device : fogDevices) {
             MyFogDevice fogDevice = (MyFogDevice) device;
@@ -396,19 +396,19 @@ public class MyMicroservicesController extends SimEntity {
                   deviceType.equals(MyFogDevice.OPERA_USER))) {
                 resourceDevices.add(fogDevice);
             } else {
-                sortedUserDevices.add(fogDevice);
+                userDevices.add(fogDevice);
             }
         }
         
         // Sort devices for consistent mapping
         resourceDevices.sort(Comparator.comparingInt(FogDevice::getId));
-        sortedUserDevices.sort(Comparator.comparingInt(FogDevice::getId));
+        userDevices.sort(Comparator.comparingInt(FogDevice::getId));
         
         // Process resource devices - direct mapping from index to device
-        for (int i = 0; i < Math.min(numberOfEdge, resourceDevices.size()); i++) {
+        for (int i = 0; i < Math.min(numberOfResources, resourceDevices.size()); i++) {
             MyFogDevice fogDevice = resourceDevices.get(i);
-            int csvIndex = i + 1; // CSV indices start at 1
-            String dataId = "res_" + csvIndex;
+            // CSV indices start at 1
+            String dataId = "res_" + i;
             int level = fogDevice.getLevel();
             
             if (resourceLocations.containsKey(dataId)) {
@@ -418,13 +418,13 @@ public class MyMicroservicesController extends SimEntity {
                         dataId,
                         level
                 );
-                System.out.println("Mapped resource CSV index " + csvIndex + " to device ID " + fogDevice.getId());
+                System.out.println("Mapped resource CSV index " + i + " to device ID " + fogDevice.getId());
             }
         }
         
         // Process user devices - direct mapping from index to device
-        for (int i = 0; i < Math.min(numberOfUsers, sortedUserDevices.size()); i++) {
-            MyFogDevice fogDevice = sortedUserDevices.get(i);
+        for (int i = 0; i < Math.min(numberOfUsers, userDevices.size()); i++) {
+            MyFogDevice fogDevice = userDevices.get(i);
             int csvIndex = i + 1; // CSV indices start at 1
             
             // Register the device
@@ -713,6 +713,8 @@ public class MyMicroservicesController extends SimEntity {
             return;
         }
 
+        MicroservicePlacementConfig.FAILURE_REASON reason = MicroservicePlacementConfig.FAILURE_REASON.USER_LACKED_RESOURCES;
+
         for (MyFogDevice userDevice : userDevices) {
             // TODO Simon says this wrong.
             //  Update requester according to the current parent.
@@ -734,8 +736,7 @@ public class MyMicroservicesController extends SimEntity {
                     // TODO Should we use the delay from placementRequestDelayMap instead?
                     sendNow(userDevice.getId(), FogEvents.TRANSMIT_PR, jsonSend);
                 } else {
-                    String reason = "Insufficient resources on user device " + userDevice.getName();
-                    Logger.error("Resource Problem", reason);
+                    Logger.error("PR failed because", reason + userDevice.getName());
                     MyMonitor.getInstance().recordFailedPR(newPR, reason);
                 }
             }
@@ -935,6 +936,8 @@ public class MyMicroservicesController extends SimEntity {
             }
             return;
         }
+
+        int cloudId = getCloud().getId();
         
         for (FogDevice device : fogDevices) {
             MyFogDevice fogDevice = (MyFogDevice) device;
@@ -944,11 +947,14 @@ public class MyMicroservicesController extends SimEntity {
                 deviceType.equals(MyFogDevice.AMBULANCE_USER) ||
                 deviceType.equals(MyFogDevice.OPERA_USER))
             ) {
-                if (fogDevice.getParentId() >= 0) {
+                // Cloud to edge
+                if (fogDevice.getParentId() > -1) {
                     FogDevice parent = getFogDeviceById(fogDevice.getParentId());
-                    if (parent == null) continue;
-                    
-                    double latency = fogDevice.getUplinkLatency();
+                    if (parent.getId() != cloudId) throw new NullPointerException("Invalid parent. Must be cloud.");
+
+//                    double latency = fogDevice.getUplinkLatency();
+                    double latency = locationManager.calculateDirectLatency(fogDevice.getId(), cloudId);
+                    fogDevice.setUplinkLatency(latency);
                     parent.getChildToLatencyMap().put(fogDevice.getId(), latency);
                     parent.getChildrenIds().add(fogDevice.getId());
                     System.out.println("Connected device " + fogDevice.getName() + " to parent " + parent.getName());
@@ -964,7 +970,7 @@ public class MyMicroservicesController extends SimEntity {
                     fogDevice.setParentId(parentId);
 
                     // Calculate latency based on distance
-                    double latency = locationManager.calculateNetworkLatency(fogDevice.getId(), parentId);
+                    double latency = locationManager.calculateDirectLatency(fogDevice.getId(), parentId);
                     fogDevice.setUplinkLatency(latency);
 
                     parent.getChildToLatencyMap().put(fogDevice.getId(), latency);

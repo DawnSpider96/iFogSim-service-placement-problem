@@ -121,7 +121,7 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
             Collections.sort(DeviceStates);
 
             if (!DeviceStates.get(0).canFit(service.getMips(), service.getRam(), service.getSize())) {
-                Logger.error("Simulation limitation problem", "FogDevices have no resources! Check DeviceStates.");
+                Logger.error("Simulation CPU limitation problem", "FogDevices have no CPU! Check DeviceStates.");
             }
 
             for (int i = 0; i < DeviceStates.size(); i++) {
@@ -193,12 +193,12 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
                 AppModule service = getModule(s, app);
                 int deviceId = placed[i];
 
-                System.out.printf("Placement of operator %s on device %s successful. Device id: %d, sensorId: %d, prIndex: %d%n",
+                Logger.debug("Placement Success", String.format("Operator %s on device %s, Device id: %d, sensorId: %d, prIndex: %d%n",
                         s,
                         CloudSim.getEntityName(deviceId),
                         deviceId,
                         placementRequest.getSensorId(),
-                        ((MyPlacementRequest) placementRequest).getPrIndex());
+                        ((MyPlacementRequest) placementRequest).getPrIndex()));
 
                 moduleToApp.put(s, app.getAppId());
 

@@ -240,11 +240,11 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
             boolean placedThisService = false;
             for (int j = 0; j < nodesBestPlacement.size(); j++) {
                 AppModule service = getModule(services.get(i), app);
-                // Ensure that DeviceState j is a PRIVATE, DEEP copy
-                if (nodesBestPlacement.get(j) == baseStates.get(j)) {
-                    nodesBestPlacement.set(j, new DeviceState(baseStates.get(j)));
-                }
                 if (nodesBestPlacement.get(j).canFit(service.getMips(), service.getRam(), service.getSize())) {
+                    // Ensure that DeviceState j is a PRIVATE, DEEP copy
+                    if (nodesBestPlacement.get(j) == baseStates.get(j)) {
+                        nodesBestPlacement.set(j, new DeviceState(baseStates.get(j)));
+                    }
                     nodesBestPlacement.get(j).allocate(service.getMips(), service.getRam(), service.getSize());
                     bestPlacement[i] = nodesBestPlacement.get(j).getId();
                     placedThisService = true;

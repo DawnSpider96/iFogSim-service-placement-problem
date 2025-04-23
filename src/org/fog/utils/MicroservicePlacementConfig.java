@@ -28,4 +28,9 @@ public class MicroservicePlacementConfig {
     public static final String FEDERATED = "federated";
     public static final String DECENTRALISED = "decentralised";
     public static String NETWORK_TOPOLOGY = CENTRALISED;
+
+    public enum FAILURE_REASON {
+        PLACEMENT_FAILED,
+        USER_LACKED_RESOURCES
+    }
 }

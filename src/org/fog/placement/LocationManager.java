@@ -1,8 +1,6 @@
 package org.fog.placement;
 
-import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.entities.FogDevice;
-import org.fog.entities.MyFogDevice;
 import org.fog.mobility.DeviceMobilityState;
 import org.fog.mobilitydata.Location;
 import org.fog.utils.Config;
@@ -150,17 +148,19 @@ public class LocationManager {
      * @param device2 second device ID
      * @return latency in seconds
      */
-    public double calculateNetworkLatency(int device1, int device2) {
+    public double calculateDirectLatency(int device1, int device2) {
         boolean isUserDevice1 = deviceMobilityStates.containsKey(device1);
         boolean isUserDevice2 = deviceMobilityStates.containsKey(device2);
         
         double distance = calculateDistance(device1, device2);
         
         // If either device is a user device, use wifi latency model
+        // NOTE: The fog node WILL be the parent of the user device.
+        // We CANNOT use this function to calculate the latency between any user and any node.
         if (isUserDevice1 || isUserDevice2) {
             return Config.baseWifiLatency + (distance * Config.latencyPerKilometer);
         } else {
-            // Otherwise use server latency model
+            // Otherwise use server latency model. Cloud-Node link.
             return Config.baseServerLatency + (distance * Config.latencyPerKilometer);
         }
     }

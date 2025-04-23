@@ -107,7 +107,8 @@ public class FogDevice extends PowerDatacenter {
         setUplinkBandwidth(uplinkBandwidth);
         setDownlinkBandwidth(downlinkBandwidth);
         // Simon says we convert to milliseconds in constructor call.
-        setUplinkLatency(uplinkLatency * Consts.MILLISECOND);
+        // If already -1, don't touch.
+        if (uplinkLatency>-1) setUplinkLatency(uplinkLatency * Consts.MILLISECOND);
         setRatePerMips(ratePerMips);
         setAssociatedActuatorIds(new ArrayList<Pair<Integer, Double>>());
         for (Host host : getCharacteristics().getHostList()) {
@@ -974,7 +975,7 @@ public class FogDevice extends PowerDatacenter {
 
     // in MILLISECONDS
     public void setUplinkLatency(double uplinkLatency) {
-        this.uplinkLatency = uplinkLatency * Consts.MILLISECOND;
+        this.uplinkLatency = uplinkLatency;
     }
 
     public boolean isSouthLinkBusy() {
