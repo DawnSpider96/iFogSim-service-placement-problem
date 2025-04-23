@@ -33,6 +33,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
     // Maps DeviceId to index (on latencies and `fogDevices` state)
     protected Map<Integer, Integer> indices;
     protected int cloudIndex = -1;
+    protected int cloudId = -1;
     protected double [][] globalLatencies;
 
     // Temporary State
@@ -304,7 +305,10 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         for (int i=0 ; i<fogDevices.size() ; i++) {
             indices.put(fogDevices.get(i).getId(), i);
             // While we're at it, determine cloud's index
-            if (fogDevices.get(i).getName() == "cloud") cloudIndex = i;
+            if (Objects.equals(fogDevices.get(i).getName(), "cloud")) {
+                cloudIndex = i;
+                cloudId = fogDevices.get(i).getId();
+            }
         }
         globalLatencies = fillGlobalLatencies(fogDevices.size(), indices);
 
@@ -751,40 +755,52 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         return null;
     }
 
+
+    // INCLUDES FINAL JOURNEY back to user
     private double determineLatencyOfDecision(PlacementRequest pr) {
         // Simon (170225) says we are currently NOT considering execution time
         // Hence only placement targets are considered
         // placedMicroservices are ordered
         double latency = 0;
-        List<Integer> deviceIds = new ArrayList<>(pr.getPlacedMicroservices().values());
+        List<Integer> edges = new ArrayList<>(pr.getPlacedMicroservices().values());
+
 
         // Check if there are at least two devices to calculate latency
-        if (deviceIds.size() > 1) {
-            for (int i = 0; i < deviceIds.size() - 1; i++) {
-                int sourceDevice = deviceIds.get(i);
-                int destDevice = deviceIds.get(i + 1);
+        if (edges.size() > 1) {
+            // Add latency between cloud and first edge
+            // TODO Simon says for 1 service scenario, variance in latency comes from 3 places:
+            //  - Latency between cloud->firstEdge
+            //  - Latency of final journey:
+            //      - firstEdge->cloud (return for routing to gateway)
+            //      - cloud->gateway
+            //      - gateway->user (most variance I assume)
+            latency += getLatency(cloudId, edges.get(0));
+            for (int i = 0; i < edges.size() - 1; i++) {
+                int sourceDevice = edges.get(i);
+                int destDevice = edges.get(i + 1);
                 latency += getLatency(sourceDevice, destDevice);
             }
         }
         return latency;
     }
 
-    private double getLatency(int srcDevice, int destDevice) {
+    private double getLatency(int srcId, int destId) {
         /*
         Destination MyFogDevice may be a user. Source MyFogDevice is always edge server.
          */
-        int srcIndex = indices.get(srcDevice);
-        int destIndex = indices.get(destDevice);
+
+        int srcIndex = indices.get(srcId);
+        int destIndex = indices.get(destId);
 
         double l = globalLatencies[srcIndex][destIndex];
         if (l >= 0) return l;
 
         assert MicroservicePlacementConfig.NETWORK_TOPOLOGY == MicroservicePlacementConfig.CENTRALISED;
-        MyFogDevice src = (MyFogDevice) getDevice(srcDevice);
-        MyFogDevice dest = (MyFogDevice) getDevice(destDevice);
+        MyFogDevice src = (MyFogDevice) getDevice(srcId);
+        MyFogDevice dest = (MyFogDevice) getDevice(destId);
 
 
-        if (src.getDeviceType() == MyFogDevice.FCN && dest.getDeviceType() == MyFogDevice.FCN){
+        if (Objects.equals(src.getDeviceType(), MyFogDevice.FCN) && Objects.equals(dest.getDeviceType(), MyFogDevice.FCN)){
             return globalLatencies[srcIndex][cloudIndex] + globalLatencies[cloudIndex][destIndex];
         }
         else { // dest is user device
@@ -792,7 +808,11 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
                     dest.getDeviceType() == MyFogDevice.AMBULANCE_USER ||
                     dest.getDeviceType() == MyFogDevice.OPERA_USER:
                     "Destination device must be Mobile User";
-            int parentIndex = indices.get(dest.getParentId());
+
+            int parentId = dest.getParentId();
+            if (parentId == srcId) return dest.getUplinkLatency();
+
+            int parentIndex = indices.get(parentId);
             // Uplinklatency in milliseconds
             // BUT fogDevice constructor converts it to seconds (simulation timestep unit)
             return globalLatencies[srcIndex][cloudIndex] + globalLatencies[cloudIndex][parentIndex] + dest.getUplinkLatency();

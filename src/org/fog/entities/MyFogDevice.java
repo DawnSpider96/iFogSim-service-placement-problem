@@ -647,18 +647,18 @@ public class MyFogDevice extends FogDevice {
 		FogBroker.setCycleNumber(FogBroker.getCycleNumber() + 1);
 		System.out.println(placementString.toString());
 
-		// Resend failed Placement Requests
-		for (PlacementRequest pr : placementRequestStatus.keySet()) {
-			if (placementRequestStatus.get(pr) != -1) {
-				if (Objects.equals(MicroservicePlacementConfig.SIMULATION_MODE, "DYNAMIC"))
-					transmitPR(pr, placementRequestStatus.get(pr));
-
-				else if (Objects.equals(MicroservicePlacementConfig.SIMULATION_MODE, "STATIC"))
-//					sendNow(placementRequestStatus.get(pr), FogEvents.RECEIVE_PR, pr);
-					Logger.error("Simulation static mode error", "Simulation should not be static.");
-
-			}
-		}
+		// Simon (230425) says we do NOT resend failed Placement Requests
+//		for (PlacementRequest pr : placementRequestStatus.keySet()) {
+//			if (placementRequestStatus.get(pr) != -1) {
+//				if (Objects.equals(MicroservicePlacementConfig.SIMULATION_MODE, "DYNAMIC"))
+//					transmitPR(pr, placementRequestStatus.get(pr));
+//
+//				else if (Objects.equals(MicroservicePlacementConfig.SIMULATION_MODE, "STATIC"))
+////					sendNow(placementRequestStatus.get(pr), FogEvents.RECEIVE_PR, pr);
+//					Logger.error("Simulation static mode error", "Simulation should not be static.");
+//
+//			}
+//		}
 
 		if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC)
 			send(getId(), MicroservicePlacementConfig.PLACEMENT_PROCESS_INTERVAL, FogEvents.PROCESS_PRS);
