@@ -267,10 +267,10 @@ public class MetricUtils {
                 double failStats = failureStats.get(i);
                 
                 fileWriter.append(String.format(
-                        "%d,%d,%d,%s,%f,%f,%f,%f,%f\n",
+                        "%d,%d,%s,%s,%f,%f,%f,%f,%f\n",
                         sc.getNumberOfEdge(),
                         sc.getNumberOfUser(),
-                        sc.getAppLoopLength(),
+                        sc.getAppLoopLengthPerType(),
                         heuristics.get(sc.getPlacementLogic()),
                         resStats[0],  // mean resource utilization
                         resStats[1],  // stddev resource utilization

@@ -1,326 +1,576 @@
 # MyExperiment Configuration File
-# Format:
-# - numberOfEdge: int    # Number of edge devices
-#   numberOfUser: int    # Number of user devices
-#   appLoopLength: int   # Length of application loop
-#   placementLogic: int  # Placement logic type (use integers from PlacementLogicFactory)
+
+# NOTE: genericUser, ambulanceUser or operaUser. Currently, we have no more.
+# Make sure the keys under "userPerType" are the same as "appLoopLengthPerType" please.
 
 # Configuration sets with appLoopLength = 1
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 13  # ACO
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 7  # BEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 8  # CLOSEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 14  # ILP
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 9  # MAX_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 11  # MULTI_OPT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 12  # SIMULATED_ANNEALING
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 13  # ACO
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 7  # BEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 8  # CLOSEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 14  # ILP
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 9  # MAX_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 11  # MULTI_OPT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 12  # SIMULATED_ANNEALING
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 13  # ACO
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 7  # BEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 8  # CLOSEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 14  # ILP
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 9  # MAX_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 11  # MULTI_OPT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 1
   placementLogic: 12  # SIMULATED_ANNEALING
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 1
+    ambulanceUser: 1
 
 # ----------------------------------------------------------------------------------------------------------------
 # Configuration sets with appLoopLength = 3
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 13  # ACO
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 7  # BEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 8  # CLOSEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 14  # ILP
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 9  # MAX_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 11  # MULTI_OPT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 12  # SIMULATED_ANNEALING
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 13  # ACO
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 7  # BEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 8  # CLOSEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 14  # ILP
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 9  # MAX_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 11  # MULTI_OPT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 12  # SIMULATED_ANNEALING
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 13  # ACO
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 7  # BEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 8  # CLOSEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 14  # ILP
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 9  # MAX_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 11  # MULTI_OPT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 3
   placementLogic: 12  # SIMULATED_ANNEALING
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 3
+    ambulanceUser: 3
 
 # ----------------------------------------------------------------------------------------------------------------
 # Configuration sets with appLoopLength = 5
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 13  # ACO
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 7  # BEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 8  # CLOSEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 14  # ILP
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 9  # MAX_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 11  # MULTI_OPT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 100
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 12  # SIMULATED_ANNEALING
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 13  # ACO
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 7  # BEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 8  # CLOSEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 14  # ILP
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 9  # MAX_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 11  # MULTI_OPT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 200
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 12  # SIMULATED_ANNEALING
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 13  # ACO
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 7  # BEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 8  # CLOSEST_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 14  # ILP
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 9  # MAX_FIT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 11  # MULTI_OPT
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5
 
 - numberOfEdge: 300
-  numberOfUser: 196
-  appLoopLength: 5
   placementLogic: 12  # SIMULATED_ANNEALING
+  usersPerType:
+    genericUser: 176
+    ambulanceUser: 20
+  appLoopLengthPerType:
+    genericUser: 5
+    ambulanceUser: 5

@@ -204,7 +204,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             
             // Create a key for this placement request
             PlacementRequestKey prKey = new PlacementRequestKey(
-                placementRequest.getSensorId(), 
+                placementRequest.getSensorId(),
                 ((MyPlacementRequest)placementRequest).getPrIndex()
             );
             
@@ -502,6 +502,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
      * @param prStatus Map of placement requests to their result. Was outputted by MapModules()
      *
      * @return Placement Decision containing:
+     *  - perDevice
      *  - perDevice
      *  - ServiceDiscovery
      *  - prStatus

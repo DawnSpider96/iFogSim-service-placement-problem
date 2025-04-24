@@ -598,15 +598,9 @@ public class MyMicroservicesController extends SimEntity {
         if (moduleToCheck == null) {
             return true; // No modules placed on this user
         }
-        
-        Application app = null;
-        for (SimEntity entity : CloudSim.getEntityList()) {
-            if (entity instanceof MyMicroservicesController) {
-                app = ((MyMicroservicesController) entity).getApplicationById(pr.getApplicationId());
-                break;
-            }
-        }
-        
+
+        Application app = getApplicationById(pr.getApplicationId());
+
         if (app == null) {
             return false;
         }

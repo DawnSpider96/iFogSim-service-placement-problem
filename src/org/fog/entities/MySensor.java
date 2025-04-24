@@ -7,7 +7,11 @@ import org.fog.utils.GeoLocation;
 import org.fog.utils.Logger;
 import org.fog.utils.distribution.Distribution;
 
+import java.util.Objects;
+
 public class MySensor extends Sensor {
+
+    String userType;
 
     public MySensor(String name, int userId, String appId, int gatewayDeviceId, double latency, GeoLocation geoLocation, Distribution transmitDistribution, int cpuLength, int nwLength, String tupleType, String destModuleName) {
         super(name, userId, appId, gatewayDeviceId, latency, geoLocation, transmitDistribution, cpuLength, nwLength, tupleType, destModuleName);
@@ -19,6 +23,19 @@ public class MySensor extends Sensor {
 
     public MySensor(String name, String tupleType, int userId, String appId, Distribution transmitDistribution) {
         super(name, tupleType, userId, appId, transmitDistribution);
+
+        // NOTE: THIS ASSUMES that the sensor's name ALWAYS starts with "s-"
+        if (!name.startsWith("s-")) throw new NullPointerException("Check name!");
+        String userType = name.substring(2).split("_")[0];
+
+        // todo This is a hardcoded check. Edit based on your user types.
+        if (!(Objects.equals(userType, MyFogDevice.GENERIC_USER) ||
+                Objects.equals(userType, MyFogDevice.AMBULANCE_USER) ||
+                Objects.equals(userType, MyFogDevice.OPERA_USER))) {
+            throw new NullPointerException("Invalid Type");
+        }
+
+        this.userType = userType;
     }
 
     @Override
@@ -39,6 +56,10 @@ public class MySensor extends Sensor {
                 super.processEvent(ev);
                 break;
         }
+    }
+
+    public String getUserType() {
+        return userType;
     }
 
     // Simon says we will use FogBroker as a central control entity that creates tuples.

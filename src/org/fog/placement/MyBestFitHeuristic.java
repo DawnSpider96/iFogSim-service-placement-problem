@@ -108,7 +108,7 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
                         s,
                         mpr.getSensorId(),
                         mpr.getPrIndex());
-                System.out.println("Failed placement " + placementRequest.getSensorId());
+//                System.out.println("Failed placement " + placementRequest.getSensorId());
 
                 // Undo every "placement" recorded in placed. Only deviceStates was changed, so we change it back
                 for (int i = 0 ; i < placed.length ; i++) {
@@ -180,10 +180,7 @@ public class MyBestFitHeuristic extends MyHeuristic implements MicroservicePlace
                     currentModuleInstanceNum.get(deviceId).put(s, currentModuleInstanceNum.get(deviceId).get(s) + 1);
             }
         }
-        else {
-            Logger.error("BestFit Control Flow Problem", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
-        }
-
+        // Else do nothing
         if (allPlaced) return -1;
         else return getFonID();
     }
