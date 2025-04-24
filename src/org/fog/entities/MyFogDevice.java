@@ -174,12 +174,18 @@ public class MyFogDevice extends FogDevice {
 //	}
 
 	protected void setDeviceType(String deviceType) {
-		if (deviceType.equals(MyFogDevice.GENERIC_USER) || deviceType.equals(MyFogDevice.FCN) ||
-				deviceType.equals(MyFogDevice.FON) || deviceType.equals(MyFogDevice.CLOUD) ||
-				deviceType.equals(MyFogDevice.AMBULANCE_USER) || deviceType.equals(MyFogDevice.OPERA_USER))
+		// First temporarily set the deviceType for isUserDevice() to work
+		this.deviceType = deviceType;
+		
+		// Then validate it's a known type
+		if (isUserDevice() || deviceType.equals(MyFogDevice.FCN) ||
+				deviceType.equals(MyFogDevice.FON) || deviceType.equals(MyFogDevice.CLOUD))
 			this.deviceType = deviceType;
-		else
+		else {
+			// Reset to null since it wasn't valid
+			this.deviceType = null;
 			Logger.error("Incompatible Device Type", "Device type not included in device type enums in MyFogDevice class");
+		}
 	}
 
 	public String getDeviceType() {
@@ -500,26 +506,15 @@ public class MyFogDevice extends FogDevice {
 						objj.put("module", vm);
 						objj.put("id", getId());
 						if (deviceType.equals(FCN)) {
-							// TODO (010425) Should we use management tuple for this?
-							//  In real life the edge node will communicate with cloud that it is done
-							sendNow(getFonId(), FogEvents.NODE_EXECUTION_FINISHED, objj);
-						} else if ((deviceType.equals(GENERIC_USER) || deviceType.equals(AMBULANCE_USER) || deviceType.equals(OPERA_USER))
-								&& microservicesControllerId != -1) {
+                            // TODO (010425) Should we use management tuple for this?
+                            //  In real life the edge node will communicate with cloud that it is done
+                            sendNow(getFonId(), FogEvents.NODE_EXECUTION_FINISHED, objj);
+                        }
+						else if (isUserDevice() && microservicesControllerId != -1) {
 							objj.put("isDecrease", false);
 							sendNow(microservicesControllerId, FogEvents.USER_RESOURCE_UPDATE, objj);
 						}
 						else Logger.error("Control Flow error", "Invalid fog device type! Must be user or edge server.");
-
-						// Retrieve the map for CPU usages
-//						Map<Integer, Map<Double, Map<String, List<Double>>>> cpuUsages = MyMonitor.getCpuUsages();
-//
-//						if (!cpuUsages.containsKey(getId())) {
-//							// If not, initialize it with a new map
-//							cpuUsages.put(getId(), new HashMap<>());
-//						}
-//
-//						cpuUsages.get(getId()).put(CloudSim.clock(), getHost().getVmScheduler().getMipsMap());
-
 					}
 				}
 			}
@@ -664,33 +659,6 @@ public class MyFogDevice extends FogDevice {
 			send(getId(), MicroservicePlacementConfig.PLACEMENT_PROCESS_INTERVAL, FogEvents.PROCESS_PRS);
 		else if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.SEQUENTIAL && !this.placementRequests.isEmpty())
 			sendNow(getId(), FogEvents.PROCESS_PRS);
-	}
-
-	public List<Integer> getClientServiceNodeIds(Application application, String
-			microservice, Map<String, Integer> placed, Map<String, Integer> placementPerPr) {
-		List<String> clientServices = getClientServices(application, microservice);
-		List<Integer> nodeIDs = new LinkedList<>();
-		for (String clientService : clientServices) {
-			if (placed.get(clientService) != null)
-				nodeIDs.add(placed.get(clientService));
-			else
-				nodeIDs.add(placementPerPr.get(clientService));
-		}
-
-		return nodeIDs;
-
-	}
-
-	public List<String> getClientServices(Application application, String microservice) {
-		List<String> clientServices = new LinkedList<>();
-
-		for (AppEdge edge : application.getEdges()) {
-			if (edge.getDestination().equals(microservice) && edge.getDirection() == Tuple.UP)
-				clientServices.add(edge.getSource());
-		}
-
-
-		return clientServices;
 	}
 
 	/**
@@ -897,7 +865,7 @@ public class MyFogDevice extends FogDevice {
 			ModuleLaunchConfig moduleLaunchConfig = new ModuleLaunchConfig(am, 1);
 			sendNow(getId(), FogEvents.LAUNCH_MODULE_INSTANCE, moduleLaunchConfig);
 
-			if (deviceType.equals(GENERIC_USER) && microservicesControllerId != -1) {
+			if (isUserDevice() && microservicesControllerId != -1) {
 				JSONObject resourceUpdate = new JSONObject();
 				resourceUpdate.put("module", am);
 				resourceUpdate.put("id", getId());
@@ -1142,6 +1110,16 @@ public class MyFogDevice extends FogDevice {
 
 	public void setMicroservicesControllerId(int microservicesControllerId) {
 		this.microservicesControllerId = microservicesControllerId;
+	}
+
+	/**
+	 * Checks if this device is a user device (any type of user device).
+	 * @return true if the device is a generic user, ambulance user, or opera user; false otherwise
+	 */
+	public boolean isUserDevice() {
+		return deviceType.equals(GENERIC_USER) || 
+		       deviceType.equals(AMBULANCE_USER) || 
+		       deviceType.equals(OPERA_USER);
 	}
 
 	//	public static final Comparator<MyFogDevice> BY_CPU_THEN_RAM = Comparator

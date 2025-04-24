@@ -11,10 +11,28 @@ public class SimulationConfig {
     final Map<String, Integer> appLoopLengthPerType;
     final int placementLogic;
     final Map<String, Integer> usersPerType;
+    
+    // Random seed configuration
+    private final int experimentSeed;
+    private final int locationSeed;
+    private final int mobilityStrategySeed;
+    
+    // Default seed values
+    private static final int DEFAULT_EXPERIMENT_SEED = 33;
+    private static final int DEFAULT_LOCATION_SEED = 42;
+    private static final int DEFAULT_MOBILITY_STRATEGY_SEED = 123;
 
     public SimulationConfig(int numberOfEdge, int placementLogic,
                             Map<String, Integer> usersPerType,
                             Map<String, Integer> appLoopLengthPerType) {
+        this(numberOfEdge, placementLogic, usersPerType, appLoopLengthPerType, 
+             DEFAULT_EXPERIMENT_SEED, DEFAULT_LOCATION_SEED, DEFAULT_MOBILITY_STRATEGY_SEED);
+    }
+
+    public SimulationConfig(int numberOfEdge, int placementLogic,
+                            Map<String, Integer> usersPerType,
+                            Map<String, Integer> appLoopLengthPerType,
+                            int experimentSeed, int locationSeed, int mobilityStrategySeed) {
         this.usersPerType = usersPerType;
         this.appLoopLengthPerType = appLoopLengthPerType;
         this.numberOfUser = usersPerType.values().stream().mapToInt(Integer::intValue).sum();
@@ -23,12 +41,17 @@ public class SimulationConfig {
         }
         this.numberOfEdge = numberOfEdge;
         this.placementLogic = placementLogic;
+        this.experimentSeed = experimentSeed;
+        this.locationSeed = locationSeed;
+        this.mobilityStrategySeed = mobilityStrategySeed;
     }
 
     @Override
     public String toString() {
-        return String.format("numberOfEdge: %d, numberOfUser: %d, appLoopLengthPerType: %s, placementLogic: %d",
-                numberOfEdge, numberOfUser, appLoopLengthPerType, placementLogic);
+        return String.format("numberOfEdge: %d, numberOfUser: %d, appLoopLengthPerType: %s, placementLogic: %d, " +
+                            "experimentSeed: %d, locationSeed: %d, mobilityStrategySeed: %d",
+                numberOfEdge, numberOfUser, appLoopLengthPerType, placementLogic, 
+                experimentSeed, locationSeed, mobilityStrategySeed);
     }
 
 
@@ -45,4 +68,16 @@ public class SimulationConfig {
     }
 
     public int getNumberOfUser() {return numberOfUser;}
+    
+    public int getExperimentSeed() {
+        return experimentSeed;
+    }
+    
+    public int getLocationSeed() {
+        return locationSeed;
+    }
+    
+    public int getMobilityStrategySeed() {
+        return mobilityStrategySeed;
+    }
 }

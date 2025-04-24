@@ -24,7 +24,7 @@ public class MyMicroservicesController extends SimEntity {
     private Map<Integer, Integer> sensorToSequenceNumber = new HashMap<>();
     protected Map<String, Application> applications = new HashMap<>();
     protected PlacementLogicFactory placementLogicFactory = new PlacementLogicFactory();
-    protected int placementLogic;
+    protected Object placementLogic; // Can be either int or String depending on configuration source
     private boolean mobilityEnabled = false;
     //    protected List<Integer> clustering_levels;
     /**
@@ -52,12 +52,16 @@ public class MyMicroservicesController extends SimEntity {
     protected MobilityStrategy mobilityStrategy;
     
     /**
-     * @param name
-     * @param fogDevices
-     * @param sensors
-     * @param applications
+     * Constructor supporting both integer and string placement logic identifiers.
+     * 
+     * @param name Controller name
+     * @param fogDevices List of fog devices
+     * @param sensors List of sensors
+     * @param applications List of applications
+     * @param placementLogic Placement logic identifier (can be Integer or String)
      */
-    public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, List<Application> applications, int placementLogic) {
+    public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, 
+                                    List<Application> applications, Object placementLogic) {
         super(name);
         this.fogDevices = fogDevices;
         this.sensors = sensors;
@@ -71,12 +75,25 @@ public class MyMicroservicesController extends SimEntity {
         
         // Initialize with the no-op mobility strategy by default
         this.mobilityStrategy = new NoMobilityStrategy();
-        
-        // Note: init() is no longer called automatically
-        // It will be called after location data is loaded via completeInitialization()
     }
 
-    public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, List<Application> applications, int placementLogic, Map<Integer, List<FogDevice>> monitored) {
+    /**
+     * Alternative constructor supporting legacy integer placement logic.
+     * 
+     * @param name Controller name
+     * @param fogDevices List of fog devices
+     * @param sensors List of sensors
+     * @param applications List of applications
+     * @param placementLogic Integer placement logic type
+     */
+    public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, 
+                                    List<Application> applications, int placementLogic) {
+        this(name, fogDevices, sensors, applications, (Object)placementLogic);
+    }
+
+    public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, 
+                                     List<Application> applications, Object placementLogic, 
+                                     Map<Integer, List<FogDevice>> monitored) {
         super(name);
         this.fogDevices = fogDevices;
         this.sensors = sensors;
@@ -90,9 +107,6 @@ public class MyMicroservicesController extends SimEntity {
         
         // Initialize with the no-op mobility strategy by default
         this.mobilityStrategy = new NoMobilityStrategy();
-        
-        // Note: init(monitored) is no longer called automatically
-        // It will be called after location data is loaded via completeInitialization(monitored)
     }
 
     /**
@@ -115,12 +129,10 @@ public class MyMicroservicesController extends SimEntity {
     public void completeInitialization() {
         init();
         
-        // Initialize parent references for mobility strategy
         Map<Integer, Integer> initialParentReferences = new HashMap<>();
         for (FogDevice device : fogDevices) {
             initialParentReferences.put(device.getId(), device.getParentId());
         }
-        // FullMobilityStrategy's temporary parent reference state is SEPARATE from controller's.
         mobilityStrategy.initialize(fogDevices, initialParentReferences);
     }
 
@@ -155,7 +167,7 @@ public class MyMicroservicesController extends SimEntity {
         generateRoutingTable();
     }
 
-    protected void initializeControllers(int placementLogic) {
+    protected void initializeControllers(Object placementLogic) {
         for (FogDevice device : fogDevices) {
             LoadBalancer loadBalancer = new UselessLoadBalancer(); // Simon (100425) says this is useless, but for backwards compatibility
             MyFogDevice cdevice = (MyFogDevice) device;
@@ -163,13 +175,20 @@ public class MyMicroservicesController extends SimEntity {
             // responsible for placement decision-making
             if (cdevice.getDeviceType().equals(MyFogDevice.FON) || cdevice.getDeviceType().equals(MyFogDevice.CLOUD)) {
                 List<FogDevice> monitoredDevices = getDevicesForFON(cdevice);
-                MicroservicePlacementLogic microservicePlacementLogic = placementLogicFactory.getPlacementLogic(placementLogic, cdevice.getId()); // NULL VALUE
+                MicroservicePlacementLogic microservicePlacementLogic;
+                
+                // Handle either string or int placementLogic
+                if (placementLogic instanceof String) {
+                    microservicePlacementLogic = placementLogicFactory.getPlacementLogic((String)placementLogic, cdevice.getId());
+                } else if (placementLogic instanceof Number) {
+                    microservicePlacementLogic = placementLogicFactory.getPlacementLogic(((Number)placementLogic).intValue(), cdevice.getId());
+                } else {
+                    Logger.error("Placement Logic Error", "Unknown placement logic type: " + placementLogic.getClass().getName());
+                    microservicePlacementLogic = null;
+                }
+                
                 cdevice.initializeController(loadBalancer, microservicePlacementLogic, getResourceInfo(monitoredDevices), applications, monitoredDevices);
-            } else if (cdevice.getDeviceType().equals(MyFogDevice.FCN) ||
-                    cdevice.getDeviceType().equals(MyFogDevice.GENERIC_USER) ||
-                    cdevice.getDeviceType().equals(MyFogDevice.AMBULANCE_USER) ||
-                    cdevice.getDeviceType().equals(MyFogDevice.OPERA_USER)
-            ) {
+            } else if (cdevice.getDeviceType().equals(MyFogDevice.FCN) || cdevice.isUserDevice()) {
                 cdevice.initializeController(loadBalancer);
             }
             else {
@@ -178,7 +197,7 @@ public class MyMicroservicesController extends SimEntity {
         }
     }
 
-    protected void initializeControllers(int placementLogic, Map<Integer, List<FogDevice>> monitored) {
+    protected void initializeControllers(Object placementLogic, Map<Integer, List<FogDevice>> monitored) {
         for (FogDevice device : fogDevices) {
             LoadBalancer loadBalancer = new RRLoadBalancer();
             MyFogDevice cdevice = (MyFogDevice) device;
@@ -186,9 +205,20 @@ public class MyMicroservicesController extends SimEntity {
             //responsible for placement decision making
             if (cdevice.getDeviceType().equals(MyFogDevice.FON) || cdevice.getDeviceType().equals(MyFogDevice.CLOUD)) {
                 List<FogDevice> monitoredDevices = monitored.get(cdevice.getFonId());
-                MicroservicePlacementLogic microservicePlacementLogic = placementLogicFactory.getPlacementLogic(placementLogic, cdevice.getId());
+                MicroservicePlacementLogic microservicePlacementLogic;
+                
+                // Handle either string or int placementLogic
+                if (placementLogic instanceof String) {
+                    microservicePlacementLogic = placementLogicFactory.getPlacementLogic((String)placementLogic, cdevice.getId());
+                } else if (placementLogic instanceof Number) {
+                    microservicePlacementLogic = placementLogicFactory.getPlacementLogic(((Number)placementLogic).intValue(), cdevice.getId());
+                } else {
+                    Logger.error("Placement Logic Error", "Unknown placement logic type: " + placementLogic.getClass().getName());
+                    microservicePlacementLogic = null;
+                }
+                
                 cdevice.initializeController(loadBalancer, microservicePlacementLogic, getResourceInfo(monitoredDevices), applications, monitoredDevices);
-            } else if (cdevice.getDeviceType().equals(MyFogDevice.FCN) || cdevice.getDeviceType().equals(MyFogDevice.GENERIC_USER)) {
+            } else if (cdevice.getDeviceType().equals(MyFogDevice.FCN) || cdevice.isUserDevice()) {
                 cdevice.initializeController(loadBalancer);
             }
             else {
@@ -244,15 +274,35 @@ public class MyMicroservicesController extends SimEntity {
      * Call in main Sim file after location data is loaded
      */
     public void enableMobility() {
+        enableMobility(System.currentTimeMillis());
+    }
+
+    /**
+     * Enables mobility for devices with a specific random seed.
+     *
+     * @param seed seed for random number generation
+     */
+    public void enableMobility(long seed) {
         this.mobilityEnabled = true;
         this.mobilityStrategy = new FullMobilityStrategy();
         
         // Initialize the strategy with current state
-//        Map<Integer, Integer> initialParentReferences = new HashMap<>();
-//        for (FogDevice device : fogDevices) {
-//            initialParentReferences.put(device.getId(), device.getParentId());
-//        }
-//        mobilityStrategy.initialize(fogDevices, initialParentReferences);
+        // Map<Integer, Integer> initialParentReferences = new HashMap<>();
+        // for (FogDevice device : fogDevices) {
+        //     initialParentReferences.put(device.getId(), device.getParentId());
+        // }
+        // mobilityStrategy.initialize(fogDevices, initialParentReferences);
+        
+        System.out.println("Mobility enabled with seed: " + seed);
+        
+        // Make sure all mobility states use pathing strategies with the proper seed
+        for (DeviceMobilityState state : deviceMobilityStates.values()) {
+            PathingStrategy strategy = state.getStrategy();
+            if (strategy instanceof AbstractPathingStrategy) {
+                ((AbstractPathingStrategy)strategy).setSeed(seed);
+                System.out.println("Set seed for " + strategy.getClass().getSimpleName());
+            }
+        }
     }
     
     /**
@@ -366,23 +416,39 @@ public class MyMicroservicesController extends SimEntity {
     }
 
     /**
-     * Initializes location data from CSV files
-     * 
+     * Initializes location data for resources and users.
+     *
      * @param resourceFilename the filename for resource locations
      * @param userFilename the filename for user locations
-     * @param numberOfResources the number of edge nodes
+     * @param numberOfResources the number of resources
      * @param numberOfUsers the number of users
+     * @param locationSeed seed for random number generation
      * @throws IOException if there's an error reading the files
      */
     public void initializeLocationData(String resourceFilename, String userFilename, 
                                       int numberOfResources, int numberOfUsers) throws IOException {
+        initializeLocationData(resourceFilename, userFilename, numberOfResources, numberOfUsers, 33);
+    }
+
+    /**
+     * Initializes location data for resources and users with a specific random seed.
+     *
+     * @param resourceFilename the filename for resource locations
+     * @param userFilename the filename for user locations
+     * @param numberOfResources the number of resources
+     * @param numberOfUsers the number of users
+     * @param seed seed for random number generation
+     * @throws IOException if there's an error reading the files
+     */
+    public void initializeLocationData(String resourceFilename, String userFilename, 
+                                      int numberOfResources, int numberOfUsers, long seed) throws IOException {
         Map<String, Location> resourceLocations = dataLoader.loadResourceLocations(resourceFilename, numberOfResources);
         Map<Integer, Location> userLocations = dataLoader.loadInitialUserLocations(userFilename, numberOfUsers);
         
         // Reproducible random for mobility generation
-        Random random = new Random(33);
-        BeelinePathingStrategy beelinePathingStrategy = new BeelinePathingStrategy();
-        GraphHopperPathingStrategy graphHopperPathingStrategy = new GraphHopperPathingStrategy();
+        Random random = new Random(seed);
+        BeelinePathingStrategy beelinePathingStrategy = new BeelinePathingStrategy(seed);
+        GraphHopperPathingStrategy graphHopperPathingStrategy = new GraphHopperPathingStrategy(seed);
 
         // Separate resource and user devices
         List<MyFogDevice> resourceDevices = new ArrayList<>();
@@ -390,10 +456,7 @@ public class MyMicroservicesController extends SimEntity {
         
         for (FogDevice device : fogDevices) {
             MyFogDevice fogDevice = (MyFogDevice) device;
-            String deviceType = fogDevice.getDeviceType();
-            if (!(deviceType.equals(MyFogDevice.GENERIC_USER) ||
-                  deviceType.equals(MyFogDevice.AMBULANCE_USER) ||
-                  deviceType.equals(MyFogDevice.OPERA_USER))) {
+            if (!fogDevice.isUserDevice()) {
                 resourceDevices.add(fogDevice);
             } else {
                 userDevices.add(fogDevice);
@@ -475,46 +538,10 @@ public class MyMicroservicesController extends SimEntity {
                 DeviceMobilityState mobilityState = deviceMobilityStates.get(deviceId);
 
                 if (mobilityState != null) {
-                    Location currentLocation = mobilityState.getCurrentLocation();
-
-//                    if (mobilityState.getClass().getName().equals("org.fog.mobility.GenericUserMobilityState")) {
-//                        // Create an initial attraction point template
-//                        initialAttraction = new Attractor(
-//                                currentLocation, // Initial location (will be replaced with random by createAttractionPoint)
-//                                "Initial Generic estination",
-//                                0.1, // min pause time
-//                                3.0, // max pause time
-//                                new PauseTimeStrategy()
-//                        );
-//                    }
-//                    else if (mobilityState.getClass().getName().equals("org.fog.mobility.AmbulanceUserMobilityState")) {
-//                        // Create an initial attraction point template
-//                        initialAttraction = new Attractor(
-//                                currentLocation, // Initial location (will be replaced with random by createAttractionPoint)
-//                                "Initial Ambulance Destination",
-//                                30, // min pause time
-//                                300, // max pause time
-//                                new PauseTimeStrategy()
-//                        );
-//                    }
-//                    else if (mobilityState.getClass().getName().equals("org.fog.mobility.OperaUserMobilityState")) {
-//                        // Create an initial attraction point template
-//                        initialAttraction = new Attractor(
-//                                currentLocation, // Initial location (will be replaced with random by createAttractionPoint)
-//                                "Opera House Destination",
-//                                7200, // min pause time
-//                                7200, // max pause time
-//                                // TODO We have to make them all stop pausing at the same timestamp (when show ends)
-//                                new PauseTimeStrategy()
-//                        );
-//                    }
-//                    else throw new NullPointerException("Invalid user type");
-//                    mobilityState.updateAttractionPoint(initialAttraction);
-
                     startDeviceMobility(deviceId);
 
                     System.out.println("Started mobility for device: " + CloudSim.getEntityName(deviceId) +
-                            " at location: " + currentLocation.latitude + ", " + currentLocation.longitude);
+                            " at location: " + mobilityState.getCurrentLocation().latitude + ", " + mobilityState.getCurrentLocation().longitude);
                 } else {
                     System.out.println("WARNING: No mobility state found for device " + CloudSim.getEntityName(deviceId));
                 }
@@ -935,18 +962,14 @@ public class MyMicroservicesController extends SimEntity {
         
         for (FogDevice device : fogDevices) {
             MyFogDevice fogDevice = (MyFogDevice) device;
-            String deviceType = fogDevice.getDeviceType();
+            
             // Connect non-user devices using existing parent IDs
-            if (!(deviceType.equals(MyFogDevice.GENERIC_USER) ||
-                deviceType.equals(MyFogDevice.AMBULANCE_USER) ||
-                deviceType.equals(MyFogDevice.OPERA_USER))
-            ) {
+            if (!fogDevice.isUserDevice()) {
                 // Cloud to edge
                 if (fogDevice.getParentId() > -1) {
                     FogDevice parent = getFogDeviceById(fogDevice.getParentId());
                     if (parent.getId() != cloudId) throw new NullPointerException("Invalid parent. Must be cloud.");
 
-//                    double latency = fogDevice.getUplinkLatency();
                     double latency = locationManager.calculateDirectLatency(fogDevice.getId(), cloudId);
                     fogDevice.setUplinkLatency(latency);
                     parent.getChildToLatencyMap().put(fogDevice.getId(), latency);
@@ -1040,5 +1063,16 @@ public class MyMicroservicesController extends SimEntity {
 
     public Map<Integer, Map<String, Double>> getUserResourceAvailability() {
         return userResourceAvailability;
+    }
+
+    // Old methods for backward compatibility
+    @Deprecated
+    protected void initializeControllers(int placementLogic) {
+        initializeControllers((Object)placementLogic);
+    }
+    
+    @Deprecated
+    protected void initializeControllers(int placementLogic, Map<Integer, List<FogDevice>> monitored) {
+        initializeControllers((Object)placementLogic, monitored);
     }
 }

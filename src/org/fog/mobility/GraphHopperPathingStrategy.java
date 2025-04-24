@@ -12,7 +12,7 @@ import java.util.*;
 import com.graphhopper.util.Parameters;
 import com.graphhopper.util.PointList;
 
-public class GraphHopperPathingStrategy implements PathingStrategy {
+public class GraphHopperPathingStrategy extends AbstractPathingStrategy {
     private GraphHopper hopper;
 
     // Configuration parameters
@@ -23,48 +23,33 @@ public class GraphHopperPathingStrategy implements PathingStrategy {
     private String blockedAreas = null;
     private boolean allowAlternativeRoutes = false;
     private double probabilityForAlternativeRoute = 0.0;
-    private Random random = new Random();
-
-//    private boolean uniqueFolders;
 
     // Constants
     private static final double MIN_WAYPOINT_DISTANCE = 20.0;  // meters
     private static final double MAX_DISTANCE_THRESHOLD = 1200.0;  // kilometers threshold
 
-    public GraphHopperPathingStrategy() {}
+    public GraphHopperPathingStrategy() {
+        super(); // Initialize with default seed
+    }
 
     public GraphHopperPathingStrategy(String osmFile, String graphFolder, String movement) {
+        super(); // Initialize with default seed
+        this.osmFileLocation = osmFile;
+        this.graphFolderFiles = graphFolder;
+        this.movementType = movement;
+    }
+    
+    public GraphHopperPathingStrategy(long seed) {
+        super(seed);
+    }
+    
+    public GraphHopperPathingStrategy(String osmFile, String graphFolder, String movement, long seed) {
+        super(seed);
         this.osmFileLocation = osmFile;
         this.graphFolderFiles = graphFolder;
         this.movementType = movement;
     }
 
-//    private void init() {
-//        File graphDir = new File(graphFolderFiles);
-//        if (!graphDir.exists()) {
-//            boolean dirCreated = graphDir.mkdirs();
-//            System.out.println("Directory created: " + dirCreated);
-//        }
-//        try {
-//            hopper = new GraphHopperOSM().forServer();
-//            hopper.setDataReaderFile(osmFileLocation);
-////            hopper.setGraphHopperLocation(graphFolderFiles);
-//            hopper.setGraphHopperLocation(graphFolderFiles + "/" + osmFileLocation.hashCode() + movementType);
-//            hopper.setEncodingManager(EncodingManager.create(movementType));
-//
-//            List<Profile> profiles = new ArrayList<>();
-//            profiles.add(new Profile("car").setVehicle("car").setWeighting("fastest"));
-//            hopper.setProfiles(profiles);
-//
-//            List<CHProfile> chProfiles = new ArrayList<>();
-//            chProfiles.add(new CHProfile("car"));
-//            hopper.getCHPreparationHandler().setCHProfiles(chProfiles);
-//
-//            hopper.importOrLoad();
-//        } catch (Exception e) {
-//            e.printStackTrace(); // Check for silent failures
-//        }
-//    }
     private void init() {
         if (hopper != null) return;
 
@@ -147,6 +132,7 @@ public class GraphHopperPathingStrategy implements PathingStrategy {
             }
 
             ResponsePath route = rsp.getBest();
+            Random random = new Random(seed);
             if (allowAlternativeRoutes && rsp.getAll().size() > 1
                     && random.nextDouble() <= probabilityForAlternativeRoute) {
                 int altIdx = random.nextInt(rsp.getAll().size() - 1) + 1;
@@ -226,8 +212,13 @@ public class GraphHopperPathingStrategy implements PathingStrategy {
         if (distKm * 1000 > MAX_DISTANCE_THRESHOLD) {
             int numWaypoints = (int) (distKm / (MAX_DISTANCE_THRESHOLD * Consts.METERS_TO_KM));
             double stepTime = time / (numWaypoints + 1);
+            
+//            Random rand = new Random(seed);
+            
             for (int i = 1; i <= numWaypoints; i++) {
                 double frac = (double) i / (numWaypoints + 1);
+                // Add a small random perturbation to avoid straight lines if needed
+                // double perturbation = (rand.nextDouble() - 0.5) * 0.01;
                 Location mid = currentLocation.movedTowards(destination, distKm * frac);
                 path.addWayPoint(new WayPoint(mid, CloudSim.clock() + stepTime * i));
             }

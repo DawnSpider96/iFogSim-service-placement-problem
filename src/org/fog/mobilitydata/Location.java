@@ -17,9 +17,34 @@ public class Location {
 	private static double maxLat = Config.maxLat;
 	private static double minLon = Config.minLon;
 	private static double maxLon = Config.maxLon;
+	
+	// Default random seed for location generation
+	private static long defaultRandomSeed = System.currentTimeMillis();
+	private static Random defaultRandom = new Random(defaultRandomSeed);
 
 	// Landmarks
 	public static final Location HOSPITAL1 = Config.HOSPITAL1;
+	
+	/**
+	 * Sets the default random seed for all random location generation methods
+	 * that don't explicitly specify a seed.
+	 * 
+	 * @param seed the seed to use for random location generation
+	 */
+	public static void setDefaultRandomSeed(long seed) {
+		defaultRandomSeed = seed;
+		defaultRandom = new Random(seed);
+		System.out.println("Location default random seed set to: " + seed);
+	}
+	
+	/**
+	 * Gets the current default random seed
+	 * 
+	 * @return the default random seed
+	 */
+	public static long getDefaultRandomSeed() {
+		return defaultRandomSeed;
+	}
 	
 	public Location(double latitude, double longitude, int block) {
 		this.latitude = latitude;
@@ -34,10 +59,10 @@ public class Location {
 	}
 
 	/*
-	* Haversine calculation of distance.
-	* Determines DIRECT distance from one point to another.
-	* Units: Kilometers
-	* */
+	 * Haversine calculation of distance.
+	 * Determines DIRECT distance from one point to another.
+	 * Units: Kilometers
+	 * */
 	public double calculateDistance(Location loc2) {
 
 		final int R = 6371; // Radius of the earth in Kilometers
@@ -77,7 +102,12 @@ public class Location {
 
 	@Deprecated
 	public static Location getRandomLocationSmallbox() {
-		Random rand = new Random();
+		return getRandomLocationSmallbox(defaultRandomSeed);
+	}
+	
+	@Deprecated
+	public static Location getRandomLocationSmallbox(long seed) {
+		Random rand = new Random(seed);
 		double horizontalRatio = rand.nextDouble();
 		double verticalRatio = rand.nextDouble();
 		double width = BOUNDARY[1][0] - BOUNDARY[0][0];
@@ -88,7 +118,11 @@ public class Location {
 	}
 
 	public static Location getRandomLocation() {
-		Random rand = new Random();
+		return getRandomLocation(defaultRandomSeed);
+	}
+	
+	public static Location getRandomLocation(long seed) {
+		Random rand = new Random(seed);
 		while (true) {
 			double randLat = minLat + rand.nextDouble() * (maxLat - minLat);
 			double randLon = minLon + rand.nextDouble() * (maxLon - minLon);
@@ -100,7 +134,11 @@ public class Location {
 	}
 
 	public static Location getRandomLocationWithinRadius(double centerLat, double centerLon, double radiusInMeters) {
-		Random rand = new Random();
+		return getRandomLocationWithinRadius(centerLat, centerLon, radiusInMeters, defaultRandomSeed);
+	}
+
+	public static Location getRandomLocationWithinRadius(double centerLat, double centerLon, double radiusInMeters, long seed) {
+		Random rand = new Random(seed);
 		final double radiusInDegrees = radiusInMeters / 111_000.0;
 
 		while (true) {
@@ -129,7 +167,7 @@ public class Location {
 			double lon_i = polygon[i][1];
 			double lat_j = polygon[j][0];
 			double lon_j = polygon[j][1];
-	
+
 			// Check if one vertex is above and one below the test latitude
 			if ((lat_i > testLat) != (lat_j > testLat)) {
 				// Interpolate a rightward ray from the test point,

@@ -13,8 +13,10 @@ import org.fog.application.Application;
 import org.fog.application.MyApplication;
 import org.fog.application.selectivity.FractionalSelectivity;
 import org.fog.entities.*;
+import org.fog.mobilitydata.Location;
 import org.fog.mobilitydata.References;
 import org.fog.placement.MyMicroservicesController;
+import org.fog.placement.PlacementLogicFactory;
 import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.utils.*;
 import org.fog.utils.distribution.DeterministicDistribution;
@@ -48,7 +50,8 @@ import java.util.stream.IntStream;
  * DYNAMIC_CLUSTERING -> true (for clustered) and false (for not clustered) * (also compatible with static clustering)
  */
 public class MyExperiment {
-    private static final String outputFile = "./output/resourceDist_Comfortable_R_Alpha.csv";
+    private static final String outputFile = "./output/resourceDist_Comfortable_R_Beta.csv";
+    // The configuration file now uses string-based placement logic identifiers instead of integers
     private static final String CONFIG_FILE = "./dataset/MyExperimentConfigs.yaml";
 
     static List<FogDevice> fogDevices = new ArrayList<FogDevice>();
@@ -119,7 +122,18 @@ public class MyExperiment {
 
             for (Map<String, Object> configMap : yamlConfigs) {
                 int numberOfEdge = ((Number) configMap.get("numberOfEdge")).intValue();
-                int placementLogic = ((Number) configMap.get("placementLogic")).intValue();
+                
+                int placementLogic;
+                Object placementLogicObj = configMap.get("placementLogic");
+                if (placementLogicObj instanceof String) {
+                    placementLogic = PlacementLogicFactory.getPlacementLogicCode((String) placementLogicObj);
+                    if (placementLogic == -1) {
+                        System.err.println("Unknown placement logic name: " + placementLogicObj + ", skipping configuration");
+                        continue;
+                    }
+                } else {
+                    placementLogic = ((Number) configMap.get("placementLogic")).intValue();
+                }
 
                 // Parse user types map
                 Map<String, Integer> usersPerType = new HashMap<>();
@@ -135,7 +149,33 @@ public class MyExperiment {
                     appLoopLengthPerType.put(entry.getKey(), ((Number) entry.getValue()).intValue());
                 }
 
-                configs.add(new SimulationConfig(numberOfEdge, placementLogic, usersPerType, appLoopLengthPerType));
+                // Read random seed values if present
+                int experimentSeed = 33; // Default value
+                int locationSeed = 42; // Default value
+                int mobilityStrategySeed = 123; // Default value
+                
+                if (configMap.containsKey("randomSeeds")) {
+                    Map<String, Object> randomSeedsMap = (Map<String, Object>) configMap.get("randomSeeds");
+                    if (randomSeedsMap.containsKey("experimentSeed")) {
+                        experimentSeed = ((Number) randomSeedsMap.get("experimentSeed")).intValue();
+                    }
+                    if (randomSeedsMap.containsKey("locationSeed")) {
+                        locationSeed = ((Number) randomSeedsMap.get("locationSeed")).intValue();
+                    }
+                    if (randomSeedsMap.containsKey("mobilityStrategySeed")) {
+                        mobilityStrategySeed = ((Number) randomSeedsMap.get("mobilityStrategySeed")).intValue();
+                    }
+                }
+
+                configs.add(new SimulationConfig(
+                    numberOfEdge, 
+                    placementLogic, 
+                    usersPerType, 
+                    appLoopLengthPerType,
+                    experimentSeed,
+                    locationSeed,
+                    mobilityStrategySeed
+                ));
             }
 
             System.out.println("Loaded " + configs.size() + " configurations from " + MyExperiment.CONFIG_FILE);
@@ -177,6 +217,10 @@ public class MyExperiment {
         sensors.clear();
         actuators.clear();
         
+        // Get the experiment seed from configuration
+        int experimentSeed = simulationConfig.getExperimentSeed();
+        System.out.println("Using experiment seed: " + experimentSeed);
+        
         try {
             Log.enable();
             Logger.ENABLED = true;
@@ -215,7 +259,7 @@ public class MyExperiment {
             Map<String, Application> applicationsPerType = new HashMap<>();
             for (String userType : simulationConfig.usersPerType.keySet()) {
                 int appLoopLength = simulationConfig.appLoopLengthPerType.get(userType);
-                Application application = createApplication(userType, broker.getId(), appLoopLength);
+                Application application = createApplication(userType, broker.getId(), appLoopLength, experimentSeed);
                 application.setUserId(broker.getId());
                 applicationsPerType.put(userType, application);
 
@@ -228,12 +272,16 @@ public class MyExperiment {
             }
 
             // Create fog devices (cloud, gateways, and mobile devices)
-            createFogDevices(broker.getId(), applicationsPerType, numberOfEdge, usersPerType);
+            createFogDevices(broker.getId(), applicationsPerType, numberOfEdge, usersPerType, simulationConfig);
 
             /**
              * Central controller for performing preprocessing functions
              */
             List<Application> appList = new ArrayList<>(applicationsPerType.values());
+
+            // Set the location seed for random location generation
+            Location.setDefaultRandomSeed(simulationConfig.getLocationSeed());
+            System.out.println("Set Location default seed to: " + simulationConfig.getLocationSeed());
 
             MyMicroservicesController microservicesController = new MyMicroservicesController(
                 "controller",
@@ -253,8 +301,8 @@ public class MyExperiment {
                 );
                 System.out.println("Location data initialization complete.");
 
-//                microservicesController.enableMobility();
-//                System.out.println("Mobility enabled using the Strategy Pattern.");
+                // microservicesController.enableMobility(simulationConfig.getMobilityStrategySeed());
+                // System.out.println("Mobility enabled with seed: " + simulationConfig.getMobilityStrategySeed());
                 
                 microservicesController.completeInitialization();
                 System.out.println("Controller initialization completed with proximity-based connections.");
@@ -307,15 +355,17 @@ public class MyExperiment {
      *
      * @param brokerId User ID for the broker
      * @param numberOfEdge Number of edge devices to create
+     * @param simulationConfig Configuration containing random seeds
      */
     private static void createFogDevices(int brokerId, Map<String, Application> applicationsPerType,
-                                         int numberOfEdge, Map<String, Integer> usersPerType) {
+                                         int numberOfEdge, Map<String, Integer> usersPerType, 
+                                         SimulationConfig simulationConfig) {
         // Create cloud device at the top of the hierarchy
         MyFogDevice cloud = createFogDevice("cloud", 44800, -1, 40000, 100, 10000, 0.01, 16 * 103, 16 * 83.25, MyFogDevice.CLOUD);
         cloud.setParentId(References.NOT_SET);
         cloud.setLevel(0);
         fogDevices.add(cloud);
-        Random random = new Random(33);
+        Random random = new Random(simulationConfig.getExperimentSeed());
 
         // Create gateway devices
         for (int i = 0; i < numberOfEdge; i++) {
@@ -529,9 +579,13 @@ public class MyExperiment {
 //        return application;
 //    }
     private static MyApplication createApplication(String userType, int brokerId, int numServices) {
+        return createApplication(userType, brokerId, numServices, 33); // Use default seed value
+    }
+
+    private static MyApplication createApplication(String userType, int brokerId, int numServices, int randomSeed) {
         String appId = userType + "App";
         MyApplication application = MyApplication.createMyApplication(appId, brokerId);
-        Random random = new Random(33);
+        Random random = new Random(randomSeed);
 
         // Prefix all module names with the user type FOR UNIQUENESS OF MODULE NAMES
         String clientModuleName = userType + "_clientModule";

@@ -17,4 +17,18 @@ public interface PathingStrategy {
      * @return a WaypointPath from currentLocation to attractionPoint
      */
     WayPointPath makePath(Attractor attractionPoint, double speed, Location currentLocation);
+    
+    /**
+     * Sets the random seed used by this pathing strategy.
+     * 
+     * @param seed the random seed to use
+     */
+    void setSeed(long seed);
+    
+    /**
+     * Gets the current random seed used by this pathing strategy.
+     * 
+     * @return the current random seed
+     */
+    long getSeed();
 } 

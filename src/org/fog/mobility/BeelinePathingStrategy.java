@@ -4,10 +4,14 @@ import org.fog.mobilitydata.Location;
 import java.util.Random;
 import org.cloudbus.cloudsim.core.CloudSim;
 
-public class BeelinePathingStrategy implements PathingStrategy {
+public class BeelinePathingStrategy extends AbstractPathingStrategy {
 
     public BeelinePathingStrategy() {
-        // No state this class is behavioural
+        super(); // Default seed is current time
+    }
+    
+    public BeelinePathingStrategy(long seed) {
+        super(seed);
     }
 
     /**
@@ -22,7 +26,7 @@ public class BeelinePathingStrategy implements PathingStrategy {
     public WayPointPath makePath(Attractor attractionPoint, double speed, Location currentLocation) {
         WayPointPath path = new WayPointPath();
 
-        Random rand = new Random();
+        Random rand = new Random(seed);
         // Random value between 5 and 10 seconds
         double time = rand.nextDouble() * 5 + 5;
 

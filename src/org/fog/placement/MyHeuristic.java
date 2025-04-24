@@ -802,17 +802,17 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             //      - firstEdge->cloud (return for routing to gateway)
             //      - cloud->gateway
             //      - gateway->user (most variance I assume)
-            latency += getLatency(cloudId, edges.get(0));
+            latency += determineLatency(cloudId, edges.get(0));
             for (int i = 0; i < edges.size() - 1; i++) {
                 int sourceDevice = edges.get(i);
                 int destDevice = edges.get(i + 1);
-                latency += getLatency(sourceDevice, destDevice);
+                latency += determineLatency(sourceDevice, destDevice);
             }
         }
         return latency;
     }
 
-    private double getLatency(int srcId, int destId) {
+    private double determineLatency(int srcId, int destId) {
         /*
         Destination MyFogDevice may be a user. Source MyFogDevice is always edge server.
          */

@@ -192,4 +192,22 @@ public abstract class DeviceMobilityState {
         }
         return 0.1; // default placeholder
     }
+
+    /**
+     * Gets the pathing strategy used by this mobility state.
+     * 
+     * @return the pathing strategy
+     */
+    public PathingStrategy getStrategy() {
+        return strategy;
+    }
+
+    /**
+     * Sets the pathing strategy for this mobility state.
+     * 
+     * @param strategy the new pathing strategy to use
+     */
+    public void setStrategy(PathingStrategy strategy) {
+        this.strategy = strategy;
+    }
 } 
