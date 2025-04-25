@@ -28,7 +28,6 @@ public class MyFogDevice extends FogDevice {
 	 * thus for security resons client devices are not used for that)
 	 */
 	protected String deviceType = null;
-//	public static final String CLIENT = "client";
 	public static final String AMBULANCE_USER = "ambulanceUser";
 	public static final String OPERA_USER = "operaUser";
 	public static final String GENERIC_USER = "genericUser"; // random movement, no objective

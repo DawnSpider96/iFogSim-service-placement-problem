@@ -156,6 +156,7 @@ public class FogBroker extends PowerDatacenterBroker{
 
 	public void transmit(int targetId, Application app, MyPlacementRequest pr){
 		String firstMicroservice = applicationToFirstMicroserviceMap.get(app);
+//		String firstMicroservice = applicationToSecondMicroservicesMap.get(app);
 		AppEdge _edge = null;
 		for(AppEdge edge : app.getEdges()){
 			if(edge.getSource().equals(firstMicroservice)) {

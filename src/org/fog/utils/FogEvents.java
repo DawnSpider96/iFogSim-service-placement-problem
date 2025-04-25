@@ -59,4 +59,6 @@ public class FogEvents {
     // Mobility Management ------------------------
     public static final int SCHEDULER_NEXT_MOVEMENT_UPDATE = BASE + 55;
     public static final int MAKE_PATH = BASE + 56;
+    // Scenario Events ----------------------------
+    public static final int OPERA_ACCIDENT_EVENT = BASE + 57;
 }

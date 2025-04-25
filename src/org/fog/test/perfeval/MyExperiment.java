@@ -50,7 +50,8 @@ import java.util.stream.IntStream;
  * DYNAMIC_CLUSTERING -> true (for clustered) and false (for not clustered) * (also compatible with static clustering)
  */
 public class MyExperiment {
-    private static final String outputFile = "./output/resourceDist_Comfortable_R_Beta.csv";
+//    private static final String outputFile = "./output/resourceDist_Comfortable_R_Beta.csv";
+    private static final String outputFile = "./output/resourceDist_TEST2.csv";
     // The configuration file now uses string-based placement logic identifiers instead of integers
     private static final String CONFIG_FILE = "./dataset/MyExperimentConfigs.yaml";
 
@@ -81,6 +82,7 @@ public class MyExperiment {
         MyMonitor mm = MyMonitor.getInstance();
 
         try {
+            // Traditional metric collection (original code)
             List<List<Double>> resourceData =
                     mm.getAllUtilizations().stream()
                             .map(MetricUtils::handleSimulationResource)
@@ -100,10 +102,47 @@ public class MyExperiment {
                     })
                     .collect(Collectors.toList());
 
+            // Write traditional aggregate metrics
             MetricUtils.writeToCSV(resourceData, latencyData, failedPRData, configs, outputFile);
-            System.out.println("CSV file has been created successfully.");
+            System.out.println("Aggregate CSV file has been created successfully at: " + outputFile);
+
+            // NEW: Classified metrics by userType
+            // Process each simulation's data
+            for (int simIndex = 0; simIndex < configs.size(); simIndex++) {
+                if (simIndex >= mm.getAllUtilizations().size() || 
+                    simIndex >= mm.getAllLatencies().size() || 
+                    simIndex >= list1.size() || 
+                    simIndex >= list2.size()) {
+                    System.err.println("Warning: Insufficient data for simulation " + simIndex);
+                    continue;
+                }
+                
+                // Extract raw data for this simulation
+                Map<Double, Map<PlacementRequest, Double>> utilizationValues = mm.getAllUtilizations().get(simIndex);
+                Map<Double, Map<PlacementRequest, Double>> latencyValues = mm.getAllLatencies().get(simIndex);
+                Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>> failedPRs = list1.get(simIndex);
+                Map<Double, Integer> totalPRs = list2.get(simIndex);
+                SimulationConfig config = configs.get(simIndex);
+                
+                // Classify metrics by userType
+                Map<String, List<Double>> resourceDataByType = MetricUtils.classifyResourceUtilizationByUserType(utilizationValues);
+                Map<String, List<Double>> latencyDataByType = MetricUtils.classifyLatencyByUserType(latencyValues);
+                Map<String, Map<String, Object>> failedPRDataByType = MetricUtils.classifyFailedPRsByUserType(failedPRs, totalPRs);
+                
+                // Write classified metrics to a separate CSV
+                String userTypeOutputFile = outputFile.replace(".csv", "_userType.csv");
+                MetricUtils.writeClassifiedMetricsToCSV(
+                    resourceDataByType, 
+                    latencyDataByType, 
+                    failedPRDataByType, 
+                    config, 
+                    userTypeOutputFile
+                );
+                System.out.println("UserType-classified CSV file for simulation " + simIndex + 
+                                   " has been created successfully at: " + userTypeOutputFile);
+            }
         } catch (IOException e) {
-            System.err.println("An error occurred while writing to the CSV file.");
+            System.err.println("An error occurred while writing to the CSV files.");
             e.printStackTrace();
         }
     }
@@ -297,7 +336,8 @@ public class MyExperiment {
                     RESOURCES_LOCATION_PATH,
                     USERS_LOCATION_PATH,
                     numberOfEdge + 1, // cloud
-                    numberOfUser
+                    numberOfUser,
+                    experimentSeed
                 );
                 System.out.println("Location data initialization complete.");
 
@@ -318,7 +358,11 @@ public class MyExperiment {
                 String userType = sensor.getUserType();
 
                 Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();
-                placedMicroservicesMap.put(userType + "_clientModule", sensor.getGatewayDeviceId());
+
+                placedMicroservicesMap.put(
+                        FogBroker.getApplicationToFirstMicroserviceMap().get(sensor.getApp()),
+                        sensor.getGatewayDeviceId()
+                );
 
                 // Use MyMicroservicesController to create PROTOTYPE placement request
                 //  They will not be processed, but used as template for periodic generation.
@@ -333,6 +377,11 @@ public class MyExperiment {
             TimeKeeper.getInstance().setSimulationStartTime(Calendar.getInstance().getTimeInMillis());
             Log.printLine("Simon app START!");
             Log.printLine(String.format("Placement Logic: %d", placementLogicType));
+
+            // Schedule the opera accident event
+            double operaExplosionTime = 7200.0; // Or read from config
+            CloudSim.send(microservicesController.getId(), microservicesController.getId(), operaExplosionTime, 
+                          FogEvents.OPERA_ACCIDENT_EVENT, null);
 
             CloudSim.startSimulation();
 //            CloudSim.stopSimulation();

@@ -8,18 +8,25 @@ public class MyPlacementRequest extends PlacementRequest{
     //  is handled in MyMicroservicesController
 
     private int prIndex; //
+    private String userType; // Added userType field to classify placement requests
 
-    public MyPlacementRequest(String applicationId, int sensorId, int prIndex, int requester, Map<String,Integer> placedMicroservicesMap){
+    public MyPlacementRequest(String applicationId, int sensorId, int prIndex, int requester, String userType, Map<String,Integer> placedMicroservicesMap){
         super(applicationId, sensorId, requester, placedMicroservicesMap);
         this.prIndex = prIndex;
+        this.userType = userType;
     }
 
-    public MyPlacementRequest(String applicationId, int sensorId, int prIndex, int requester){
+    public MyPlacementRequest(String applicationId, int sensorId, int prIndex, int requester, String userType){
         super(applicationId, sensorId, requester);
         this.prIndex = prIndex;
+        this.userType = userType;
     }
 
     public int getPrIndex() {
         return prIndex;
+    }
+    
+    public String getUserType() {
+        return userType;
     }
 }

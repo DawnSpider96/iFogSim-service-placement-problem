@@ -118,8 +118,8 @@ public class FullMobilityStrategy implements MobilityStrategy {
             System.out.println("Created new path for device " + deviceId + ", first movement at " + arrivalTime);
             return delay;
         } else {
-            throw new NullPointerException("CRITICAL ERROR: Created Empty Path for device " + deviceId);
-//            return -1.0;
+            Logger.error("WARNING: Empty Path", "Check if stationary ambulance/opera user.");
+            return -1.0;
         }
     }
     

@@ -23,6 +23,7 @@ import org.fog.entities.FogDeviceCharacteristics;
 import org.fog.entities.MyFogDevice;
 import org.fog.placement.MyMicroservicesController;
 import org.fog.policy.AppModuleAllocationPolicy;
+import org.fog.utils.FogEvents;
 import org.fog.utils.FogLinearPowerModel;
 import org.fog.utils.FogUtils;
 import org.fog.utils.Logger;
@@ -122,7 +123,10 @@ public class MobilityPOC {
 //                    System.out.println("WARNING: No mobility state found for device " + CloudSim.getEntityName(deviceId));
 //                }
 //            }
-            
+
+            double operaExplosionTime = 7200.0; // Or read from config
+            CloudSim.send(controller.getId(), controller.getId(), operaExplosionTime,
+                    FogEvents.OPERA_ACCIDENT_EVENT, null);
             CloudSim.startSimulation();
             
             Log.printLine("Mobility Proof of Concept finished!");
@@ -155,7 +159,8 @@ public class MobilityPOC {
 
         Map<String, Double> userTypeRatios = new LinkedHashMap<>();
         userTypeRatios.put(MyFogDevice.GENERIC_USER, 0.5);
-        userTypeRatios.put(MyFogDevice.AMBULANCE_USER, 0.5);
+        userTypeRatios.put(MyFogDevice.OPERA_USER, 0.4);
+        userTypeRatios.put(MyFogDevice.AMBULANCE_USER, 0.1);
 //        userTypeRatios.put(MyFogDevice.OPERA_USER, 0.2);
 
         // Create user devices connected to each gateway. NO SENSORS/ACTUATORS.

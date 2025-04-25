@@ -35,7 +35,7 @@ public class GenericUserMobilityState extends DeviceMobilityState {
     public void updateAttractionPoint(Attractor currentAttractionPoint) {
         PauseTimeStrategy pts;
         if (currentAttractionPoint == null) {
-            pts = new PauseTimeStrategy();
+            pts = new PauseTimeStrategy(getStrategy().getSeed());
         }
         else {
             pts = currentAttractionPoint.getPauseTimeStrategy();

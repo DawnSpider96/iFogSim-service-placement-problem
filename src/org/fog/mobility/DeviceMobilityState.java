@@ -39,7 +39,7 @@ public abstract class DeviceMobilityState {
     protected Attractor currentAttractor;
 
     /**
-     * The walking/driving speed of this device (units: e.g., meters/second or km/h).
+     * The walking/driving speed of this device (units: e.g., meters/second).
      */
     protected double speed;
 
@@ -209,5 +209,16 @@ public abstract class DeviceMobilityState {
      */
     public void setStrategy(PathingStrategy strategy) {
         this.strategy = strategy;
+    }
+    
+    /**
+     * Handles external events that may affect mobility
+     * @param eventType The type of event from FogEvents
+     * @param eventData Any data associated with the event
+     * @return true if the event was handled, false otherwise
+     */
+    public boolean handleEvent(int eventType, Object eventData) {
+        // Default implementation ignores events
+        return false;
     }
 } 

@@ -85,7 +85,7 @@ public class GraphHopperPathingStrategy extends AbstractPathingStrategy {
         try {
             hopper.importOrLoad();
         } catch (Exception e) {
-            System.err.println("[GraphHopperPathingStrategy] GraphHopper graph file must be re-imported!");
+            System.err.println("ERROR [GraphHopperPathingStrategy] GraphHopper graph file must be re-imported!");
             hopper.clean();
             hopper.importOrLoad();
         }

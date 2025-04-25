@@ -261,6 +261,9 @@ public class MyMicroservicesController extends SimEntity {
             case FogEvents.MAKE_PATH:
                 makePath((int) ev.getData());
                 break;
+            case FogEvents.OPERA_ACCIDENT_EVENT:
+                handleAccidentEvent(ev);
+                break;
         }
     }
 
@@ -370,7 +373,7 @@ public class MyMicroservicesController extends SimEntity {
         if (delay > 0) {
             send(getId(), delay, FogEvents.SCHEDULER_NEXT_MOVEMENT_UPDATE, deviceId);
         }
-        else throw new NullPointerException("Invalid delay.");
+        else Logger.error("Delay WARNING", "This user is NOT scheduled to move again. Check that user will call makePath in future.");
     }
     
     /**
@@ -422,11 +425,10 @@ public class MyMicroservicesController extends SimEntity {
      * @param userFilename the filename for user locations
      * @param numberOfResources the number of resources
      * @param numberOfUsers the number of users
-     * @param locationSeed seed for random number generation
      * @throws IOException if there's an error reading the files
      */
-    public void initializeLocationData(String resourceFilename, String userFilename, 
-                                      int numberOfResources, int numberOfUsers) throws IOException {
+    public void initializeLocationData(String resourceFilename, String userFilename,
+                                       int numberOfResources, int numberOfUsers) throws IOException {
         initializeLocationData(resourceFilename, userFilename, numberOfResources, numberOfUsers, 33);
     }
 
@@ -445,12 +447,11 @@ public class MyMicroservicesController extends SimEntity {
         Map<String, Location> resourceLocations = dataLoader.loadResourceLocations(resourceFilename, numberOfResources);
         Map<Integer, Location> userLocations = dataLoader.loadInitialUserLocations(userFilename, numberOfUsers);
         
-        // Reproducible random for mobility generation
         Random random = new Random(seed);
         BeelinePathingStrategy beelinePathingStrategy = new BeelinePathingStrategy(seed);
         GraphHopperPathingStrategy graphHopperPathingStrategy = new GraphHopperPathingStrategy(seed);
+        JitterBugPathingStrategy jitterBugPathingStrategy = new JitterBugPathingStrategy(seed);
 
-        // Separate resource and user devices
         List<MyFogDevice> resourceDevices = new ArrayList<>();
         List<MyFogDevice> userDevices = new ArrayList<>();
         
@@ -502,7 +503,7 @@ public class MyMicroservicesController extends SimEntity {
                     DeviceMobilityState mobilityState = new GenericUserMobilityState(
                             userLocations.get(csvIndex),
                             beelinePathingStrategy,
-                            random.nextDouble() * 2 // TODO Is this in m/timestep??? And is each timestep 1 second???
+                            1 + random.nextDouble() * 1.5 // m/s
                     );
                     registerDeviceMobilityState(fogDevice.getId(), mobilityState);
                 }
@@ -513,7 +514,16 @@ public class MyMicroservicesController extends SimEntity {
                             random.nextDouble() * 20 + 10 // 10 to 30 m/s
                     );
                     registerDeviceMobilityState(fogDevice.getId(), mobilityState);
-                } // TODO Add for Opera user
+                }
+                else if (fogDevice.getDeviceType().equals(MyFogDevice.OPERA_USER)) {
+                    DeviceMobilityState mobilityState = new OperaUserMobilityState(
+                        userLocations.get(csvIndex), 
+                        jitterBugPathingStrategy,
+                        0.5 + random.nextDouble() * 1.5, // m/s
+                        3600.0 // 1 hour
+                    );
+                    registerDeviceMobilityState(fogDevice.getId(), mobilityState);
+                }
                 else {
                     Logger.error("Invalid deviceType Error", "DeviceType is not Generic/Ambulance/Opera");
                 }
@@ -668,45 +678,16 @@ public class MyMicroservicesController extends SimEntity {
 
     public MyPlacementRequest createPlacementRequest(Sensor sensor, Map<String, Integer> placedMicroservices) {
         int sequenceNumber = getNextSequenceNumber(sensor.getId());
+        String userType = ((MySensor) sensor).getUserType();
 
-        // Create the placement request with the unique sequence number as the prId
+        // Create the placement request with the unique sequence number as the prId, including userType
         return new MyPlacementRequest(
                 sensor.getAppId(),  // applicationId
                 sensor.getId(),
                 sequenceNumber,     // prId - now using a unique sequence per sensor
-                sensor.getGatewayDeviceId(), // parent fog device
+                sensor.getGatewayDeviceId(), // parent user device
+                userType,           // userType from sensor
                 placedMicroservices
-        );
-    }
-
-    /**
-     * Creates a new {@link PlacementRequest} with a unique, incremented placement request ID (prId)
-     * for the given sensor.
-     * <p>
-     * Placement requests are uniquely identified by a combination of sensor ID and placement request ID (prId).
-     * Each sensor maintains its own independent sequence of prIds. This method is part of a central component
-     * responsible for tracking the latest prId for each sensor.
-     * </p>
-     * <p>
-     * Given a {@code previousRequest}, this method generates the next prId for the same sensor and creates
-     * a new {@link PlacementRequest} using that updated prId. The newly created request retains all other
-     * details from the previous request (e.g., application ID, requester, placed microservices), ensuring
-     * continuity while assigning a unique prId.
-     * </p>
-     *
-     * @param previousRequest the previous {@link PlacementRequest} for the same sensor.
-     * @return a new {@link PlacementRequest} with the next prId for the sensor.
-     */
-    public MyPlacementRequest createSubsequentPlacementRequest(MyPlacementRequest previousRequest) {
-        int sequenceNumber = getNextSequenceNumber(previousRequest.getSensorId());
-//        int newRequester = ((MyFogDevice) CloudSim.getEntity(previousRequest.getRequester())).getParentId();
-
-        return new MyPlacementRequest(
-                previousRequest.getApplicationId(),
-                previousRequest.getSensorId(),
-                sequenceNumber,
-                previousRequest.getRequester(),
-                new LinkedHashMap<>(previousRequest.getPlacedMicroservices())
         );
     }
 
@@ -737,8 +718,6 @@ public class MyMicroservicesController extends SimEntity {
         MicroservicePlacementConfig.FAILURE_REASON reason = MicroservicePlacementConfig.FAILURE_REASON.USER_LACKED_RESOURCES;
 
         for (MyFogDevice userDevice : userDevices) {
-            // TODO Simon says this wrong.
-            //  Update requester according to the current parent.
             MyPlacementRequest existingPR = null;
             for (PlacementRequest pr : placementRequestDelayMap.keySet()) {
                 if (pr.getRequester() == userDevice.getId()) {
@@ -748,7 +727,16 @@ public class MyMicroservicesController extends SimEntity {
             }
             
             if (existingPR != null) {
-                PlacementRequest newPR = createSubsequentPlacementRequest(existingPR);
+                // Requester's new parent is accounted for because we send TRANSMIT_PR to requester,
+                //  and requester knows its new parent.
+                MyPlacementRequest newPR = new MyPlacementRequest(
+                    existingPR.getApplicationId(),
+                    existingPR.getSensorId(),
+                    getNextSequenceNumber(existingPR.getSensorId()),
+                    userDevice.getId(),
+                    existingPR.getUserType(),
+                    new LinkedHashMap<>(existingPR.getPlacedMicroservices())
+                );
 
                 if (userCanFit(userDevice.getId(), newPR)) {
                     JSONObject jsonSend = new JSONObject();
@@ -1074,5 +1062,25 @@ public class MyMicroservicesController extends SimEntity {
     @Deprecated
     protected void initializeControllers(int placementLogic, Map<Integer, List<FogDevice>> monitored) {
         initializeControllers((Object)placementLogic, monitored);
+    }
+
+    /**
+     * Handles the opera accident event and notifies all relevant mobility states
+     * @param ev The simulation event
+     */
+    private void handleAccidentEvent(SimEvent ev) {
+        System.out.println("⚠️ ACCIDENT EVENT AT OPERA HOUSE at time: " + CloudSim.clock());
+        
+        // Extract any event data if needed
+        Object eventData = ev.getData();
+        
+        // Forward the event to all relevant mobility states
+        for (Map.Entry<Integer, DeviceMobilityState> entry : deviceMobilityStates.entrySet()) {
+            DeviceMobilityState state = entry.getValue();
+            if (state.handleEvent(FogEvents.OPERA_ACCIDENT_EVENT, eventData)) {
+                System.out.println("Device " + CloudSim.getEntityName(entry.getKey()) + 
+                                   " responded to accident event");
+            }
+        }
     }
 }

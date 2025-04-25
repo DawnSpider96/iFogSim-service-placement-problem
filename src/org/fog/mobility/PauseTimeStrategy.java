@@ -13,9 +13,9 @@ public class PauseTimeStrategy {
     /**
      * Creates a new pause time strategy with a random seed
      */
-    public PauseTimeStrategy() {
-        this.random = new Random();
-    }
+//    public PauseTimeStrategy() {
+//        this.random = new Random();
+//    }
     
     /**
      * Creates a new pause time strategy with a specified seed
