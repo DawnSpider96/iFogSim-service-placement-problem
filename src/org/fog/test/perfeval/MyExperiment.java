@@ -51,7 +51,7 @@ import java.util.stream.IntStream;
  */
 public class MyExperiment {
 //    private static final String outputFile = "./output/resourceDist_Comfortable_R_Beta.csv";
-    private static final String outputFile = "./output/resourceDist_TEST2.csv";
+    private static final String outputFile = "./output/resourceDist_TEST.csv";
     // The configuration file now uses string-based placement logic identifiers instead of integers
     private static final String CONFIG_FILE = "./dataset/MyExperimentConfigs.yaml";
 
@@ -117,19 +117,16 @@ public class MyExperiment {
                     continue;
                 }
                 
-                // Extract raw data for this simulation
                 Map<Double, Map<PlacementRequest, Double>> utilizationValues = mm.getAllUtilizations().get(simIndex);
                 Map<Double, Map<PlacementRequest, Double>> latencyValues = mm.getAllLatencies().get(simIndex);
                 Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>> failedPRs = list1.get(simIndex);
                 Map<Double, Integer> totalPRs = list2.get(simIndex);
                 SimulationConfig config = configs.get(simIndex);
                 
-                // Classify metrics by userType
                 Map<String, List<Double>> resourceDataByType = MetricUtils.classifyResourceUtilizationByUserType(utilizationValues);
                 Map<String, List<Double>> latencyDataByType = MetricUtils.classifyLatencyByUserType(latencyValues);
                 Map<String, Map<String, Object>> failedPRDataByType = MetricUtils.classifyFailedPRsByUserType(failedPRs, totalPRs);
                 
-                // Write classified metrics to a separate CSV
                 String userTypeOutputFile = outputFile.replace(".csv", "_userType.csv");
                 MetricUtils.writeClassifiedMetricsToCSV(
                     resourceDataByType, 
@@ -181,13 +178,6 @@ public class MyExperiment {
                     usersPerType.put(entry.getKey(), ((Number) entry.getValue()).intValue());
                 }
 
-                // Parse app loop lengths map
-                Map<String, Integer> appLoopLengthPerType = new HashMap<>();
-                Map<String, Object> loopLengthMap = (Map<String, Object>) configMap.get("appLoopLengthPerType");
-                for (Map.Entry<String, Object> entry : loopLengthMap.entrySet()) {
-                    appLoopLengthPerType.put(entry.getKey(), ((Number) entry.getValue()).intValue());
-                }
-
                 // Read random seed values if present
                 int experimentSeed = 33; // Default value
                 int locationSeed = 42; // Default value
@@ -206,15 +196,49 @@ public class MyExperiment {
                     }
                 }
 
-                configs.add(new SimulationConfig(
-                    numberOfEdge, 
-                    placementLogic, 
-                    usersPerType, 
-                    appLoopLengthPerType,
-                    experimentSeed,
-                    locationSeed,
-                    mobilityStrategySeed
-                ));
+                // Check for new format (numberOfApplications and appLoopLength)
+                if (configMap.containsKey("numberOfApplications") && configMap.containsKey("appLoopLength")) {
+                    int numberOfApplications = ((Number) configMap.get("numberOfApplications")).intValue();
+                    int appLoopLength = ((Number) configMap.get("appLoopLength")).intValue();
+                    
+                    configs.add(new SimulationConfig(
+                        numberOfEdge, 
+                        placementLogic, 
+                        numberOfApplications,
+                        appLoopLength,
+                        usersPerType,
+                        experimentSeed,
+                        locationSeed,
+                        mobilityStrategySeed
+                    ));
+                    
+                    System.out.println("Loaded configuration with " + numberOfApplications + 
+                                     " applications and loop length " + appLoopLength);
+                } 
+                // Legacy format with appLoopLengthPerType
+                else if (configMap.containsKey("appLoopLengthPerType")) {
+                    // Parse app loop lengths map (legacy format)
+                    Map<String, Integer> appLoopLengthPerType = new HashMap<>();
+                    Map<String, Object> loopLengthMap = (Map<String, Object>) configMap.get("appLoopLengthPerType");
+                    for (Map.Entry<String, Object> entry : loopLengthMap.entrySet()) {
+                        appLoopLengthPerType.put(entry.getKey(), ((Number) entry.getValue()).intValue());
+                    }
+                    
+                    configs.add(new SimulationConfig(
+                        numberOfEdge, 
+                        placementLogic, 
+                        usersPerType, 
+                        appLoopLengthPerType,
+                        experimentSeed,
+                        locationSeed,
+                        mobilityStrategySeed
+                    ));
+                    
+                    System.out.println("Loaded legacy configuration with app loop lengths per type");
+                }
+                else {
+                    System.err.println("Configuration missing required fields, skipping");
+                }
             }
 
             System.out.println("Loaded " + configs.size() + " configurations from " + MyExperiment.CONFIG_FILE);
@@ -281,55 +305,79 @@ public class MyExperiment {
             CloudSim.setFogBrokerId(broker.getId());
             System.out.println("FogBroker ID: " + broker.getId());
 
-            // TODO Create multiple applications.
-            //  According to usersPerType. Each user type gets an application. The matching is naturally performed here.
-//            String appId = "SimonApp"; // identifier of the application
-//            MyApplication application = createApplication(appId, broker.getId(), appLoopLength);
-//            application.setUserId(broker.getId());
-
-            // Simon (140125) says tuples will be sent to FogDevices and executed under mService1
-            // because source module is clientModule but dest module is mService1
-            // TODO Change accordingly if the AppLoop ever changes (or there are more AppLoops)
-//            FogBroker.getApplicationToFirstMicroserviceMap().put(application, "clientModule");
-//            List<String> simonAppSecondMicroservices = new ArrayList<>();
-//            simonAppSecondMicroservices.add("mService1");
-//            FogBroker.getApplicationToSecondMicroservicesMap().put(application, simonAppSecondMicroservices);
-
-            Map<String, Application> applicationsPerType = new HashMap<>();
-            for (String userType : simulationConfig.usersPerType.keySet()) {
-                int appLoopLength = simulationConfig.appLoopLengthPerType.get(userType);
-                Application application = createApplication(userType, broker.getId(), appLoopLength, experimentSeed);
-                application.setUserId(broker.getId());
-                applicationsPerType.put(userType, application);
-
-                String clientModuleName = userType + "_clientModule"; // todo NOTE hardcoded.
-                FogBroker.getApplicationToFirstMicroserviceMap().put(application, clientModuleName);
-
-                List<String> secondMicroservices = new ArrayList<>();
-                secondMicroservices.add(userType + "_Service1");
-                FogBroker.getApplicationToSecondMicroservicesMap().put(application, secondMicroservices);
+            // Create applications based on configuration
+            List<Application> applicationPool = new ArrayList<>();
+            
+            // If using the new configuration format with multiple applications
+            if (simulationConfig.getNumberOfApplications() > 0) {
+                int numApps = simulationConfig.getNumberOfApplications();
+                int appLoopLength = simulationConfig.getAppLoopLength();
+                
+                System.out.println("Creating " + numApps + " applications with loop length " + appLoopLength);
+                
+                for (int i = 0; i < numApps; i++) {
+                    String appId = "app_" + i;
+                    Application application = createApplication(appId, broker.getId(), appLoopLength, experimentSeed + i);
+                    application.setUserId(broker.getId());
+                    applicationPool.add(application);
+                    
+                    // Configure broker with application's modules
+                    String clientModuleName = appId + "_clientModule";
+                    FogBroker.getApplicationToFirstMicroserviceMap().put(application, clientModuleName);
+                    
+                    List<String> secondMicroservices = new ArrayList<>();
+                    secondMicroservices.add(appId + "_Service1");
+                    FogBroker.getApplicationToSecondMicroservicesMap().put(application, secondMicroservices);
+                }
+            } 
+            // Legacy approach with one application per user type
+            else {
+                Map<String, Application> applicationsPerType = new HashMap<>();
+                for (String userType : simulationConfig.usersPerType.keySet()) {
+                    // Use a default app loop length of 3 for legacy configurations
+                    int appLoopLength = 3;
+                    Application application = createApplication(userType, broker.getId(), appLoopLength, experimentSeed);
+                    application.setUserId(broker.getId());
+                    applicationsPerType.put(userType, application);
+                    applicationPool.add(application);
+    
+                    // NOTE:Hardcoded
+                    String clientModuleName = userType + "_clientModule"; // todo NOTE hardcoded.
+                    FogBroker.getApplicationToFirstMicroserviceMap().put(application, clientModuleName);
+    
+                    List<String> secondMicroservices = new ArrayList<>();
+                    secondMicroservices.add(userType + "_Service1");
+                    FogBroker.getApplicationToSecondMicroservicesMap().put(application, secondMicroservices);
+                }
+                
+                // Create fog devices with user types
+                createFogDevices(broker.getId(), applicationsPerType, numberOfEdge, usersPerType, simulationConfig);
             }
-
-            // Create fog devices (cloud, gateways, and mobile devices)
-            createFogDevices(broker.getId(), applicationsPerType, numberOfEdge, usersPerType, simulationConfig);
-
-            /**
-             * Central controller for performing preprocessing functions
-             */
-            List<Application> appList = new ArrayList<>(applicationsPerType.values());
+            
+            // If using the new configuration, create fog devices without specifying applications per user type
+            if (simulationConfig.getNumberOfApplications() > 0) {
+                createFogDevices(broker.getId(), null, numberOfEdge, usersPerType, simulationConfig);
+            }
 
             // Set the location seed for random location generation
             Location.setDefaultRandomSeed(simulationConfig.getLocationSeed());
             System.out.println("Set Location default seed to: " + simulationConfig.getLocationSeed());
 
+            /**
+             * Central controller for performing preprocessing functions
+             */
             MyMicroservicesController microservicesController = new MyMicroservicesController(
                 "controller",
                     fogDevices,
                     sensors,
-                    appList,
-                    placementLogicType
+                    applicationPool,
+                    placementLogicType,
+                    simulationConfig.getExperimentSeed()  // Pass the experiment seed
             );
                 
+            // Register device-sensor-actuator mappings
+            microservicesController.registerDeviceMappings();
+            
             try {
                 System.out.println("Initializing location data from CSV files...");
                 microservicesController.initializeLocationData(
@@ -353,22 +401,15 @@ public class MyExperiment {
             }
 
             List<PlacementRequest> placementRequests = new ArrayList<>();
-            for (Sensor s : sensors) {
-                MySensor sensor = (MySensor) s;
-                String userType = sensor.getUserType();
-
-                Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();
-
-                placedMicroservicesMap.put(
-                        FogBroker.getApplicationToFirstMicroserviceMap().get(sensor.getApp()),
-                        sensor.getGatewayDeviceId()
-                );
-
-                // Use MyMicroservicesController to create PROTOTYPE placement request
-                //  They will not be processed, but used as template for periodic generation.
-                PlacementRequest prototypePR = microservicesController.createPlacementRequest(
-                        sensor, placedMicroservicesMap);
-                placementRequests.add(prototypePR);
+            for (MyFogDevice device : userDevices) {
+                try {
+                    PlacementRequest prototypePR = microservicesController.createNewPlacementRequestForDevice(device.getId());
+                    if (prototypePR != null) {
+                        placementRequests.add(prototypePR);
+                    }
+                } catch (NullPointerException e) {
+                    System.err.println("Failed to create placement request for device " + device.getName() + ": " + e.getMessage());
+                }
             }
 
             // TODO Simon says now we need to give them time intervals to send periodically across the Simulation
@@ -403,7 +444,9 @@ public class MyExperiment {
      * It now handles device creation without relying on the LocationHandler.
      *
      * @param brokerId User ID for the broker
+     * @param applicationsPerType Map of user types to their applications (may be null for new configuration)
      * @param numberOfEdge Number of edge devices to create
+     * @param usersPerType Map of user types to their counts
      * @param simulationConfig Configuration containing random seeds
      */
     private static void createFogDevices(int brokerId, Map<String, Application> applicationsPerType,
@@ -445,15 +488,25 @@ public class MyExperiment {
                 throw new NullPointerException("Invalid Type");
             }
 
-            Application appForThisType = applicationsPerType.get(userType);
             int numUsersOfThisType = usersPerType.get(userType);
-
-            for (int i = 0; i < numUsersOfThisType; i++) {
-                // Use the specific application for this user type
-                FogDevice mobile = addUser(userType, userType + "_" + i, brokerId, appForThisType, References.NOT_SET);
-                mobile.setLevel(2);
-
-                fogDevices.add(mobile);
+            
+            // For new configuration (applicationPool), create users without specific applications
+            if (applicationsPerType == null) {
+                for (int i = 0; i < numUsersOfThisType; i++) {
+                    FogDevice mobile = addUser(userType, userType + "_" + i, brokerId, null, References.NOT_SET);
+                    mobile.setLevel(2);
+                    fogDevices.add(mobile);
+                }
+            }
+            // For legacy configuration with applications per user type
+            else {
+                Application appForThisType = applicationsPerType.get(userType);
+                for (int i = 0; i < numUsersOfThisType; i++) {
+                    // Use the specific application for this user type
+                    FogDevice mobile = addUser(userType, userType + "_" + i, brokerId, appForThisType, References.NOT_SET);
+                    mobile.setLevel(2);
+                    fogDevices.add(mobile);
+                }
             }
         }
     }
@@ -544,104 +597,54 @@ public class MyExperiment {
         MyFogDevice mobile = createFogDevice(name, 200, -1, 200, 10000, 270, 0, 87.53, 82.44, userType);
         mobile.setParentId(parentId);
         
-        Sensor mobileSensor = new MySensor("s-" + name, "SENSOR", brokerId, app.getAppId(), new DeterministicDistribution(SENSOR_TRANSMISSION_TIME));
-        mobileSensor.setApp(app);
-        sensors.add(mobileSensor);
-        
-        Actuator mobileDisplay = new Actuator("a-" + name, brokerId, app.getAppId(), "DISPLAY");
-        actuators.add(mobileDisplay);
-
-        mobileSensor.setGatewayDeviceId(mobile.getId());
-        mobileSensor.setLatency(6.0);  // latency of connection between EEG sensors and the parent Smartphone is 6 ms
-
-        mobileDisplay.setGatewayDeviceId(mobile.getId());
-        mobileDisplay.setLatency(1.0);  // latency of connection between Display actuator and the parent Smartphone is 1 ms
-        mobileDisplay.setApp(app);
+        if (app != null) {
+            // Create sensor and actuator with specific application
+            Sensor mobileSensor = new MySensor("s-" + name, "SENSOR", brokerId, app.getAppId(), new DeterministicDistribution(SENSOR_TRANSMISSION_TIME));
+            mobileSensor.setApp(app);
+            sensors.add(mobileSensor);
+            
+            Actuator mobileDisplay = new Actuator("a-" + name, brokerId, app.getAppId(), "DISPLAY");
+            actuators.add(mobileDisplay);
+    
+            mobileSensor.setGatewayDeviceId(mobile.getId());
+            mobileSensor.setLatency(6.0);  // latency of connection between EEG sensors and the parent Smartphone is 6 ms
+    
+            mobileDisplay.setGatewayDeviceId(mobile.getId());
+            mobileDisplay.setLatency(1.0);  // latency of connection between Display actuator and the parent Smartphone is 1 ms
+            mobileDisplay.setApp(app);
+        } else {
+            // If no app create sensor and actuator without specific application
+            // The application will be randomly assigned during placement request generation
+            Sensor mobileSensor = new MySensor("s-" + name, "SENSOR", brokerId, null, new DeterministicDistribution(SENSOR_TRANSMISSION_TIME));
+            sensors.add(mobileSensor);
+            
+            Actuator mobileDisplay = new Actuator("a-" + name, brokerId, null, "DISPLAY");
+            actuators.add(mobileDisplay);
+    
+            mobileSensor.setGatewayDeviceId(mobile.getId());
+            mobileSensor.setLatency(6.0);
+    
+            mobileDisplay.setGatewayDeviceId(mobile.getId());
+            mobileDisplay.setLatency(1.0);
+        }
 
         return mobile;
     }
 
-
-//    private static MyApplication createApplication(String appId, int userId, int numServices) {
-//        MyApplication application = MyApplication.createMyApplication(appId, userId);
-//        Random random = new Random(33);
-//
-//        application.addAppModule("clientModule", 4, 4, 50);
-//        for (int i = 1; i <= numServices; i++) {
-//            // Services 250-750 mips, 250-4000 MB ram (MB because values are int)
-//            application.addAppModule("mService" + i, random.nextInt(3751) + 250, random.nextInt(501) + 250, 500);
-//        }
-//
-//        /*
-//         * Connecting the application modules (vertices) in the application model (directed graph) with edges
-//         */
-//        application.addAppEdge("SENSOR", "clientModule", 14, 50, "SENSOR", Tuple.UP, AppEdge.SENSOR);
-//        //  Execution time 300 seconds average and 500 mips average => 150000
-//        //  We halve it to 100 seconds execution time, for scenario 2. Slowest case 50000/250 = 200 seconds.
-//        application.addAppEdge("clientModule", "mService1", 10000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
-//
-//        // Connect microservices in sequence
-//        for (int i = 1; i < numServices; i++) {
-//            String sourceModule = "mService" + i;
-//            String destModule = "mService" + (i+1);
-//            String tupleType = "FILTERED_DATA" + i;
-//
-//            application.addAppEdge(sourceModule, destModule, 10000, 500, tupleType, Tuple.UP, AppEdge.MODULE);
-//        }
-//
-//        application.addAppEdge("mService" + numServices, "clientModule", 4, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
-//        // NOTE tupleCpuLength and tupleNwLength don't matter; actuator doesn't execute.
-//        application.addAppEdge("clientModule", "DISPLAY", 4, 50, "RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
-//
-//        /*
-//         * Defining the input-output relationships (represented by selectivity) of the application modules.
-//         */
-//        application.addTupleMapping("clientModule", "SENSOR", "RAW_DATA", new FractionalSelectivity(1.0));
-//        for (int i = 1; i < numServices; i++) {
-//            String sourceModule = "mService" + i;
-//            String inputTupleType = (i == 1) ? "RAW_DATA" : "FILTERED_DATA" + (i-1);
-//            String outputTupleType = "FILTERED_DATA" + i;
-//
-//            application.addTupleMapping(sourceModule, inputTupleType, outputTupleType, new FractionalSelectivity(1.0));
-//        }
-//        String lastInputTupleType = (numServices == 1) ? "RAW_DATA" : "FILTERED_DATA" + (numServices-1);
-//        application.addTupleMapping("mService" + numServices, lastInputTupleType, "RESULT", new FractionalSelectivity(1.0));
-//        application.addTupleMapping("clientModule", "RESULT", "RESULT_DISPLAY", new FractionalSelectivity(1.0));
-//
-//        final AppLoop loop = new AppLoop(new ArrayList<String>() {{
-//            add("SENSOR");
-//            add("clientModule");
-//
-//            for (int i = 1; i <= numServices; i++) {
-//                add("mService" + i);
-//            }
-//
-//            add("clientModule");
-//            add("DISPLAY");
-//        }});
-//
-//        List<AppLoop> loops = new ArrayList<AppLoop>() {{
-//            add(loop);
-//        }};
-//        application.setLoops(loops);
-//
-//        return application;
-//    }
     private static MyApplication createApplication(String userType, int brokerId, int numServices) {
         return createApplication(userType, brokerId, numServices, 33); // Use default seed value
     }
 
-    private static MyApplication createApplication(String userType, int brokerId, int numServices, int randomSeed) {
-        String appId = userType + "App";
+    private static MyApplication createApplication(String appId, int brokerId, int numServices, int randomSeed) {
         MyApplication application = MyApplication.createMyApplication(appId, brokerId);
         Random random = new Random(randomSeed);
 
         // Prefix all module names with the user type FOR UNIQUENESS OF MODULE NAMES
-        String clientModuleName = userType + "_clientModule";
+        String clientModuleName = appId + "_clientModule";
         application.addAppModule(clientModuleName, 4, 4, 50);
 
         for (int i = 1; i <= numServices; i++) {
-            String serviceName = userType + "_Service" + i;
+            String serviceName = appId + "_Service" + i;
             application.addAppModule(serviceName, random.nextInt(3751) + 250, random.nextInt(501) + 250, 500);
         }
 
@@ -650,53 +653,53 @@ public class MyExperiment {
          */
         application.addAppEdge("SENSOR", clientModuleName, 14, 50, "SENSOR", Tuple.UP, AppEdge.SENSOR);
 
-        String firstServiceName = userType + "_Service1";
+        String firstServiceName = appId + "_Service1";
         application.addAppEdge(clientModuleName, firstServiceName, 10000, 500,
-                userType + "_RAW_DATA", Tuple.UP, AppEdge.MODULE);
+                appId + "_RAW_DATA", Tuple.UP, AppEdge.MODULE);
         for (int i = 1; i < numServices; i++) {
-            String sourceModule = userType + "_Service" + i;
-            String destModule = userType + "_Service" + (i+1);
-            String tupleType = userType + "_FILTERED_DATA" + i;
+            String sourceModule = appId + "_Service" + i;
+            String destModule = appId + "_Service" + (i+1);
+            String tupleType = appId + "_FILTERED_DATA" + i;
 
             application.addAppEdge(sourceModule, destModule, 10000, 500, tupleType, Tuple.UP, AppEdge.MODULE);
         }
 
-        String lastServiceName = userType + "_Service" + numServices;
+        String lastServiceName = appId + "_Service" + numServices;
         application.addAppEdge(lastServiceName, clientModuleName, 4, 500,
-                userType + "_RESULT", Tuple.DOWN, AppEdge.MODULE);
+                appId + "_RESULT", Tuple.DOWN, AppEdge.MODULE);
 
         // Connect to actuator
         application.addAppEdge(clientModuleName, "DISPLAY", 4, 50,
-                userType + "_RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
+                appId + "_RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
 
         /*
          * Defining the input-output relationships (represented by selectivity) of the application modules.
          */
-        application.addTupleMapping(clientModuleName, "SENSOR", userType + "_RAW_DATA",
+        application.addTupleMapping(clientModuleName, "SENSOR", appId + "_RAW_DATA",
                 new FractionalSelectivity(1.0));
 
         for (int i = 1; i < numServices; i++) {
-            String sourceModule = userType + "_Service" + i;
-            String inputTupleType = (i == 1) ? userType + "_RAW_DATA" : userType + "_FILTERED_DATA" + (i-1);
-            String outputTupleType = userType + "_FILTERED_DATA" + i;
+            String sourceModule = appId + "_Service" + i;
+            String inputTupleType = (i == 1) ? appId + "_RAW_DATA" : appId + "_FILTERED_DATA" + (i-1);
+            String outputTupleType = appId + "_FILTERED_DATA" + i;
 
             application.addTupleMapping(sourceModule, inputTupleType, outputTupleType,
                     new FractionalSelectivity(1.0));
         }
 
-        String lastInputTupleType = (numServices == 1) ? userType + "_RAW_DATA" : userType + "_FILTERED_DATA" + (numServices-1);
-        application.addTupleMapping(userType + "_Service" + numServices, lastInputTupleType,
-                userType + "_RESULT", new FractionalSelectivity(1.0));
+        String lastInputTupleType = (numServices == 1) ? appId + "_RAW_DATA" : appId + "_FILTERED_DATA" + (numServices-1);
+        application.addTupleMapping(appId + "_Service" + numServices, lastInputTupleType,
+                appId + "_RESULT", new FractionalSelectivity(1.0));
 
-        application.addTupleMapping(clientModuleName, userType + "_RESULT",
-                userType + "_RESULT_DISPLAY", new FractionalSelectivity(1.0));
+        application.addTupleMapping(clientModuleName, appId + "_RESULT",
+                appId + "_RESULT_DISPLAY", new FractionalSelectivity(1.0));
 
         final AppLoop loop = new AppLoop(new ArrayList<String>() {{
             add("SENSOR");
             add(clientModuleName);
 
             for (int i = 1; i <= numServices; i++) {
-                add(userType + "_Service" + i);
+                add(appId + "_Service" + i);
             }
 
             add(clientModuleName);

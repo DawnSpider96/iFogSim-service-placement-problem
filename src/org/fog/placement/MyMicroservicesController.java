@@ -26,6 +26,7 @@ public class MyMicroservicesController extends SimEntity {
     protected PlacementLogicFactory placementLogicFactory = new PlacementLogicFactory();
     protected Object placementLogic; // Can be either int or String depending on configuration source
     private boolean mobilityEnabled = false;
+    private Random applicationSelectionRandom; // For seeded random application selection
     //    protected List<Integer> clustering_levels;
     /**
      * A permanent set of Placement Requests, initialized with one per user device.
@@ -51,6 +52,10 @@ public class MyMicroservicesController extends SimEntity {
     // Mobility strategy
     protected MobilityStrategy mobilityStrategy;
     
+    // Add these new fields after the existing field declarations (around line 35-40)
+    private Map<Integer, List<MySensor>> deviceToSensors = new HashMap<>();
+    private Map<Integer, List<Actuator>> deviceToActuators = new HashMap<>();
+
     /**
      * Constructor supporting both integer and string placement logic identifiers.
      * 
@@ -59,9 +64,10 @@ public class MyMicroservicesController extends SimEntity {
      * @param sensors List of sensors
      * @param applications List of applications
      * @param placementLogic Placement logic identifier (can be Integer or String)
+     * @param experimentSeed Seed for random number generation
      */
     public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, 
-                                    List<Application> applications, Object placementLogic) {
+                                    List<Application> applications, Object placementLogic, int experimentSeed) {
         super(name);
         this.fogDevices = fogDevices;
         this.sensors = sensors;
@@ -75,6 +81,23 @@ public class MyMicroservicesController extends SimEntity {
         
         // Initialize with the no-op mobility strategy by default
         this.mobilityStrategy = new NoMobilityStrategy();
+        
+        // Initialize application selection random with provided seed
+        this.applicationSelectionRandom = new Random(experimentSeed);
+    }
+
+    /**
+     * Constructor supporting both integer and string placement logic identifiers (without seed).
+     * 
+     * @param name Controller name
+     * @param fogDevices List of fog devices
+     * @param sensors List of sensors
+     * @param applications List of applications
+     * @param placementLogic Placement logic identifier (can be Integer or String)
+     */
+    public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, 
+                                    List<Application> applications, Object placementLogic) {
+        this(name, fogDevices, sensors, applications, placementLogic, 33); // Default seed
     }
 
     /**
@@ -88,12 +111,13 @@ public class MyMicroservicesController extends SimEntity {
      */
     public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, 
                                     List<Application> applications, int placementLogic) {
-        this(name, fogDevices, sensors, applications, (Object)placementLogic);
+        this(name, fogDevices, sensors, applications, (Object)placementLogic, 33); // Default seed
     }
 
+    // Add a constructor with monitored devices and seed
     public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, 
                                      List<Application> applications, Object placementLogic, 
-                                     Map<Integer, List<FogDevice>> monitored) {
+                                     Map<Integer, List<FogDevice>> monitored, int experimentSeed) {
         super(name);
         this.fogDevices = fogDevices;
         this.sensors = sensors;
@@ -107,6 +131,16 @@ public class MyMicroservicesController extends SimEntity {
         
         // Initialize with the no-op mobility strategy by default
         this.mobilityStrategy = new NoMobilityStrategy();
+        
+        // Initialize application selection random with provided seed
+        this.applicationSelectionRandom = new Random(experimentSeed);
+    }
+
+    // Update the existing constructor with monitored devices to use the new one with seed
+    public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, 
+                                     List<Application> applications, Object placementLogic, 
+                                     Map<Integer, List<FogDevice>> monitored) {
+        this(name, fogDevices, sensors, applications, placementLogic, monitored, 33); // Default seed
     }
 
     /**
@@ -235,6 +269,9 @@ public class MyMicroservicesController extends SimEntity {
                 break;
             case FogEvents.GENERATE_PERIODIC_PR:
                 generatePeriodicPlacementRequests();
+                break;
+            case FogEvents.GENERATE_PR_FOR_DEVICE:
+                generatePrForDevice((int) ev.getData());
                 break;
             case FogEvents.USER_RESOURCE_UPDATE:
                 processUserResourceUpdate(ev);
@@ -692,68 +729,16 @@ public class MyMicroservicesController extends SimEntity {
     }
 
     /**
-     * Periodically generates and sends placement requests from user devices based on a predefined set.
-     * <p>
-     * This method iterates over all user devices and attempts to generate new placement requests
-     * by creating deep copies of corresponding {@link PlacementRequest} objects stored in
-     * {@code placementRequestDelayMap}. These requests are permanent templates and remain unchanged;
-     * the newly generated copies are entirely independent, with no shared references (e.g., new
-     * {@code LinkedHashMap} is created for microservice placements).
-     * <p>
-     * Before sending a request, the method checks whether the user device has sufficient resources
-     * using {@code userCanFit(...)}, ensuring that CPU, RAM, and storage requirements are met.
-     * If the user device is eligible, the request is transmitted to it along with the corresponding
-     * {@link Application} object.
-     * <p>
-     * This function is periodically scheduled using the static {@code prGenerationInterval}, which
-     * defines the interval between consecutive invocations. In future versions, this interval may
-     * be varied per-request by using the delay values from {@code placementRequestDelayMap}.
+     * Periodically generates and sends placement requests for each user device.
+     * Each device receives an individual event with its ID for generating a PR.
      */
     public void generatePeriodicPlacementRequests() {
-        if (placementRequestDelayMap.isEmpty()) {
-            Logger.debug("WARNING: placementRequestDelayMap", "No placements were initialized in Sim file! Ensure that this is intentional.");
-            return;
-        }
-
-        MicroservicePlacementConfig.FAILURE_REASON reason = MicroservicePlacementConfig.FAILURE_REASON.USER_LACKED_RESOURCES;
-
+        // Schedule individual events per device with same interval
         for (MyFogDevice userDevice : userDevices) {
-            MyPlacementRequest existingPR = null;
-            for (PlacementRequest pr : placementRequestDelayMap.keySet()) {
-                if (pr.getRequester() == userDevice.getId()) {
-                    existingPR = (MyPlacementRequest) pr;
-                    break;
-                }
-            }
-            
-            if (existingPR != null) {
-                // Requester's new parent is accounted for because we send TRANSMIT_PR to requester,
-                //  and requester knows its new parent.
-                MyPlacementRequest newPR = new MyPlacementRequest(
-                    existingPR.getApplicationId(),
-                    existingPR.getSensorId(),
-                    getNextSequenceNumber(existingPR.getSensorId()),
-                    userDevice.getId(),
-                    existingPR.getUserType(),
-                    new LinkedHashMap<>(existingPR.getPlacedMicroservices())
-                );
-
-                if (userCanFit(userDevice.getId(), newPR)) {
-                    JSONObject jsonSend = new JSONObject();
-                    jsonSend.put("PR", newPR);
-                    jsonSend.put("app", applications.get(newPR.getApplicationId()));
-                    // TODO Should we use the delay from placementRequestDelayMap instead?
-                    sendNow(userDevice.getId(), FogEvents.TRANSMIT_PR, jsonSend);
-                } else {
-                    Logger.error("PR failed because", reason + userDevice.getName());
-                    MyMonitor.getInstance().recordFailedPR(newPR, reason);
-                }
-            }
-            else{
-                throw new NullPointerException("PR doesn't exist");
-            }
+            send(getId(), 0, FogEvents.GENERATE_PR_FOR_DEVICE, userDevice.getId());
         }
         
+        // Schedule the next periodic PR generation
         send(getId(), prGenerationInterval, FogEvents.GENERATE_PERIODIC_PR);
     }
 
@@ -1081,6 +1066,170 @@ public class MyMicroservicesController extends SimEntity {
                 System.out.println("Device " + CloudSim.getEntityName(entry.getKey()) + 
                                    " responded to accident event");
             }
+        }
+    }
+
+    /**
+     * Gets a random application from the pool, using a seeded random number generator.
+     * 
+     * @return A randomly selected application from the application pool
+     */
+    private Application getRandomApplication() {
+        List<String> appKeys = new ArrayList<>(applications.keySet());
+        int randomIndex = applicationSelectionRandom.nextInt(appKeys.size());
+        return applications.get(appKeys.get(randomIndex));
+    }
+
+    /**
+     * Registers the mappings between devices and their sensors/actuators.
+     * This should be called after all devices, sensors, and actuators are created.
+     */
+    public void registerDeviceMappings() {
+        // Initialize the maps
+        deviceToSensors.clear();
+        deviceToActuators.clear();
+        
+        // Populate the maps from the existing sensors and actuators lists
+        for (Sensor s : sensors) {
+            if (s instanceof MySensor) {
+                int deviceId = s.getGatewayDeviceId();
+                if (!deviceToSensors.containsKey(deviceId)) {
+                    deviceToSensors.put(deviceId, new ArrayList<>());
+                }
+                deviceToSensors.get(deviceId).add((MySensor)s);
+            }
+        }
+
+        for (Actuator a : actuators) {
+            int deviceId = a.getGatewayDeviceId();
+            if (!deviceToActuators.containsKey(deviceId)) {
+                deviceToActuators.put(deviceId, new ArrayList<>());
+            }
+            deviceToActuators.get(deviceId).add(a);
+        }
+    }
+
+    /**
+     * Creates a new placement request for a device with a random application.
+     *
+     * @param deviceId The device ID to create the PR for
+     * @return The newly created placement request
+     * @throws NullPointerException if the device has no associated sensors
+     */
+    public MyPlacementRequest createNewPlacementRequestForDevice(int deviceId) {
+        // First ensure the device mappings are populated
+        if (deviceToSensors.isEmpty() && deviceToActuators.isEmpty()) {
+            registerDeviceMappings();
+        }
+        
+        // Check if the device has any sensors
+        List<MySensor> deviceSensors = deviceToSensors.getOrDefault(deviceId, new ArrayList<>());
+        if (deviceSensors.isEmpty()) {
+            throw new NullPointerException("Device " + deviceId + " has no associated sensors");
+        }
+        
+        // Get a random application
+        Application randomApp = getRandomApplication();
+        
+        // Update all sensors for this device
+        for (MySensor sensor : deviceSensors) {
+            sensor.setAppId(randomApp.getAppId());
+            sensor.setApp(randomApp);
+        }
+        
+        // Update all actuators for this device
+        List<Actuator> deviceActuators = deviceToActuators.getOrDefault(deviceId, new ArrayList<>());
+        for (Actuator actuator : deviceActuators) {
+            actuator.setAppId(randomApp.getAppId());
+            actuator.setApp(randomApp);
+        }
+        
+        // Create the placement request using the first sensor
+        MySensor firstSensor = deviceSensors.get(0);
+        Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();
+        String clientModuleName = FogBroker.getApplicationToFirstMicroserviceMap().get(randomApp);
+        placedMicroservicesMap.put(clientModuleName, deviceId);
+        
+        int sequenceNumber = getNextSequenceNumber(firstSensor.getId());
+        String userType = firstSensor.getUserType();
+        
+        return new MyPlacementRequest(
+            randomApp.getAppId(),
+            firstSensor.getId(),
+            sequenceNumber,
+            deviceId,
+            userType,
+            placedMicroservicesMap
+        );
+    }
+
+    /**
+     * Creates a new placement request for a device with a random application.
+     *
+     * @param deviceId The device ID to create the PR for
+     * @return The newly created placement request
+     * @throws NullPointerException if the device has no associated sensors
+     */
+    private void generatePrForDevice(int deviceId) {
+        try {
+            // Create a new PR with random application using our device-level method
+            MyPlacementRequest newPR = createNewPlacementRequestForDevice(deviceId);
+            
+            // Check if the user device can host the microservice
+            if (userCanFit(deviceId, newPR)) {
+                // Send the PR
+                JSONObject jsonSend = new JSONObject();
+                jsonSend.put("PR", newPR);
+                jsonSend.put("app", applications.get(newPR.getApplicationId()));
+                sendNow(deviceId, FogEvents.TRANSMIT_PR, jsonSend);
+            } else {
+                MicroservicePlacementConfig.FAILURE_REASON reason = MicroservicePlacementConfig.FAILURE_REASON.USER_LACKED_RESOURCES;
+                Logger.error("PR failed because", reason + " " + CloudSim.getEntityName(deviceId));
+                MyMonitor.getInstance().recordFailedPR(newPR, reason);
+            }
+        } catch (NullPointerException e) {
+            Logger.error("PR Generation Error", e.getMessage());
+        }
+    }
+
+    /**
+     * Creates a new placement request for a sensor with a random application 
+     * from the application pool.
+     *
+     * @param sensor The sensor to create the PR for
+     * @return The newly created placement request
+     */
+    public MyPlacementRequest createNewPlacementRequestWithRandomApp(MySensor sensor) {
+        try {
+            // Use our device-level method instead
+            return createNewPlacementRequestForDevice(sensor.getGatewayDeviceId());
+        } catch (NullPointerException e) {
+            // If there's an issue with the device-level method, fall back to just updating this sensor
+            Application randomApp = getRandomApplication();
+            
+            // Update the sensor's application association
+            sensor.setAppId(randomApp.getAppId());
+            sensor.setApp(randomApp);
+            
+            Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();
+            String clientModuleName = FogBroker.getApplicationToFirstMicroserviceMap().get(randomApp);
+            placedMicroservicesMap.put(
+                clientModuleName,
+                sensor.getGatewayDeviceId()
+            );
+            
+            // Create the PR with the next sequence number
+            int sequenceNumber = getNextSequenceNumber(sensor.getId());
+            String userType = sensor.getUserType();
+            
+            return new MyPlacementRequest(
+                randomApp.getAppId(),
+                sensor.getId(),
+                sequenceNumber,
+                sensor.getGatewayDeviceId(),
+                userType,
+                placedMicroservicesMap
+            );
         }
     }
 }

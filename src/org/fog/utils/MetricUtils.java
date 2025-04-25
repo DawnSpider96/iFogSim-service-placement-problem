@@ -267,11 +267,16 @@ public class MetricUtils {
                 double[] latStats = latencyStats.get(i);
                 double failStats = failureStats.get(i);
                 
+                // Get the service count (app loop length) based on whether it's new or legacy format
+                String serviceCount = sc.getNumberOfApplications() > 0 
+                                     ? String.valueOf(sc.getAppLoopLength()) 
+                                     : "Legacy";
+                
                 fileWriter.append(String.format(
                         "%d,%d,%s,%s,%f,%f,%f,%f,%f\n",
                         sc.getNumberOfEdge(),
                         sc.getNumberOfUser(),
-                        sc.getAppLoopLengthPerType().values().toArray()[0],
+                        serviceCount,
                         heuristics.get(sc.getPlacementLogic()),
                         resStats[0],  // mean resource utilization
                         resStats[1],  // stddev resource utilization
@@ -435,6 +440,11 @@ public class MetricUtils {
         try (FileWriter fileWriter = new FileWriter(filePath)) {
             fileWriter.append("edges, users, services, Placement Logic, UserType, Avg Resource, Resource stddev, Avg Latency, Latency stddev, Failure ratio\n");
             
+            // Get the service count (app loop length) based on whether it's new or legacy format
+            String serviceCount = simConfig.getNumberOfApplications() > 0 
+                                 ? String.valueOf(simConfig.getAppLoopLength()) 
+                                 : "Legacy";
+            
             // For each userType, write a row with the metrics
             for (String userType : resourceDataByType.keySet()) {
                 List<Double> resourceValues = resourceDataByType.getOrDefault(userType, Collections.emptyList());
@@ -456,7 +466,7 @@ public class MetricUtils {
                         "%d,%d,%s,%s,%s,%f,%f,%f,%f,%f\n",
                         simConfig.getNumberOfEdge(),
                         simConfig.getNumberOfUser(),
-                        simConfig.getAppLoopLengthPerType().values().toArray()[0],
+                        serviceCount,
                         heuristics.get(simConfig.getPlacementLogic()),
                         userType,
                         resStats[0],  // mean resource utilization

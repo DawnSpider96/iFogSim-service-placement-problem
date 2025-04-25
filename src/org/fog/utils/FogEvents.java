@@ -61,4 +61,6 @@ public class FogEvents {
     public static final int MAKE_PATH = BASE + 56;
     // Scenario Events ----------------------------
     public static final int OPERA_ACCIDENT_EVENT = BASE + 57;
+    // PR Generation Device-specific ------------
+    public static final int GENERATE_PR_FOR_DEVICE = BASE + 58;
 }
