@@ -252,8 +252,8 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
                     placementStillPossible = false;
                     break; // Do nothing, already -1
                 } else {
-                    // get random fitting node
-                    int j = (int) (onlyFittingNodesSubset.size() * Math.random());
+                    // get random fitting node - use seeded random instead of Math.random()
+                    int j = (int) (onlyFittingNodesSubset.size() * getRandom().nextDouble());
                     int j_Idx = devToIdx.get(onlyFittingNodesSubset.get(j).getId());
                     // check if DeviceState at j_Inx is ALREADY a private copy
                     //  (private copy would have been made if a previous service was placed on DeviceState j)
@@ -284,7 +284,7 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
             double currentLatency = placementLatencySum(currentPlacement, closestFogDevice);
             double neighborLatency = placementLatencySum(neighbourPlacement, closestFogDevice);
 
-            if (Math.random() < probabilityOfAcceptance(currentLatency, neighborLatency, t)) {
+            if (getRandom().nextDouble() < probabilityOfAcceptance(currentLatency, neighborLatency, t)) {
                 currentPlacement = neighbourPlacement.clone();
                 currentLatency = neighborLatency;
             }

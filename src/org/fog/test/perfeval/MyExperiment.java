@@ -2,6 +2,7 @@ package org.fog.test.perfeval;
 
 import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.power.PowerHost;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
 import org.cloudbus.cloudsim.sdn.example.policies.VmSchedulerTimeSharedEnergy;
@@ -51,7 +52,7 @@ import java.util.stream.IntStream;
  */
 public class MyExperiment {
 //    private static final String outputFile = "./output/resourceDist_Comfortable_R_Beta.csv";
-    private static final String outputFile = "./output/resourceDist_TEST.csv";
+    private static final String outputFile = "./output/GreenBaby_Mobile_10k_COPY_COPY.csv";
     // The configuration file now uses string-based placement logic identifiers instead of integers
     private static final String CONFIG_FILE = "./dataset/MyExperimentConfigs.yaml";
 
@@ -82,7 +83,7 @@ public class MyExperiment {
         MyMonitor mm = MyMonitor.getInstance();
 
         try {
-            // Traditional metric collection (original code)
+            // Combined metric collection approach
             List<List<Double>> resourceData =
                     mm.getAllUtilizations().stream()
                             .map(MetricUtils::handleSimulationResource)
@@ -102,44 +103,22 @@ public class MyExperiment {
                     })
                     .collect(Collectors.toList());
 
-            // Write traditional aggregate metrics
-            MetricUtils.writeToCSV(resourceData, latencyData, failedPRData, configs, outputFile);
-            System.out.println("Aggregate CSV file has been created successfully at: " + outputFile);
-
-            // NEW: Classified metrics by userType
-            // Process each simulation's data
-            for (int simIndex = 0; simIndex < configs.size(); simIndex++) {
-                if (simIndex >= mm.getAllUtilizations().size() || 
-                    simIndex >= mm.getAllLatencies().size() || 
-                    simIndex >= list1.size() || 
-                    simIndex >= list2.size()) {
-                    System.err.println("Warning: Insufficient data for simulation " + simIndex);
-                    continue;
-                }
-                
-                Map<Double, Map<PlacementRequest, Double>> utilizationValues = mm.getAllUtilizations().get(simIndex);
-                Map<Double, Map<PlacementRequest, Double>> latencyValues = mm.getAllLatencies().get(simIndex);
-                Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>> failedPRs = list1.get(simIndex);
-                Map<Double, Integer> totalPRs = list2.get(simIndex);
-                SimulationConfig config = configs.get(simIndex);
-                
-                Map<String, List<Double>> resourceDataByType = MetricUtils.classifyResourceUtilizationByUserType(utilizationValues);
-                Map<String, List<Double>> latencyDataByType = MetricUtils.classifyLatencyByUserType(latencyValues);
-                Map<String, Map<String, Object>> failedPRDataByType = MetricUtils.classifyFailedPRsByUserType(failedPRs, totalPRs);
-                
-                String userTypeOutputFile = outputFile.replace(".csv", "_userType.csv");
-                MetricUtils.writeClassifiedMetricsToCSV(
-                    resourceDataByType, 
-                    latencyDataByType, 
-                    failedPRDataByType, 
-                    config, 
-                    userTypeOutputFile
-                );
-                System.out.println("UserType-classified CSV file for simulation " + simIndex + 
-                                   " has been created successfully at: " + userTypeOutputFile);
-            }
+            // Write all metrics to a single CSV file (both aggregate and user type classified)
+            MetricUtils.writeAllMetricsToCSV(
+                resourceData, 
+                latencyData, 
+                failedPRData, 
+                mm.getAllUtilizations(), 
+                mm.getAllLatencies(), 
+                list1, 
+                list2, 
+                configs, 
+                outputFile
+            );
+            
+            System.out.println("All metrics have been written to a single CSV file: " + outputFile);
         } catch (IOException e) {
-            System.err.println("An error occurred while writing to the CSV files.");
+            System.err.println("An error occurred while writing to the CSV file.");
             e.printStackTrace();
         }
     }
@@ -177,11 +156,22 @@ public class MyExperiment {
                 for (Map.Entry<String, Object> entry : userTypeMap.entrySet()) {
                     usersPerType.put(entry.getKey(), ((Number) entry.getValue()).intValue());
                 }
+                
+                // Parse interval values for Poisson distribution
+                Map<String, Integer> intervalValues = new HashMap<>();
+                if (configMap.containsKey("intervalValues")) {
+                    Map<String, Object> intervalMap = (Map<String, Object>) configMap.get("intervalValues");
+                    for (Map.Entry<String, Object> entry : intervalMap.entrySet()) {
+                        intervalValues.put(entry.getKey(), ((Number) entry.getValue()).intValue());
+                    }
+                    System.out.println("Loaded interval values for Poisson distribution: " + intervalValues);
+                }
 
                 // Read random seed values if present
                 int experimentSeed = 33; // Default value
                 int locationSeed = 42; // Default value
                 int mobilityStrategySeed = 123; // Default value
+                int heuristicSeed = 456; // Default value for heuristic placement algorithms
                 
                 if (configMap.containsKey("randomSeeds")) {
                     Map<String, Object> randomSeedsMap = (Map<String, Object>) configMap.get("randomSeeds");
@@ -193,6 +183,9 @@ public class MyExperiment {
                     }
                     if (randomSeedsMap.containsKey("mobilityStrategySeed")) {
                         mobilityStrategySeed = ((Number) randomSeedsMap.get("mobilityStrategySeed")).intValue();
+                    }
+                    if (randomSeedsMap.containsKey("heuristicSeed")) {
+                        heuristicSeed = ((Number) randomSeedsMap.get("heuristicSeed")).intValue();
                     }
                 }
 
@@ -207,9 +200,11 @@ public class MyExperiment {
                         numberOfApplications,
                         appLoopLength,
                         usersPerType,
+                        intervalValues,
                         experimentSeed,
                         locationSeed,
-                        mobilityStrategySeed
+                        mobilityStrategySeed,
+                        heuristicSeed
                     ));
                     
                     System.out.println("Loaded configuration with " + numberOfApplications + 
@@ -366,20 +361,33 @@ public class MyExperiment {
             /**
              * Central controller for performing preprocessing functions
              */
-            MyMicroservicesController microservicesController = new MyMicroservicesController(
-                "controller",
+            MyMicroservicesController microservicesController;
+            
+            // Get interval values from the configuration
+            Map<String, Integer> intervalValues = simulationConfig.getIntervalValues();
+            
+            if (intervalValues != null && !intervalValues.isEmpty()) {
+                System.out.println("Using interval values for Poisson distribution: " + intervalValues);
+                
+                microservicesController = new MyMicroservicesController(
+                    "controller",
                     fogDevices,
                     sensors,
+                    actuators,
                     applicationPool,
                     placementLogicType,
-                    simulationConfig.getExperimentSeed()  // Pass the experiment seed
-            );
-                
+                    intervalValues,
+                    simulationConfig.getExperimentSeed(),
+                    simulationConfig.getHeuristicSeed()
+                );
+            } else {throw new NullPointerException("Need interval values in experiment config");}
+            
             // Register device-sensor-actuator mappings
             microservicesController.registerDeviceMappings();
             
             try {
                 System.out.println("Initializing location data from CSV files...");
+                microservicesController.enableMobility();
                 microservicesController.initializeLocationData(
                     RESOURCES_LOCATION_PATH,
                     USERS_LOCATION_PATH,
@@ -389,8 +397,8 @@ public class MyExperiment {
                 );
                 System.out.println("Location data initialization complete.");
 
-                // microservicesController.enableMobility(simulationConfig.getMobilityStrategySeed());
-                // System.out.println("Mobility enabled with seed: " + simulationConfig.getMobilityStrategySeed());
+                microservicesController.setPathingSeeds(simulationConfig.getMobilityStrategySeed());
+                System.out.println("Mobility enabled with seed: " + simulationConfig.getMobilityStrategySeed());
                 
                 microservicesController.completeInitialization();
                 System.out.println("Controller initialization completed with proximity-based connections.");
@@ -401,7 +409,7 @@ public class MyExperiment {
             }
 
             List<PlacementRequest> placementRequests = new ArrayList<>();
-            for (MyFogDevice device : userDevices) {
+            for (MyFogDevice device : microservicesController.getUserDevices()) {
                 try {
                     PlacementRequest prototypePR = microservicesController.createNewPlacementRequestForDevice(device.getId());
                     if (prototypePR != null) {
@@ -484,7 +492,8 @@ public class MyExperiment {
             // todo This is a hardcoded check. Edit based on your user types.
             if (!(Objects.equals(userType, MyFogDevice.GENERIC_USER) ||
                 Objects.equals(userType, MyFogDevice.AMBULANCE_USER) ||
-                Objects.equals(userType, MyFogDevice.OPERA_USER))) {
+                Objects.equals(userType, MyFogDevice.OPERA_USER) ||
+                Objects.equals(userType, MyFogDevice.IMMOBILE_USER))) {
                 throw new NullPointerException("Invalid Type");
             }
 
@@ -645,7 +654,7 @@ public class MyExperiment {
 
         for (int i = 1; i <= numServices; i++) {
             String serviceName = appId + "_Service" + i;
-            application.addAppModule(serviceName, random.nextInt(3751) + 250, random.nextInt(501) + 250, 500);
+            application.addAppModule(serviceName, random.nextInt(501) + 250, random.nextInt(501) + 250, 500);
         }
 
         /*

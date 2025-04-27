@@ -52,10 +52,10 @@ public abstract class DeviceMobilityState {
     
     /**
      * Creates a new device mobility state
-     * 
-     * @param location initial location
-     * @param strategy mobility strategy to use
-     * @param speed travel speed
+     *
+     * @param location        initial location
+     * @param strategy        mobility strategy to use
+     * @param speed           travel speed
      */
     public DeviceMobilityState(Location location, PathingStrategy strategy, double speed) {
         this.currentLocation = location;

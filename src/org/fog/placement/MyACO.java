@@ -222,6 +222,7 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
         //    private Map<Integer, MECSystemEntity> mecSystems;
         private int requestReceiver;
         private final Application app;
+        private final Random random;
 
         MyACOHelper(List<String> microservices, List<DeviceState> edgeServers, Application app, double[][] latencies, Map<Integer, Integer> serversIds, int antsNumber, double tau0, int requestReceiver) {
             this.microservices = microservices;
@@ -240,6 +241,7 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
             this.heuristic = new double[edgeServers.size()][microservices.size()];
             this.tau0 = tau0;
             this.requestReceiver = requestReceiver;
+            this.random = MyACO.this.getRandom();
             initAnts();
             initPheromones();
         }
@@ -358,9 +360,7 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
 
             if (sumProb > 0) {
                 done = true;
-                // System.out.println("her ACO");
-
-                double prob = Math.random() * sumProb;
+                double prob = random.nextDouble() * sumProb;
                 int j = 0;
                 double p = selectionProb[j];
                 while (p < prob) {

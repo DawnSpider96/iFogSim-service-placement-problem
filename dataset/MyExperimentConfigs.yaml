@@ -9,757 +9,1206 @@
   numberOfApplications: 1300  # New field: total applications to create
   appLoopLength: 1  # Uniform loop length for all applications
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  # Interval values in seconds for PR generation per user type
+  # These will be converted to lambda values (lambda = 1/interval)
+  intervalValues:
+    genericUser: 300  # One event every 300 seconds
+    ambulanceUser: 180  # One event every 180 seconds
+    operaUser: 600  # One event every 600 seconds
+    immobileUser: 900  # One event every 900 seconds
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
+    heuristicSeed: 456
 
 - numberOfEdge: 100
   placementLogic: "BEST_FIT"  # Previously 7
   numberOfApplications: 1300
   appLoopLength: 1
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  # Interval values in seconds for PR generation per user type
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
+    heuristicSeed: 456
 
 - numberOfEdge: 100
   placementLogic: "CLOSEST_FIT"  # Previously 8
   numberOfApplications: 1300
   appLoopLength: 1
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  # Interval values in seconds for PR generation per user type
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
+    heuristicSeed: 456
 
 - numberOfEdge: 100
   placementLogic: "ILP"  # Previously 14
   numberOfApplications: 1300
   appLoopLength: 1
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  # Interval values in seconds for PR generation per user type
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
+    heuristicSeed: 456
 
 - numberOfEdge: 100
   placementLogic: "MAX_FIT"  # Previously 9
   numberOfApplications: 1300
   appLoopLength: 1
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  # Interval values in seconds for PR generation per user type
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
+    heuristicSeed: 456
 
 - numberOfEdge: 100
   placementLogic: "MULTI_OPT"  # Previously 11
   numberOfApplications: 1300
   appLoopLength: 1
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  # Interval values in seconds for PR generation per user type
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
+    heuristicSeed: 456
 
 - numberOfEdge: 100
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
   numberOfApplications: 1300
   appLoopLength: 1
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  # Interval values in seconds for PR generation per user type
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
+    heuristicSeed: 456
 
 - numberOfEdge: 200
   placementLogic: "ACO"  # Previously 13
   numberOfApplications: 1300
   appLoopLength: 1
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
+    heuristicSeed: 456
 
 - numberOfEdge: 200
   placementLogic: "BEST_FIT"  # Previously 7
   numberOfApplications: 1300
   appLoopLength: 1
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
+    heuristicSeed: 456
 
 - numberOfEdge: 200
   placementLogic: "CLOSEST_FIT"  # Previously 8
   numberOfApplications: 1300
   appLoopLength: 1
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
+    heuristicSeed: 456
 
 - numberOfEdge: 200
   placementLogic: "ILP"  # Previously 14
   numberOfApplications: 1300
   appLoopLength: 1
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
+    heuristicSeed: 456
 
 - numberOfEdge: 200
   placementLogic: "MAX_FIT"  # Previously 9
   numberOfApplications: 1300
   appLoopLength: 1
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
+    heuristicSeed: 456
 
 - numberOfEdge: 200
   placementLogic: "MULTI_OPT"  # Previously 11
   numberOfApplications: 1300
   appLoopLength: 1
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
+    heuristicSeed: 456
 
 - numberOfEdge: 200
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
   numberOfApplications: 1300
   appLoopLength: 1
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
+    heuristicSeed: 456
 
 - numberOfEdge: 300
   placementLogic: "ACO"  # Previously 13
   numberOfApplications: 1300
   appLoopLength: 1
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
+    heuristicSeed: 456
 
 - numberOfEdge: 300
   placementLogic: "BEST_FIT"  # Previously 7
   numberOfApplications: 1300
   appLoopLength: 1
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
+    heuristicSeed: 456
 
 - numberOfEdge: 300
   placementLogic: "CLOSEST_FIT"  # Previously 8
   numberOfApplications: 1300
   appLoopLength: 1
   usersPerType:
-    genericUser: 176
+    genericUser: 100
+    operaUser: 76
     ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
   randomSeeds:
     experimentSeed: 33
     locationSeed: 42
     mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "ILP"  # Previously 14
-  numberOfApplications: 1300
-  appLoopLength: 1
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "MAX_FIT"  # Previously 9
-  numberOfApplications: 1300
-  appLoopLength: 1
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "MULTI_OPT"  # Previously 11
-  numberOfApplications: 1300
-  appLoopLength: 1
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
-  numberOfApplications: 1300
-  appLoopLength: 1
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-# ----------------------------------------------------------------------------------------------------------------
-# Configuration set with appLoopLength = 3 and numberOfApplications = 1300
-- numberOfEdge: 100
-  placementLogic: "ACO"  # Previously 13
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 100
-  placementLogic: "BEST_FIT"  # Previously 7
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 100
-  placementLogic: "CLOSEST_FIT"  # Previously 8
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 100
-  placementLogic: "ILP"  # Previously 14
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 100
-  placementLogic: "MAX_FIT"  # Previously 9
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 100
-  placementLogic: "MULTI_OPT"  # Previously 11
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 100
-  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 200
-  placementLogic: "ACO"  # Previously 13
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 200
-  placementLogic: "BEST_FIT"  # Previously 7
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 200
-  placementLogic: "CLOSEST_FIT"  # Previously 8
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 200
-  placementLogic: "ILP"  # Previously 14
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 200
-  placementLogic: "MAX_FIT"  # Previously 9
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 200
-  placementLogic: "MULTI_OPT"  # Previously 11
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 200
-  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "ACO"  # Previously 13
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "BEST_FIT"  # Previously 7
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "CLOSEST_FIT"  # Previously 8
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "ILP"  # Previously 14
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "MAX_FIT"  # Previously 9
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "MULTI_OPT"  # Previously 11
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
-  numberOfApplications: 1300
-  appLoopLength: 3
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-# ----------------------------------------------------------------------------------------------------------------
-# Configuration set with appLoopLength = 5 and numberOfApplications = 1300
-- numberOfEdge: 100
-  placementLogic: "ACO"  # Previously 13
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 100
-  placementLogic: "BEST_FIT"  # Previously 7
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 100
-  placementLogic: "CLOSEST_FIT"  # Previously 8
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 100
-  placementLogic: "ILP"  # Previously 14
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 100
-  placementLogic: "MAX_FIT"  # Previously 9
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 100
-  placementLogic: "MULTI_OPT"  # Previously 11
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 100
-  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 200
-  placementLogic: "ACO"  # Previously 13
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 200
-  placementLogic: "BEST_FIT"  # Previously 7
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 200
-  placementLogic: "CLOSEST_FIT"  # Previously 8
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 200
-  placementLogic: "ILP"  # Previously 14
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 200
-  placementLogic: "MAX_FIT"  # Previously 9
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 200
-  placementLogic: "MULTI_OPT"  # Previously 11
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 200
-  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "ACO"  # Previously 13
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "BEST_FIT"  # Previously 7
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "CLOSEST_FIT"  # Previously 8
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "ILP"  # Previously 14
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "MAX_FIT"  # Previously 9
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "MULTI_OPT"  # Previously 11
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
-
-- numberOfEdge: 300
-  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
-  numberOfApplications: 1300
-  appLoopLength: 5
-  usersPerType:
-    genericUser: 176
-    ambulanceUser: 20
-  randomSeeds:
-    experimentSeed: 33
-    locationSeed: 42
-    mobilityStrategySeed: 123
+    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "ILP"  # Previously 14
+#  numberOfApplications: 1300
+#  appLoopLength: 1
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "MAX_FIT"  # Previously 9
+#  numberOfApplications: 1300
+#  appLoopLength: 1
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "MULTI_OPT"  # Previously 11
+#  numberOfApplications: 1300
+#  appLoopLength: 1
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
+#  numberOfApplications: 1300
+#  appLoopLength: 1
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+## ----------------------------------------------------------------------------------------------------------------
+## Configuration set with appLoopLength = 3 and numberOfApplications = 1300
+#- numberOfEdge: 100
+#  placementLogic: "ACO"  # Previously 13
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 100
+#  placementLogic: "BEST_FIT"  # Previously 7
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 100
+#  placementLogic: "CLOSEST_FIT"  # Previously 8
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 100
+#  placementLogic: "ILP"  # Previously 14
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 100
+#  placementLogic: "MAX_FIT"  # Previously 9
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 100
+#  placementLogic: "MULTI_OPT"  # Previously 11
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 100
+#  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 200
+#  placementLogic: "ACO"  # Previously 13
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 200
+#  placementLogic: "BEST_FIT"  # Previously 7
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 200
+#  placementLogic: "CLOSEST_FIT"  # Previously 8
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 200
+#  placementLogic: "ILP"  # Previously 14
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 200
+#  placementLogic: "MAX_FIT"  # Previously 9
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 200
+#  placementLogic: "MULTI_OPT"  # Previously 11
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 200
+#  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "ACO"  # Previously 13
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "BEST_FIT"  # Previously 7
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "CLOSEST_FIT"  # Previously 8
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "ILP"  # Previously 14
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "MAX_FIT"  # Previously 9
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "MULTI_OPT"  # Previously 11
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
+#  numberOfApplications: 1300
+#  appLoopLength: 3
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+## ----------------------------------------------------------------------------------------------------------------
+## Configuration set with appLoopLength = 5 and numberOfApplications = 1300
+#- numberOfEdge: 100
+#  placementLogic: "ACO"  # Previously 13
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 100
+#  placementLogic: "BEST_FIT"  # Previously 7
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 100
+#  placementLogic: "CLOSEST_FIT"  # Previously 8
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 100
+#  placementLogic: "ILP"  # Previously 14
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 100
+#  placementLogic: "MAX_FIT"  # Previously 9
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 100
+#  placementLogic: "MULTI_OPT"  # Previously 11
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 100
+#  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 200
+#  placementLogic: "ACO"  # Previously 13
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 200
+#  placementLogic: "BEST_FIT"  # Previously 7
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 200
+#  placementLogic: "CLOSEST_FIT"  # Previously 8
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 200
+#  placementLogic: "ILP"  # Previously 14
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 200
+#  placementLogic: "MAX_FIT"  # Previously 9
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 200
+#  placementLogic: "MULTI_OPT"  # Previously 11
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 200
+#  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "ACO"  # Previously 13
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "BEST_FIT"  # Previously 7
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "CLOSEST_FIT"  # Previously 8
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "ILP"  # Previously 14
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "MAX_FIT"  # Previously 9
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "MULTI_OPT"  # Previously 11
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456
+#
+#- numberOfEdge: 300
+#  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
+#  numberOfApplications: 1300
+#  appLoopLength: 5
+#  usersPerType:
+#    genericUser: 100
+#    operaUser: 76
+#    ambulanceUser: 20
+#  intervalValues:
+#    genericUser: 300
+#    ambulanceUser: 180
+#    operaUser: 600
+#    immobileUser: 900
+#  randomSeeds:
+#    experimentSeed: 33
+#    locationSeed: 42
+#    mobilityStrategySeed: 123
+#    heuristicSeed: 456

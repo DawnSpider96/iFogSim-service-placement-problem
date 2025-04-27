@@ -98,11 +98,12 @@ public class ShortestPathRoutingGenerator {
             }
         }
 
-        System.out.println("Routing Table : "); // todo Let's remove this someday, routing table too big
-        for (String deviceName : routingString.keySet()) {
-            System.out.println(deviceName + " : " + routingString.get(deviceName).toString());
-        }
-        System.out.println("\n");
+        // (260425) commented out to clean simulation log.
+//        System.out.println("Routing Table : ");
+//        for (String deviceName : routingString.keySet()) {
+//            System.out.println(deviceName + " : " + routingString.get(deviceName).toString());
+//        }
+//        System.out.println("\n");
 
         return routing;
     }

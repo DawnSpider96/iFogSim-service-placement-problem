@@ -488,4 +488,142 @@ public class MetricUtils {
     public static String getHeuristicName(int placementLogicCode) {
         return heuristics.getOrDefault(placementLogicCode, "Unknown");
     }
+
+    /**
+     * Writes both aggregate metrics and metrics classified by userType to a single CSV file
+     * 
+     * @param resourceData Aggregate resource utilization data
+     * @param latencyData Aggregate latency data
+     * @param failedPRData Aggregate failed PR data
+     * @param allUtilizations Raw utilization data by simulation index
+     * @param allLatencies Raw latency data by simulation index
+     * @param allFailedPRs Raw failed PR data by simulation index
+     * @param allTotalPRs Raw total PR data by simulation index
+     * @param simConfigs Simulation configurations
+     * @param filePath Path to the output file
+     * @throws IOException If there's an error writing to the file
+     */
+    public static void writeAllMetricsToCSV(
+            List<List<Double>> resourceData,
+            List<List<Double>> latencyData,
+            List<Map<String, Object>> failedPRData,
+            List<Map<Double, Map<PlacementRequest, Double>>> allUtilizations,
+            List<Map<Double, Map<PlacementRequest, Double>>> allLatencies,
+            List<Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>>> allFailedPRs,
+            List<Map<Double, Integer>> allTotalPRs,
+            List<SimulationConfig> simConfigs,
+            String filePath) throws IOException {
+        
+        if (resourceData.size() != simConfigs.size() || latencyData.size() != simConfigs.size()) {
+            throw new IllegalArgumentException(String.format(
+                    "size mismatch: all must have one element per simulation. %d %d %d %d",
+                    resourceData.size(), latencyData.size(), failedPRData.size(), simConfigs.size()));
+        }
+        
+        List<double[]> resourceStats = resourceData.stream()
+                .map(MetricUtils::calculateStatistics)
+                .collect(Collectors.toList());
+                
+        List<double[]> latencyStats = latencyData.stream()
+                .map(MetricUtils::calculateStatistics)
+                .collect(Collectors.toList());
+
+        List<Double> failureStats = failedPRData.stream()
+                .map(MetricUtils::getFailureStats)
+                .collect(Collectors.toList());
+
+        try (FileWriter fileWriter = new FileWriter(filePath)) {
+            // Move UserType column to be next to users column
+            fileWriter.append("Simulation,edges,users,UserType,services,Placement Logic,Avg Resource,Resource stddev,Avg Latency,Latency stddev,Failure ratio\n");
+
+            // First, write aggregate metrics for each simulation
+            for (int i = 0; i < simConfigs.size(); i++) {
+                SimulationConfig sc = simConfigs.get(i);
+                double[] resStats = resourceStats.get(i);
+                double[] latStats = latencyStats.get(i);
+                double failStats = failureStats.get(i);
+                
+                // Get the service count (app loop length) based on whether it's new or legacy format
+                String serviceCount = sc.getNumberOfApplications() > 0 
+                                     ? String.valueOf(sc.getAppLoopLength()) 
+                                     : "Legacy";
+                
+                // For aggregate rows, show the total number of users
+                fileWriter.append(String.format(
+                        "%d,%d,%d,%s,%s,%s,%f,%f,%f,%f,%f\n",
+                        i,
+                        sc.getNumberOfEdge(),
+                        sc.getNumberOfUser(),
+                        "Aggregate", // Mark these as aggregate metrics
+                        serviceCount,
+                        heuristics.get(sc.getPlacementLogic()),
+                        resStats[0],  // mean resource utilization
+                        resStats[1],  // stddev resource utilization
+                        latStats[0],  // mean latency
+                        latStats[1],  // stddev latency
+                        failStats     // failure ratio
+                ));
+            }
+            
+            // Then, write metrics classified by userType for each simulation
+            for (int i = 0; i < simConfigs.size(); i++) {
+                if (i >= allUtilizations.size() || i >= allLatencies.size() || 
+                    i >= allFailedPRs.size() || i >= allTotalPRs.size()) {
+                    System.err.println("Warning: Insufficient data for simulation " + i);
+                    continue;
+                }
+                
+                SimulationConfig sc = simConfigs.get(i);
+                
+                // Process and classify metrics by userType for this simulation
+                Map<Double, Map<PlacementRequest, Double>> utilizationValues = allUtilizations.get(i);
+                Map<Double, Map<PlacementRequest, Double>> latencyValues = allLatencies.get(i);
+                Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>> failedPRs = allFailedPRs.get(i);
+                Map<Double, Integer> totalPRs = allTotalPRs.get(i);
+                
+                Map<String, List<Double>> resourceDataByType = classifyResourceUtilizationByUserType(utilizationValues);
+                Map<String, List<Double>> latencyDataByType = classifyLatencyByUserType(latencyValues);
+                Map<String, Map<String, Object>> failedPRDataByType = classifyFailedPRsByUserType(failedPRs, totalPRs);
+                
+                // Get the service count (app loop length) based on whether it's new or legacy format
+                String serviceCount = sc.getNumberOfApplications() > 0 
+                                     ? String.valueOf(sc.getAppLoopLength()) 
+                                     : "Legacy";
+                
+                for (String userType : resourceDataByType.keySet()) {
+                    List<Double> resourceValues = resourceDataByType.getOrDefault(userType, Collections.emptyList());
+                    List<Double> latencyValues1 = latencyDataByType.getOrDefault(userType, Collections.emptyList());
+                    
+                    double[] resStats = calculateStatistics(resourceValues);
+                    double[] latStats = calculateStatistics(latencyValues1);
+                    
+                    double failStats = 0.0;
+                    if (failedPRDataByType.containsKey(userType)) {
+                        Map<String, Object> failData = failedPRDataByType.get(userType);
+                        int totalFailures = (int) failData.getOrDefault("totalFailures", 0);
+                        int totalPRCount = (int) failData.getOrDefault("totalPRs", 1); // Avoid division by zero
+                        failStats = (double) totalFailures / totalPRCount;
+                    }
+                    
+                    // Get the number of users for this specific user type
+                    int usersOfThisType = sc.getUsersPerType().getOrDefault(userType, 0);
+                    
+                    fileWriter.append(String.format(
+                            "%d,%d,%d,%s,%s,%s,%f,%f,%f,%f,%f\n",
+                            i,
+                            sc.getNumberOfEdge(),
+                            usersOfThisType, // Use the user count for this specific type
+                            userType,
+                            serviceCount,
+                            heuristics.get(sc.getPlacementLogic()),
+                            resStats[0],  // mean resource utilization
+                            resStats[1],  // stddev resource utilization
+                            latStats[0],  // mean latency
+                            latStats[1],  // stddev latency
+                            failStats     // peak failure ratio
+                    ));
+                }
+            }
+        }
+    }
 }

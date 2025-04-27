@@ -83,6 +83,10 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
     // Modified to use composite key but maintain LinkedHashMap as the outer structure
     LinkedHashMap<PlacementRequestKey, LinkedHashMap<String, Integer>> mappedMicroservices = new LinkedHashMap<>();
 
+    // Add a seed field and a random generator
+    protected long seed = 33; // Default to 33 instead of currentTimeMillis for reproducibility
+    protected Random random = new Random(seed); // Initialize with default seed
+
     public MyHeuristic(int fonID) {
         setFONId(fonID);
     }
@@ -1096,6 +1100,23 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         public Integer getDeviceId() { return deviceId; }
         public Integer getSensorId() { return sensorId; }
         public Integer getPrIndex() { return prIndex; }
+    }
+
+    /**
+     * Sets the seed for random number generation to ensure reproducible results.
+     * @param seed The seed value to use
+     */
+    public void setSeed(long seed) {
+        this.seed = seed;
+        this.random = new Random(seed);
+    }
+    
+    /**
+     * Gets the seeded random number generator for use by child classes.
+     * @return A consistently seeded Random object
+     */
+    protected Random getRandom() {
+        return random;
     }
 
 }

@@ -78,7 +78,7 @@ public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacem
 
     @Override
     protected List<DeviceState> getCurrentDeviceStates() {
-        return new ArrayList<>(deviceStateMap.values());
+        return DeviceStates;
     }
 
     @Override
@@ -95,7 +95,7 @@ public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacem
 
         // Simon says if fails to fit, the entire PR should fail
         for (int j = 0 ; j < microservices.size() ; j++) {
-            int nodeIndex = ThreadLocalRandom.current().nextInt(nodes.size());
+            int nodeIndex = getRandom().nextInt(nodes.size());
             int deviceId = nodes.get(nodeIndex).getId();
             String s = microservices.get(j);
             AppModule service = getModule(s, app);

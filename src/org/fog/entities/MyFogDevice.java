@@ -31,6 +31,7 @@ public class MyFogDevice extends FogDevice {
 	public static final String AMBULANCE_USER = "ambulanceUser";
 	public static final String OPERA_USER = "operaUser";
 	public static final String GENERIC_USER = "genericUser"; // random movement, no objective
+	public static final String IMMOBILE_USER = "immobileUser";
 	public static final String FCN = "fcn"; // fog computation node
 	public static final String FON = "fon"; // fog orchestration node
 	public static final String CLOUD = "cloud"; // cloud datacenter
@@ -711,7 +712,7 @@ public class MyFogDevice extends FogDevice {
 				if (module.isBeingInstantiated()) {
 					module.setBeingInstantiated(false);
 				}
-				// todo Simon says no periodic tuples because the apps have no periodic edges.
+				// Simon says no periodic tuples because the apps have no periodic edges.
 				//  Commented out just in case
 //				initializePeriodicTuples(module);
 				// getAllocatedMipsforVm checks the mipmap of the VMScheduler of the Host
@@ -1118,10 +1119,7 @@ public class MyFogDevice extends FogDevice {
 	public boolean isUserDevice() {
 		return deviceType.equals(GENERIC_USER) || 
 		       deviceType.equals(AMBULANCE_USER) || 
-		       deviceType.equals(OPERA_USER);
+		       deviceType.equals(OPERA_USER) ||
+			   deviceType.equals(IMMOBILE_USER);
 	}
-
-	//	public static final Comparator<MyFogDevice> BY_CPU_THEN_RAM = Comparator
-//			.comparingInt(MyFogDevice::getCpu)
-//			.thenComparingInt(MyFogDevice::getRam);
 }

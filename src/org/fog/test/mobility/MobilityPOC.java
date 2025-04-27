@@ -70,6 +70,7 @@ public class MobilityPOC {
                 "controller",
                 fogDevices, 
                 new ArrayList<>(), // no sensors
+                new ArrayList<>(),
                 new ArrayList<>(), // no applications
                 0 // placementLogic
             );

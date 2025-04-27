@@ -199,9 +199,6 @@ public class MyMultiOptHeuristic extends MyHeuristic implements MicroservicePlac
                     currentModuleInstanceNum.get(deviceId).put(s, currentModuleInstanceNum.get(deviceId).get(s) + 1);
             }
         }
-        else {
-            Logger.error("MultiOpt Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
-        }
 
         if (allPlaced) return -1;
         else return getFonID();

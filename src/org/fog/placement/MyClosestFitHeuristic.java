@@ -98,8 +98,8 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
 
         // Initialize temporary state
         int[] placed = new int[microservices.size()];
-        for (int i = 0 ; i < microservices.size() ; i++) {
-            placed[i] = -1;
+        for (int j = 0 ; j < microservices.size() ; j++) {
+            placed[j] = -1;
         }
 
 
@@ -190,9 +190,6 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
                 else
                     currentModuleInstanceNum.get(deviceId).put(s, currentModuleInstanceNum.get(deviceId).get(s) + 1);
             }
-        }
-        else {
-            Logger.error("ClosestFit Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
         }
 
         if (allPlaced) return -1;

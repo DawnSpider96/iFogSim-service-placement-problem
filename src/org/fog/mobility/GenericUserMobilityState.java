@@ -1,8 +1,6 @@
 package org.fog.mobility;
 
-import java.util.Random;
 import org.fog.mobilitydata.Location;
-import org.fog.mobility.PathingStrategy;
 import org.fog.utils.Logger;
 
 /**
@@ -25,7 +23,7 @@ public class GenericUserMobilityState extends DeviceMobilityState {
      * @param strategy the mobility strategy to use
      * @param speed the travel speed (e.g., meters/second)
      */
-    public GenericUserMobilityState(Location location, PathingStrategy strategy, 
+    public GenericUserMobilityState(Location location, PathingStrategy strategy,
                                   double speed) {
         super(location, strategy, speed);
         this.status = GenericUserStatus.PAUSED;        

@@ -106,12 +106,14 @@ public class OnlinePOC {
                     "controller",
                     fogDevices,
                     sensors,
+                    actuators,
                     appList,
                     placementAlgo
             );
 
             try {
                 System.out.println("Initializing location data from CSV files...");
+                microservicesController.enableMobility();
                 microservicesController.initializeLocationData(
                     RESOURCES_LOCATION_PATH,
                     USERS_LOCATION_PATH,
@@ -119,8 +121,8 @@ public class OnlinePOC {
                     numberOfUser
                 );
                 System.out.println("Location data initialization complete.");
-                
-                microservicesController.enableMobility();
+
+                microservicesController.setPathingSeeds(33);
                 System.out.println("Mobility enabled using the Strategy Pattern.");
                 
                 microservicesController.completeInitialization();

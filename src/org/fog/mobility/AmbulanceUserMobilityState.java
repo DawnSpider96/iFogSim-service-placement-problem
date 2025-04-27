@@ -1,8 +1,6 @@
 package org.fog.mobility;
 
-import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.mobilitydata.Location;
-import org.fog.mobility.PathingStrategy;
 import org.fog.utils.Config;
 import org.fog.utils.FogEvents;
 import org.fog.utils.Logger;
@@ -25,7 +23,6 @@ public class AmbulanceUserMobilityState extends DeviceMobilityState {
         //  Next time if we have multiple hospitals, each ambulance's hospital can be passed in as argument.
         super(Location.HOSPITAL1, strategy, speed);
         this.status = AmbulanceUserStatus.WAITING_FOR_EMERGENCY;
-
     }
 
     // Called right after startMoving()
@@ -106,6 +103,10 @@ public class AmbulanceUserMobilityState extends DeviceMobilityState {
     @Override
     public boolean handleEvent(int eventType, Object eventData) {
         if (eventType == FogEvents.OPERA_ACCIDENT_EVENT) {
+            if (this.strategy instanceof LazyBugPathingStrategy) {
+                Logger.debug("Ambulance will not move", "Check that mobility is disabled.");
+                return false;
+            }
             // Can respond from any waiting state
             if (this.status == AmbulanceUserStatus.WAITING_FOR_EMERGENCY) {
                 
@@ -117,6 +118,7 @@ public class AmbulanceUserMobilityState extends DeviceMobilityState {
                 Logger.debug("Ambulance Mobility", "Ambulance responding to opera house emergency");
                 return true;
             }
+            else throw new NullPointerException("Invalid status for handleEvent");
         }
         return false;
     }

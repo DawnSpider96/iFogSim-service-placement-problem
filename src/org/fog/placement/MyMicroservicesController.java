@@ -11,6 +11,7 @@ import org.fog.mobility.*;
 import org.fog.utils.*;
 import org.json.simple.JSONObject;
 import org.fog.mobilitydata.Location;
+import org.fog.utils.distribution.PoissonDistribution;
 
 import java.io.IOException;
 import java.util.*;
@@ -21,6 +22,7 @@ public class MyMicroservicesController extends SimEntity {
 
     protected List<FogDevice> fogDevices;
     protected List<Sensor> sensors;
+    protected List<Actuator> actuators;
     private Map<Integer, Integer> sensorToSequenceNumber = new HashMap<>();
     protected Map<String, Application> applications = new HashMap<>();
     protected PlacementLogicFactory placementLogicFactory = new PlacementLogicFactory();
@@ -56,21 +58,62 @@ public class MyMicroservicesController extends SimEntity {
     private Map<Integer, List<MySensor>> deviceToSensors = new HashMap<>();
     private Map<Integer, List<Actuator>> deviceToActuators = new HashMap<>();
 
+    // Add a field for the Poisson distribution
+    private PoissonDistribution poissonDistribution;
+
+    // Field to store the heuristic seed
+    private int heuristicSeed = 456; // Default value
+
+    /**
+     * Resets all instance state that should not persist between experiments.
+     * Call this method at the beginning of each new experiment.
+     */
+    public void reset() {
+        // Clear sequence numbers
+        sensorToSequenceNumber.clear();
+        
+        // Clear user devices and resource tracking
+        userDevices.clear();
+        userResourceAvailability.clear();
+        
+        // Clear device mappings
+        deviceToSensors.clear();
+        deviceToActuators.clear();
+        
+        // Clear placement requests
+        placementRequestDelayMap.clear();
+        
+        // Clear mobility states
+        deviceMobilityStates.clear();
+        
+        // Reset mobility strategy
+        mobilityStrategy = new NoMobilityStrategy();
+        
+        // Location data initialization flag
+        locationDataInitialized = false;
+    }
+
     /**
      * Constructor supporting both integer and string placement logic identifiers.
      * 
      * @param name Controller name
      * @param fogDevices List of fog devices
      * @param sensors List of sensors
+     * @param actuators List of actuators
      * @param applications List of applications
      * @param placementLogic Placement logic identifier (can be Integer or String)
      * @param experimentSeed Seed for random number generation
      */
     public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, 
-                                    List<Application> applications, Object placementLogic, int experimentSeed) {
+                                    List<Actuator> actuators, List<Application> applications, 
+                                    Object placementLogic, int experimentSeed) {
         super(name);
+        // Reset any previous state
+        reset();
+        
         this.fogDevices = fogDevices;
         this.sensors = sensors;
+        this.actuators = actuators;
         this.placementLogic = placementLogic;
         for (Application app : applications) {
             this.applications.put(app.getAppId(), app);
@@ -92,12 +135,14 @@ public class MyMicroservicesController extends SimEntity {
      * @param name Controller name
      * @param fogDevices List of fog devices
      * @param sensors List of sensors
+     * @param actuators List of actuators
      * @param applications List of applications
      * @param placementLogic Placement logic identifier (can be Integer or String)
      */
     public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, 
-                                    List<Application> applications, Object placementLogic) {
-        this(name, fogDevices, sensors, applications, placementLogic, 33); // Default seed
+                                    List<Actuator> actuators, List<Application> applications, 
+                                    Object placementLogic) {
+        this(name, fogDevices, sensors, actuators, applications, placementLogic, 33); // Default seed
     }
 
     /**
@@ -106,41 +151,76 @@ public class MyMicroservicesController extends SimEntity {
      * @param name Controller name
      * @param fogDevices List of fog devices
      * @param sensors List of sensors
+     * @param actuators List of actuators
      * @param applications List of applications
      * @param placementLogic Integer placement logic type
      */
     public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, 
-                                    List<Application> applications, int placementLogic) {
-        this(name, fogDevices, sensors, applications, (Object)placementLogic, 33); // Default seed
+                                    List<Actuator> actuators, List<Application> applications, 
+                                    int placementLogic) {
+        this(name, fogDevices, sensors, actuators, applications, (Object)placementLogic, 33); // Default seed
     }
 
     // Add a constructor with monitored devices and seed
-    public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, 
-                                     List<Application> applications, Object placementLogic, 
-                                     Map<Integer, List<FogDevice>> monitored, int experimentSeed) {
-        super(name);
-        this.fogDevices = fogDevices;
-        this.sensors = sensors;
-        this.placementLogic = placementLogic;
-        for (Application app : applications) {
-            this.applications.put(app.getAppId(), app);
-        }
-        
-        // Initialize the location management components
-        initializeLocationComponents();
-        
-        // Initialize with the no-op mobility strategy by default
-        this.mobilityStrategy = new NoMobilityStrategy();
-        
-        // Initialize application selection random with provided seed
-        this.applicationSelectionRandom = new Random(experimentSeed);
-    }
+//    public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors,
+//                                     List<Actuator> actuators, List<Application> applications,
+//                                     Object placementLogic, Map<Integer, List<FogDevice>> monitored,
+//                                     int experimentSeed) {
+//        super(name);
+//        this.fogDevices = fogDevices;
+//        this.sensors = sensors;
+//        this.actuators = actuators;
+//        this.placementLogic = placementLogic;
+//        for (Application app : applications) {
+//            this.applications.put(app.getAppId(), app);
+//        }
+//
+//        // Initialize the location management components
+//        initializeLocationComponents();
+//
+//        // Initialize with the no-op mobility strategy by default
+//        this.mobilityStrategy = new NoMobilityStrategy();
+//
+//        // Initialize application selection random with provided seed
+//        this.applicationSelectionRandom = new Random(experimentSeed);
+//    }
 
     // Update the existing constructor with monitored devices to use the new one with seed
+//    public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors,
+//                                     List<Actuator> actuators, List<Application> applications,
+//                                     Object placementLogic, Map<Integer, List<FogDevice>> monitored) {
+//        this(name, fogDevices, sensors, actuators, applications, placementLogic, monitored, 33); // Default seed
+//    }
+
+    /**
+     * Constructor that takes a map of interval values in seconds for the Poisson distribution
+     * Interval values are automatically converted to lambda values (lambda = 1/interval)
+     */
     public MyMicroservicesController(String name, List<FogDevice> fogDevices, List<Sensor> sensors, 
-                                     List<Application> applications, Object placementLogic, 
-                                     Map<Integer, List<FogDevice>> monitored) {
-        this(name, fogDevices, sensors, applications, placementLogic, monitored, 33); // Default seed
+                                   List<Actuator> actuators, List<Application> applications, 
+                                   Object placementLogic, Map<String, Integer> intervalValues, 
+                                   int experimentSeed, int heuristicSeed) {
+        this(name, fogDevices, sensors, actuators, applications, placementLogic, experimentSeed);
+        
+        // Store the heuristic seed
+        this.heuristicSeed = heuristicSeed;
+        
+        // Initialize the Poisson distribution with interval values
+        if (intervalValues != null && !intervalValues.isEmpty()) {
+            initializePoissonDistributionWithIntervals(intervalValues, experimentSeed);
+        }
+    }
+
+    /**
+     * This constructor has been deprecated and should not be used.
+     * Use the constructor with intervalValues instead.
+     */
+    @Deprecated
+    public MyMicroservicesController withLambdaValues(String name, List<FogDevice> fogDevices, List<Sensor> sensors,
+                                   List<Actuator> actuators, List<Application> applications,
+                                   Object placementLogic, Map<String, Double> lambdaValues, int experimentSeed) {
+        // This method is kept only for compatibility but should not be used
+        throw new UnsupportedOperationException("This method is deprecated. Use constructor with interval values instead.");
     }
 
     /**
@@ -221,6 +301,13 @@ public class MyMicroservicesController extends SimEntity {
                     microservicePlacementLogic = null;
                 }
                 
+                // Set the seed if the placement logic is a MyHeuristic instance
+                if (microservicePlacementLogic instanceof MyHeuristic) {
+                    ((MyHeuristic) microservicePlacementLogic).setSeed(heuristicSeed);
+                    System.out.println("Set heuristic seed to " + heuristicSeed + " for " + 
+                        microservicePlacementLogic.getClass().getSimpleName());
+                }
+                
                 cdevice.initializeController(loadBalancer, microservicePlacementLogic, getResourceInfo(monitoredDevices), applications, monitoredDevices);
             } else if (cdevice.getDeviceType().equals(MyFogDevice.FCN) || cdevice.isUserDevice()) {
                 cdevice.initializeController(loadBalancer);
@@ -249,6 +336,13 @@ public class MyMicroservicesController extends SimEntity {
                 } else {
                     Logger.error("Placement Logic Error", "Unknown placement logic type: " + placementLogic.getClass().getName());
                     microservicePlacementLogic = null;
+                }
+                
+                // Set the seed if the placement logic is a MyHeuristic instance
+                if (microservicePlacementLogic instanceof MyHeuristic) {
+                    ((MyHeuristic) microservicePlacementLogic).setSeed(heuristicSeed);
+                    System.out.println("Set heuristic seed to " + heuristicSeed + " for " + 
+                        microservicePlacementLogic.getClass().getSimpleName());
                 }
                 
                 cdevice.initializeController(loadBalancer, microservicePlacementLogic, getResourceInfo(monitoredDevices), applications, monitoredDevices);
@@ -310,19 +404,9 @@ public class MyMicroservicesController extends SimEntity {
     }
 
     /**
-     * Enables mobility functionality by switching to the FullMobilityStrategy
-     * Call in main Sim file after location data is loaded
+     * Enables mobility for the simulation.
      */
     public void enableMobility() {
-        enableMobility(System.currentTimeMillis());
-    }
-
-    /**
-     * Enables mobility for devices with a specific random seed.
-     *
-     * @param seed seed for random number generation
-     */
-    public void enableMobility(long seed) {
         this.mobilityEnabled = true;
         this.mobilityStrategy = new FullMobilityStrategy();
         
@@ -333,8 +417,10 @@ public class MyMicroservicesController extends SimEntity {
         // }
         // mobilityStrategy.initialize(fogDevices, initialParentReferences);
         
-        System.out.println("Mobility enabled with seed: " + seed);
-        
+        System.out.println("Mobility enabled.");
+    }
+
+    public void setPathingSeeds(long seed) {
         // Make sure all mobility states use pathing strategies with the proper seed
         for (DeviceMobilityState state : deviceMobilityStates.values()) {
             PathingStrategy strategy = state.getStrategy();
@@ -486,7 +572,10 @@ public class MyMicroservicesController extends SimEntity {
         
         Random random = new Random(seed);
         BeelinePathingStrategy beelinePathingStrategy = new BeelinePathingStrategy(seed);
-        GraphHopperPathingStrategy graphHopperPathingStrategy = new GraphHopperPathingStrategy(seed);
+        // Option "type". Only return GraphHopperPathingStrategy if mobility enabled.
+        //  Because Ambulance user will always call makepath in response to the accident event.
+        AbstractPathingStrategy graphHopperPathingStrategyOption = mobilityEnabled ?
+            new GraphHopperPathingStrategy(seed) : new LazyBugPathingStrategy(seed);
         JitterBugPathingStrategy jitterBugPathingStrategy = new JitterBugPathingStrategy(seed);
 
         List<MyFogDevice> resourceDevices = new ArrayList<>();
@@ -547,7 +636,7 @@ public class MyMicroservicesController extends SimEntity {
                 else if (fogDevice.getDeviceType().equals(MyFogDevice.AMBULANCE_USER)) {
                     DeviceMobilityState mobilityState = new AmbulanceUserMobilityState(
                             userLocations.get(csvIndex), // We don't use this, instead spawn user at hospital.
-                            graphHopperPathingStrategy,
+                            graphHopperPathingStrategyOption,
                             random.nextDouble() * 20 + 10 // 10 to 30 m/s
                     );
                     registerDeviceMobilityState(fogDevice.getId(), mobilityState);
@@ -591,6 +680,17 @@ public class MyMicroservicesController extends SimEntity {
                             " at location: " + mobilityState.getCurrentLocation().latitude + ", " + mobilityState.getCurrentLocation().longitude);
                 } else {
                     System.out.println("WARNING: No mobility state found for device " + CloudSim.getEntityName(deviceId));
+                }
+            }
+        } else {
+            // Even with mobility disabled, initialize locations for reporting
+            for (int deviceId : deviceMobilityStates.keySet()) {
+                DeviceMobilityState mobilityState = deviceMobilityStates.get(deviceId);
+                if (mobilityState != null) {
+                    System.out.println("Device: " + CloudSim.getEntityName(deviceId) +
+                            " positioned at: " + mobilityState.getCurrentLocation().latitude + 
+                            ", " + mobilityState.getCurrentLocation().longitude + 
+                            " (mobility disabled)");
                 }
             }
         }
@@ -730,16 +830,41 @@ public class MyMicroservicesController extends SimEntity {
 
     /**
      * Periodically generates and sends placement requests for each user device.
-     * Each device receives an individual event with its ID for generating a PR.
+     * Now uses Poisson distribution to determine the delay for each device based on its user type.
      */
     public void generatePeriodicPlacementRequests() {
-        // Schedule individual events per device with same interval
-        for (MyFogDevice userDevice : userDevices) {
-            send(getId(), 0, FogEvents.GENERATE_PR_FOR_DEVICE, userDevice.getId());
+        // Check if we have a Poisson distribution initialized
+        if (poissonDistribution == null) {
+            // Fall back to uniform distribution if Poisson is not initialized
+            for (MyFogDevice userDevice : userDevices) {
+                send(getId(), 0, FogEvents.GENERATE_PR_FOR_DEVICE, userDevice.getId());
+            }
+        } else {
+            // Use Poisson distribution with user-type specific lambda values
+            for (MyFogDevice userDevice : userDevices) {
+                String userType = userDevice.getDeviceType();
+                double delay;
+                
+                try {
+                    // Try to use the user-type specific lambda value
+                    if (poissonDistribution.hasLambdaForUserType(userType)) {
+                        delay = poissonDistribution.getNextValue(userType);
+                    } else {
+                        throw new NullPointerException("Invalid user type");
+                    }
+                } catch (NullPointerException e) {
+                    // Handle case where user type is not valid
+                    System.err.println("Warning: Could not get time interval for user type: " + userType);
+                    delay = poissonDistribution.getNextValue(); // Use default
+                }
+                
+                // Schedule the PR generation with the calculated delay
+                send(getId(), delay, FogEvents.GENERATE_PR_FOR_DEVICE, userDevice.getId());
+            }
         }
         
         // Schedule the next periodic PR generation
-        send(getId(), prGenerationInterval, FogEvents.GENERATE_PERIODIC_PR);
+//        send(getId(), prGenerationInterval, FogEvents.GENERATE_PERIODIC_PR);
     }
 
     protected void initiatePlacementRequestProcessingDynamic() {
@@ -1060,13 +1185,47 @@ public class MyMicroservicesController extends SimEntity {
         Object eventData = ev.getData();
         
         // Forward the event to all relevant mobility states
+        int respondedCount = 0;
+        int operaUserCount = 0;
+        int operaUsersAtOperaCount = 0;
+        int ambulanceUserCount = 0;
+        
         for (Map.Entry<Integer, DeviceMobilityState> entry : deviceMobilityStates.entrySet()) {
+            int deviceId = entry.getKey();
             DeviceMobilityState state = entry.getValue();
-            if (state.handleEvent(FogEvents.OPERA_ACCIDENT_EVENT, eventData)) {
-                System.out.println("Device " + CloudSim.getEntityName(entry.getKey()) + 
-                                   " responded to accident event");
+            if (state == null) {
+                Logger.error("Mobility Error", "Null mobility state found for device " + deviceId);
+                continue;
+            }
+            
+            // Count user types for statistics
+            String deviceName = CloudSim.getEntityName(deviceId);
+            if (deviceName.contains("Opera")) {
+                operaUserCount++;
+                if (state.getStatus().toString().equals("AT_OPERA")) {
+                    operaUsersAtOperaCount++;
+                }
+            } else if (deviceName.contains("Ambulance")) {
+                ambulanceUserCount++;
+            }
+            
+            try {
+                if (state.handleEvent(FogEvents.OPERA_ACCIDENT_EVENT, eventData)) {
+                    respondedCount++;
+                    System.out.println("Device " + deviceName + " responded to accident event");
+                }
+            } catch (Exception e) {
+                Logger.error("Exception in handleAccidentEvent", 
+                    "Device " + deviceName + " error: " + e.getMessage());
             }
         }
+        
+        System.out.println("Accident Event Statistics:");
+        System.out.println("- Total Opera Users: " + operaUserCount);
+        System.out.println("- Opera Users at Opera: " + operaUsersAtOperaCount + 
+                          " (" + (mobilityEnabled ? "mobility enabled" : "mobility disabled") + ")");
+        System.out.println("- Total Ambulance Users: " + ambulanceUserCount);
+        System.out.println("- Total Devices Responded: " + respondedCount);
     }
 
     /**
@@ -1100,7 +1259,7 @@ public class MyMicroservicesController extends SimEntity {
             }
         }
 
-        for (Actuator a : actuators) {
+        for (Actuator a : this.actuators) {
             int deviceId = a.getGatewayDeviceId();
             if (!deviceToActuators.containsKey(deviceId)) {
                 deviceToActuators.put(deviceId, new ArrayList<>());
@@ -1143,8 +1302,8 @@ public class MyMicroservicesController extends SimEntity {
             actuator.setAppId(randomApp.getAppId());
             actuator.setApp(randomApp);
         }
-        
-        // Create the placement request using the first sensor
+
+        // todo Change if one user device has more than one sensor
         MySensor firstSensor = deviceSensors.get(0);
         Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();
         String clientModuleName = FogBroker.getApplicationToFirstMicroserviceMap().get(randomApp);
@@ -1190,6 +1349,26 @@ public class MyMicroservicesController extends SimEntity {
         } catch (NullPointerException e) {
             Logger.error("PR Generation Error", e.getMessage());
         }
+
+        MyFogDevice userDevice = (MyFogDevice) CloudSim.getEntity(deviceId);
+        String userType = userDevice.getDeviceType();
+        double delay;
+
+        try {
+            // Try to use the user-type specific lambda value
+            if (poissonDistribution.hasLambdaForUserType(userType)) {
+                delay = poissonDistribution.getNextValue(userType);
+            } else {
+                throw new NullPointerException("Invalid user type");
+            }
+        } catch (NullPointerException e) {
+            // Handle case where user type is not valid
+            System.err.println("Warning: Could not get time interval for user type: " + userType);
+            delay = poissonDistribution.getNextValue(); // Use default
+        }
+
+        // Schedule the PR generation with the calculated delay
+        send(getId(), delay, FogEvents.GENERATE_PR_FOR_DEVICE, userDevice.getId());
     }
 
     /**
@@ -1231,5 +1410,62 @@ public class MyMicroservicesController extends SimEntity {
                 placedMicroservicesMap
             );
         }
+    }
+
+    /**
+     * Gets the list of user devices registered with this controller
+     * 
+     * @return List of user devices
+     */
+    public List<MyFogDevice> getUserDevices() {
+        return userDevices;
+    }
+
+    /**
+     * Initialize the Poisson distribution with the provided interval values in seconds
+     * 
+     * @param intervalValues Map of user types to interval values in seconds, or null to use default
+     * @param seed Random seed for the distribution
+     */
+    private void initializePoissonDistributionWithIntervals(Map<String, Integer> intervalValues, long seed) {
+        // Default lambda is 1/interval
+        double defaultLambda = 1.0 / prGenerationInterval;
+        
+        // Initialize with default lambda and set a seed for reproducibility
+        poissonDistribution = new PoissonDistribution(defaultLambda, seed);
+        
+        // Convert intervals to lambda values and add them to the distribution
+        if (intervalValues != null && !intervalValues.isEmpty()) {
+            for (Map.Entry<String, Integer> entry : intervalValues.entrySet()) {
+                String userType = entry.getKey();
+                Integer interval = entry.getValue();
+                
+                if (userType != null && interval != null && interval > 0) {
+                    // Convert interval to lambda (lambda = 1/interval)
+                    double lambda = 1.0 / interval;
+                    poissonDistribution.addUserTypeLambda(userType, lambda);
+                }
+            }
+        }
+    }
+
+    /**
+     * @deprecated This method is kept for backwards compatibility only
+     * Use initializePoissonDistributionWithIntervals instead
+     */
+    @Deprecated
+    private void initializePoissonDistribution(Map<String, Double> lambdaValues, long seed) {
+        // Convert lambda values to interval values for internal consistency
+        Map<String, Integer> intervalValues = new HashMap<>();
+        if (lambdaValues != null) {
+            for (Map.Entry<String, Double> entry : lambdaValues.entrySet()) {
+                if (entry.getValue() > 0) {
+                    intervalValues.put(entry.getKey(), (int)(1.0 / entry.getValue()));
+                }
+            }
+        }
+        
+        // Use the new method with interval values
+        initializePoissonDistributionWithIntervals(intervalValues, seed);
     }
 }

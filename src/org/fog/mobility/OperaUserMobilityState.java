@@ -1,6 +1,5 @@
 package org.fog.mobility;
 
-import org.apache.commons.math3.exception.NullArgumentException;
 import org.cloudbus.cloudsim.Consts;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.mobilitydata.Location;
@@ -35,7 +34,7 @@ public class OperaUserMobilityState extends DeviceMobilityState {
      * @param speed the travel speed (meters/second)
      * @param concertStartTime the time when the concert starts
      */
-    public OperaUserMobilityState(Location location, PathingStrategy strategy, 
+    public OperaUserMobilityState(Location location, PathingStrategy strategy,
                                double speed, double concertStartTime) {
         super(location, strategy, speed);
         this.status = OperaUserStatus.WAITING_AT_SPAWN;
@@ -137,15 +136,18 @@ public class OperaUserMobilityState extends DeviceMobilityState {
                 while (!this.path.isEmpty()) {
                     this.path.removeNextWayPoint();
                 }
-                Logger.debug("Opera Mobility", "User became immobile due to accident event");
+                Logger.debug("Opera Mobility", "User became immobile due to accident event"); // TODO change to lazybug
                 return true;
             }
             else {
-                throw new NullPointerException("Opera user should be at the opera house");
+                // Simply log and ignore - this user wasn't at the opera when the accident happened
+                Logger.debug("Opera Mobility", "Opera accident event received but user was not at the opera " +
+                            "(status: " + this.status + ") - ignoring");
+                return false;
             }
         }
         
-        // Not handled or already in immobile state
+        // Not handled
         return false;
     }
 } 

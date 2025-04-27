@@ -96,7 +96,11 @@ public class MyMaxFitHeuristic extends MyHeuristic implements MicroservicePlacem
             if (placed[j] < 0) {
                 // todo Simon says what do we do when failure?
                 //  (160125) Nothing. Because (aggregated) failure will be determined outside the for loop
-                System.out.println("Failed to place module " + s + "on PR " + placementRequest.getSensorId());
+                MyPlacementRequest mpr = (MyPlacementRequest) placementRequest;
+                System.out.printf("Failed to place module %s on PR %d, cycle %d%n",
+                        s,
+                        mpr.getSensorId(),
+                        mpr.getPrIndex());
                 System.out.println("Failed placement " + placementRequest.getSensorId());
 
                 // Undo every "placement" recorded in placed. Only deviceStates was changed, so we change it back
@@ -168,9 +172,6 @@ public class MyMaxFitHeuristic extends MyHeuristic implements MicroservicePlacem
                 else
                     currentModuleInstanceNum.get(deviceId).put(s, currentModuleInstanceNum.get(deviceId).get(s) + 1);
             }
-        }
-        else {
-            Logger.error("MaxFit Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
         }
 
         if (allPlaced) return -1;

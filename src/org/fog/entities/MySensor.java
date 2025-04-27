@@ -38,6 +38,8 @@ public class MySensor extends Sensor {
         this.userType = userType;
     }
 
+    // NOTE: Overridden to prevent EMIT_TUPLE event from being sent to self.
+    // MyMicroservicesController
     @Override
     public void startEntity() {
         send(gatewayDeviceId, CloudSim.getMinTimeBetweenEvents(), FogEvents.SENSOR_JOINED, geoLocation);
