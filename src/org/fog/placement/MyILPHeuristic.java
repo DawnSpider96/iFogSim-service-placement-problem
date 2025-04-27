@@ -46,7 +46,7 @@ public class MyILPHeuristic extends MyHeuristic implements MicroservicePlacement
 
     @Override
     protected Map<PlacementRequest, Integer> mapModules() {
-        Map<PlacementRequest, List<String>> toPlace = new HashMap<>();
+        Map<PlacementRequest, List<String>> toPlace = new LinkedHashMap<>();
 
         int placementCompleteCount = 0;
         if (toPlace.isEmpty()) {
@@ -60,7 +60,7 @@ public class MyILPHeuristic extends MyHeuristic implements MicroservicePlacement
                     fogDevice.getHost().getTotalMips(), fogDevice.getHost().getRam(), fogDevice.getHost().getStorage()));
         }
 
-        Map<PlacementRequest, Integer> prStatus = new HashMap<>();
+        Map<PlacementRequest, Integer> prStatus = new LinkedHashMap<>();
         // Process every PR individually
         for (Map.Entry<PlacementRequest, List<String>> entry : toPlace.entrySet()) {
             PlacementRequest placementRequest = entry.getKey();

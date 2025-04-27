@@ -52,7 +52,7 @@ import java.util.stream.IntStream;
  */
 public class MyExperiment {
 //    private static final String outputFile = "./output/resourceDist_Comfortable_R_Beta.csv";
-    private static final String outputFile = "./output/GreenBaby_Mobile_10k_COPY_COPY.csv";
+    private static final String outputFile = "./output/GreenBaby_Mobile_10k.csv";
     // The configuration file now uses string-based placement logic identifiers instead of integers
     private static final String CONFIG_FILE = "./dataset/MyExperimentConfigs.yaml";
 

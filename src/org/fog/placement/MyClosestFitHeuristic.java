@@ -27,7 +27,7 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
 
     // Add DeviceStates field to match other implementations
     private List<DeviceState> DeviceStates = new ArrayList<>();
-    private Map<Integer, DeviceState> deviceStateMap = new HashMap<>();
+    private Map<Integer, DeviceState> deviceStateMap = new LinkedHashMap<>();
 
     @Override
     public void postProcessing() {
@@ -35,7 +35,7 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
 
     @Override
     protected Map<PlacementRequest, Integer> mapModules() {
-        Map<PlacementRequest, List<String>> toPlace = new HashMap<>();
+        Map<PlacementRequest, List<String>> toPlace = new LinkedHashMap<>();
 
         if(cloudIndex < 0) {
             Logger.error("Control Flow Error", "Cloud index should have value.");
@@ -49,7 +49,7 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
 
         // Initialize DeviceStates similar to other implementations
         DeviceStates = new ArrayList<>();
-        deviceStateMap = new HashMap<>();
+        deviceStateMap = new LinkedHashMap<>();
         for (FogDevice fogDevice : edgeFogDevices) {
             DeviceState state = new DeviceState(
                 fogDevice.getId(), 
@@ -62,7 +62,7 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
             deviceStateMap.put(fogDevice.getId(), state);
         }
 
-        Map<PlacementRequest, Integer> prStatus = new HashMap<>();
+        Map<PlacementRequest, Integer> prStatus = new LinkedHashMap<>();
         // Process every PR individually
         for (Map.Entry<PlacementRequest, List<String>> entry : toPlace.entrySet()) {
             PlacementRequest placementRequest = entry.getKey();

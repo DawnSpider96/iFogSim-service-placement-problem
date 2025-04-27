@@ -26,9 +26,9 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
     private SortedMap<Integer, DeviceState> deviceStateMap = new TreeMap<>();
     List<DeviceState> baseStates;
     // For quick lookup with id as key
-    private Map<Integer, FogDevice> deviceIdMap = new HashMap<>();
-    Map<Integer,Integer> devToIdx = new HashMap<>();
-    private Map<String, Double> latencyCache = new HashMap<>();
+    private Map<Integer, FogDevice> deviceIdMap = new LinkedHashMap<>();
+    Map<Integer,Integer> devToIdx = new LinkedHashMap<>();
+    private Map<String, Double> latencyCache = new LinkedHashMap<>();
 
     // Simulated Annealing parameters
     private static double temperature = 1000;
@@ -41,7 +41,7 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
 
     @Override
     protected Map<PlacementRequest, Integer> mapModules() {
-        Map<PlacementRequest, List<String>> toPlace = new HashMap<>();
+        Map<PlacementRequest, List<String>> toPlace = new LinkedHashMap<>();
 
         int placementCompleteCount = 0;
         if (toPlace.isEmpty()) {
@@ -53,7 +53,7 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
         //  This initialisation occurs only once, capturing the state of resourceAvailability (and fogDevices) at this point in time
         // However, everytime a placement is made (for one PR), DeviceStates will be updated.
         deviceStateMap = new TreeMap<>();
-        deviceIdMap = new HashMap<>();
+        deviceIdMap = new LinkedHashMap<>();
         for (FogDevice fogDevice : edgeFogDevices) {
             // SHARED object in both states
             DeviceState deviceState = new DeviceState(
@@ -73,7 +73,7 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
         }
 
 
-        Map<PlacementRequest, Integer> prStatus = new HashMap<>();
+        Map<PlacementRequest, Integer> prStatus = new LinkedHashMap<>();
         // Process every PR individually
         for (Map.Entry<PlacementRequest, List<String>> entry : toPlace.entrySet()) {
             PlacementRequest placementRequest = entry.getKey();

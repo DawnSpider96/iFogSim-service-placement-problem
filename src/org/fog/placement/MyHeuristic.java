@@ -40,9 +40,9 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
     protected Map<Integer, Double> currentCpuLoad;
     protected Map<Integer, Double> currentRamLoad;
     protected Map<Integer, Double> currentStorageLoad;
-    protected Map<Integer, List<String>> currentModuleMap = new HashMap<>();
-    protected Map<Integer, Map<String, Double>> currentModuleLoadMap = new HashMap<>();
-    protected Map<Integer, Map<String, Integer>> currentModuleInstanceNum = new HashMap<>();
+    protected Map<Integer, List<String>> currentModuleMap = new LinkedHashMap<>();
+    protected Map<Integer, Map<String, Double>> currentModuleLoadMap = new LinkedHashMap<>();
+    protected Map<Integer, Map<String, Integer>> currentModuleInstanceNum = new LinkedHashMap<>();
 
     // For quick lookup in getModule method
     private final Map<String, Map<String, AppModule>> moduleCache = new HashMap<>();
@@ -84,8 +84,8 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
     LinkedHashMap<PlacementRequestKey, LinkedHashMap<String, Integer>> mappedMicroservices = new LinkedHashMap<>();
 
     // Add a seed field and a random generator
-    protected long seed = 33; // Default to 33 instead of currentTimeMillis for reproducibility
-    protected Random random = new Random(seed); // Initialize with default seed
+    protected long seed = 33;
+    protected Random random = new Random(seed);
 
     public MyHeuristic(int fonID) {
         setFONId(fonID);
@@ -203,7 +203,22 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
      */
     protected int fillToPlace(int placementCompleteCount, Map<PlacementRequest, List<String>> toPlace, List<PlacementRequest> placementRequests) {
         int f = placementCompleteCount;
-        for (PlacementRequest placementRequest : placementRequests) {
+        
+        // Sort placementRequests by a deterministic key to ensure consistent processing order
+        List<PlacementRequest> sortedRequests = new ArrayList<>(placementRequests);
+        sortedRequests.sort((pr1, pr2) -> {
+            MyPlacementRequest mpr1 = (MyPlacementRequest) pr1;
+            MyPlacementRequest mpr2 = (MyPlacementRequest) pr2;
+            
+            // First compare by sensorId
+            int sensorCompare = Integer.compare(mpr1.getSensorId(), mpr2.getSensorId());
+            if (sensorCompare != 0) return sensorCompare;
+            
+            // Then by prIndex if sensorIds are equal
+            return Integer.compare(mpr1.getPrIndex(), mpr2.getPrIndex());
+        });
+        
+        for (PlacementRequest placementRequest : sortedRequests) {
             Application app = applicationInfo.get(placementRequest.getApplicationId());
             
             // Create a key for this placement request
@@ -318,21 +333,21 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         this.mappedMicroservices = new LinkedHashMap<>();
         this.closestNodes = mapPlacedAndSpecialModules(placementRequests);
 
-        setCurrentCpuLoad(new HashMap<Integer, Double>());
-        setCurrentRamLoad(new HashMap<Integer, Double>());
-        setCurrentStorageLoad(new HashMap<Integer, Double>());
-        setCurrentModuleMap(new HashMap<>());
+        setCurrentCpuLoad(new LinkedHashMap<Integer, Double>());
+        setCurrentRamLoad(new LinkedHashMap<Integer, Double>());
+        setCurrentStorageLoad(new LinkedHashMap<Integer, Double>());
+        setCurrentModuleMap(new LinkedHashMap<>());
         for (FogDevice dev : fogDevices) {
             int id = dev.getId();
             getCurrentCpuLoad().put(id, 0.0);
             getCurrentRamLoad().put(id, 0.0);
             getCurrentStorageLoad().put(id, 0.0);
             getCurrentModuleMap().put(id, new ArrayList<>());
-            currentModuleLoadMap.put(id, new HashMap<String, Double>());
-            currentModuleInstanceNum.put(id, new HashMap<String, Integer>());
+            currentModuleLoadMap.put(id, new LinkedHashMap<String, Double>());
+            currentModuleInstanceNum.put(id, new LinkedHashMap<String, Integer>());
         }
 
-        indices = new HashMap<>();
+        indices = new LinkedHashMap<>();
         for (int i=0 ; i<fogDevices.size() ; i++) {
             indices.put(fogDevices.get(i).getId(), i);
             // While we're at it, determine cloud's index
@@ -344,7 +359,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         globalLatencies = fillGlobalLatencies(fogDevices.size(), indices);
 
         // Initialize placementRequestMap for efficient lookups
-        placementRequestMap = new HashMap<>();
+        placementRequestMap = new LinkedHashMap<>();
         for (PlacementRequest pr : prs) {
             MyPlacementRequest myPr = (MyPlacementRequest) pr;
             PlacementRequestKey key = new PlacementRequestKey(myPr.getSensorId(), myPr.getPrIndex());
@@ -448,8 +463,8 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         Returns HashMap containing all the services placed IN THIS CYCLE to each device
         */
         MicroservicePlacementConfig.FAILURE_REASON failureReason = MicroservicePlacementConfig.FAILURE_REASON.PLACEMENT_FAILED;
-        Map<PlacementRequestKey, Map<String, Integer>> placement = new HashMap<>();
-        Map<PlacementRequest, Double> latencies = new HashMap<>();
+        Map<PlacementRequestKey, Map<String, Integer>> placement = new LinkedHashMap<>();
+        Map<PlacementRequest, Double> latencies = new LinkedHashMap<>();
 
         // Collect Total PRs metric. Failed PRs metric collected below.
         MyMonitor.getInstance().recordTotalPRs(placementRequests.size(), CloudSim.clock());
@@ -518,8 +533,8 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
 
         //todo it assumed that modules are not shared among applications.
         // <deviceid, < app, list of modules to deploy > this is to remove deploying same module more than once on a certain device.
-        Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice = new HashMap<>();
-        Map<Integer, List<PRContextAwareEntry>> serviceDiscoveryInfo = new HashMap<>();
+        Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice = new LinkedHashMap<>();
+        Map<Integer, List<PRContextAwareEntry>> serviceDiscoveryInfo = new LinkedHashMap<>();
         if (placements != null) {
             for (PlacementRequestKey prKey : placements.keySet()) {
                 // placementRequestMap is for O(1) lookup
@@ -634,7 +649,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
     * @return Map of each PR to the deviceId that the FogBroker will inform to begin execution
     * */
     protected Map<PlacementRequest, Integer> determineTargets(Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice, Map<PlacementRequest, Integer> prStatus) {
-        Map<PlacementRequest, Integer> targets = new HashMap<>();
+        Map<PlacementRequest, Integer> targets = new LinkedHashMap<>();
         for (PlacementRequest pr : placementRequests) {
             // Skip failed placement requests
             if (prStatus.containsKey(pr) && prStatus.get(pr) != -1) {
@@ -671,7 +686,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
     */
     protected Map<PlacementRequest, Integer> determineTargets(Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice) {
         // Create an empty prStatus map to pass to the new method
-        Map<PlacementRequest, Integer> emptyPrStatus = new HashMap<>();
+        Map<PlacementRequest, Integer> emptyPrStatus = new LinkedHashMap<>();
         // Mark all PRs as successful by default
         for (PlacementRequest pr : placementRequests) {
             emptyPrStatus.put(pr, -1);
@@ -943,17 +958,20 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         @Override
         public int compareTo(DeviceState other) {
             // Sort by CPU Util, then by RAM Util if CPU is equal, from smallest to biggest
-            int cpuCompare;
-            cpuCompare = Double.compare(
+            int cpuCompare = Double.compare(
                     this.getCPUUtil(), // Smallest first
                     other.getCPUUtil()
             );
             if (cpuCompare != 0) return cpuCompare;
 
-            return Double.compare(
+            int ramCompare = Double.compare(
                     this.getRAMUtil(), // Smallest first
                     other.getRAMUtil()
             );
+            if (ramCompare != 0) return ramCompare;
+            
+            // Use device ID as final tiebreaker for stable sorting
+            return Integer.compare(this.deviceId, other.deviceId);
         }
     }
 
@@ -1067,14 +1085,14 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         @Override
         public int compareTo(RelativeLatencyDeviceState other) {
             try {
-                if (this.latencyToClosestHost < other.latencyToClosestHost) {
-                    return -1;
-                } else if (this.latencyToClosestHost > other.latencyToClosestHost) {
-                    return 1;
-
-                } else {
-                    return 0;
+                // First compare by latency
+                int latencyCompare = Double.compare(this.latencyToClosestHost, other.latencyToClosestHost);
+                if (latencyCompare != 0) {
+                    return latencyCompare;
                 }
+                
+                // If latencies are equal, use device ID as a tiebreaker
+                return Integer.compare(this.fogDevice.getId(), other.fogDevice.getId());
             } catch (Exception ex) {
                 Logger.error("An error occurred", ex.getMessage());
                 return 0;
