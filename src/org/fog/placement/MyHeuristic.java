@@ -126,7 +126,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             );
 
             // already placed modules
-            mappedMicroservices.put(prKey, new LinkedHashMap<>(placementRequest.getPlacedMicroservices()));
+            mappedMicroservices.put(prKey, new LinkedHashMap<>(placementRequest.getPlacedServices()));
 
             //special modules  - predefined cloud placements
             Application app =  applicationInfo.get(placementRequest.getApplicationId());
@@ -485,19 +485,19 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
                 List<String> toRemove = new ArrayList<>();
                 // placement should include newly placed ones
                 for (String microservice : mappedMicroservices.get(prKey).keySet()) {
-                    if (placementRequest.getPlacedMicroservices().containsKey(microservice))
+                    if (placementRequest.getPlacedServices().containsKey(microservice))
                         toRemove.add(microservice);
                     else
-                        placementRequest.getPlacedMicroservices().put(microservice, mappedMicroservices.get(prKey).get(microservice));
+                        placementRequest.getPlacedServices().put(microservice, mappedMicroservices.get(prKey).get(microservice));
                 }
                 for (String microservice : toRemove)
                     mappedMicroservices.get(prKey).remove(microservice);
 
                 // Simon (170225) says update PR to shift first module (always clientModule) to last place
                 // For metric collecting purposes
-                Map.Entry<String, Integer> clientModuleEntry = placementRequest.getPlacedMicroservices().entrySet().iterator().next();
-                placementRequest.getPlacedMicroservices().remove(clientModuleEntry.getKey());
-                placementRequest.getPlacedMicroservices().put(clientModuleEntry.getKey(), clientModuleEntry.getValue());
+                Map.Entry<String, Integer> clientModuleEntry = placementRequest.getPlacedServices().entrySet().iterator().next();
+                placementRequest.getPlacedServices().remove(clientModuleEntry.getKey());
+                placementRequest.getPlacedServices().put(clientModuleEntry.getKey(), clientModuleEntry.getValue());
                 latencies.put(placementRequest, determineLatencyOfDecision(placementRequest));
 
                 // Update output - now keyed by PlacementRequestKey rather than just sensorId
@@ -586,7 +586,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
                     // Get client devices that need this service discovery info
                     List<Integer> clientDevices = getClientServiceNodeIds(application,
                             microserviceName,
-                            placementRequest.getPlacedMicroservices(),
+                            placementRequest.getPlacedServices(),
                             placements.get(prKey));
 
                     for (int clientDevice : clientDevices) {
@@ -661,7 +661,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             // If there are no second microservices, targeted is true
             boolean targeted = true;
             for (String secondMicroservice : FogBroker.getApplicationToSecondMicroservicesMap().get(app)) {
-                for (Map.Entry<String, Integer> entry : pr.getPlacedMicroservices().entrySet()) {
+                for (Map.Entry<String, Integer> entry : pr.getPlacedServices().entrySet()) {
                     if (Objects.equals(entry.getKey(), secondMicroservice)) {
                         targets.put(pr, entry.getValue());
                         targeted = true;
@@ -809,7 +809,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         // Hence only placement targets are considered
         // placedMicroservices are ordered
         double latency = 0;
-        List<Integer> edges = new ArrayList<>(pr.getPlacedMicroservices().values());
+        List<Integer> edges = new ArrayList<>(pr.getPlacedServices().values());
 
 
         // Check if there are at least two devices to calculate latency

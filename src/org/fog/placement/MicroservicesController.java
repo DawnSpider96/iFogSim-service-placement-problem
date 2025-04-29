@@ -195,8 +195,8 @@ public class MicroservicesController extends SimEntity {
     }
 
     protected void processPlacedModules(PlacementRequest p) {
-        for (String placed : p.getPlacedMicroservices().keySet()) {
-            int deviceId = p.getPlacedMicroservices().get(placed);
+        for (String placed : p.getPlacedServices().keySet()) {
+            int deviceId = p.getPlacedServices().get(placed);
             Application application = applications.get(p.getApplicationId());
             sendNow(deviceId, FogEvents.ACTIVE_APP_UPDATE, application);
             sendNow(deviceId, FogEvents.APP_SUBMIT, application);

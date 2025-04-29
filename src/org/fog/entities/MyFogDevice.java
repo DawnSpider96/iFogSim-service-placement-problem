@@ -5,7 +5,6 @@ import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEvent;
-import org.fog.application.AppEdge;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.placement.MicroservicePlacementLogic;
@@ -312,7 +311,7 @@ public class MyFogDevice extends FogDevice {
 							break;
 						}
 						else {
-							Logger.error("Null Error", "Target VM is already full!");
+							throw new NullPointerException("Target vm is already full!");
 						}
 					}
 				}
@@ -848,7 +847,7 @@ public class MyFogDevice extends FogDevice {
 	private void installStartingModule(PlacementRequest pr, Application application) {
 		// Find the first module placed on the given device 
 		// (There should only be one because this is an unfulfilled Placement Request)
-		String placedModule = pr.getPlacedMicroservices()
+		String placedModule = pr.getPlacedServices()
 				.entrySet()
 				.stream()
 				.filter(entry -> entry.getValue().equals(getId()))
@@ -953,6 +952,30 @@ public class MyFogDevice extends FogDevice {
 				case ManagementTuple.RESOURCE_UPDATE:
 					sendNow(getId(), FogEvents.UPDATE_RESOURCE_INFO, tuple.getResourceData());
 					break;
+					
+				case ManagementTuple.INSTALL_NOTIFICATION:
+					// Cloud forwards installation notification to FogBroker without network cost,
+					// because FogBroker is attached to cloud.
+					if (deviceType.equals(MyFogDevice.CLOUD)) {
+						JSONObject js = new JSONObject();
+						js.put("deviceId", tuple.getSourceDeviceId());
+						js.put("cycleNumber", tuple.getCycleNumber());
+						sendNow(CloudSim.getFogBrokerId(), FogEvents.RECEIVE_INSTALL_NOTIF, js);
+					}
+					else throw new NullPointerException("Only cloud should receive this");
+					break;
+					
+				case ManagementTuple.TUPLE_FORWARDING:
+					Tuple startingTuple = tuple.getStartingTuple();
+					
+					if (deviceType.equals(MyFogDevice.CLOUD)) {
+//						startingTuple.setSourceDeviceId(getId());
+//						sendNow(getId(), FogEvents.TUPLE_ARRIVAL, startingTuple);
+						throw new NullPointerException("Control flow error.");
+					} else {
+						sendNow(getId(), FogEvents.TUPLE_ARRIVAL, startingTuple);
+					}
+					break;
 
 				default:
 					throw new IllegalArgumentException("Unknown ManagementTuple type: " + tuple.managementTupleType);
@@ -992,8 +1015,19 @@ public class MyFogDevice extends FogDevice {
 				sendNow(getId(), FogEvents.LAUNCH_MODULE_INSTANCE, moduleLaunchConfig); // Updates local resource availability information
 			}
 		}
-		// Simon says (140125) FogDevice will send ack to FogBroker a bit AFTER LAUNCH_MODULE is processed
-		send(CloudSim.getFogBrokerId(), MicroservicePlacementConfig.MODULE_DEPLOYMENT_TIME + CloudSim.getMinTimeBetweenEvents(), FogEvents.RECEIVE_INSTALL_NOTIF, cycleNumber);
+		
+		// Send installation notification with appropriate network delay
+		if (!deviceType.equals(MyFogDevice.CLOUD)) {
+			// Create installation notification tuple for non-cloud devices
+			ManagementTuple installNotifTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.INSTALL_NOTIFICATION);
+			installNotifTuple.setSourceDeviceId(getId());
+			installNotifTuple.setCycleNumber(cycleNumber);
+			installNotifTuple.setDestinationDeviceId(getFonId()); // Send to cloud via FON ID
+			sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, installNotifTuple);
+		} else {
+			// Cloud can directly notify FogBroker without network cost
+			send(CloudSim.getFogBrokerId(), MicroservicePlacementConfig.MODULE_DEPLOYMENT_TIME + CloudSim.getMinTimeBetweenEvents(), FogEvents.RECEIVE_INSTALL_NOTIF, cycleNumber);
+		}
 
 		// Simon says (140125) that we are shelving this functionality for a while
 		// Instead, fog broker will send the tuples

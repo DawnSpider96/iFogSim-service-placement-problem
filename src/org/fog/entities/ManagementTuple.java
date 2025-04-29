@@ -21,12 +21,15 @@ public class ManagementTuple extends Tuple {
     public static final int SERVICE_DISCOVERY_INFO = 2;
     public static final int RESOURCE_UPDATE = 3;
     public static final int DEPLOYMENT_REQUEST = 4;
+    public static final int INSTALL_NOTIFICATION = 5;
+    public static final int TUPLE_FORWARDING = 6;
 
     public int managementTupleType;
     protected PlacementRequest placementRequest;
     protected MyHeuristic.PRContextAwareEntry serviceDiscoveryInfo;
     protected Map<Application, List<ModuleLaunchConfig>> deployementSet;
     protected Pair<Integer, Map<String, Double>> resourceData;
+    protected Tuple startingTuple;
 
     // TODO Note (sensorID, prIndex) fields serve different purposes in managementTuples and Tuples.
     //  Tuples use them to PASS information to other FogDevices for service discovery.
@@ -86,5 +89,13 @@ public class ManagementTuple extends Tuple {
 
     public void setResourceData(Pair<Integer, Map<String, Double>> resourceData) {
         this.resourceData = resourceData;
+    }
+
+    public Tuple getStartingTuple() {
+        return startingTuple;
+    }
+
+    public void setStartingTuple(Tuple startingTuple) {
+        this.startingTuple = startingTuple;
     }
 }

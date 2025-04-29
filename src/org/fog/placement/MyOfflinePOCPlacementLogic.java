@@ -87,10 +87,10 @@ public class MyOfflinePOCPlacementLogic implements MicroservicePlacementLogic {
             List<String> toRemove = new ArrayList<>();
             //placement should include newly placed ones
             for (String microservice : mappedMicroservices.get(placementRequest.getSensorId()).keySet()) {
-                if (placementRequest.getPlacedMicroservices().containsKey(microservice))
+                if (placementRequest.getPlacedServices().containsKey(microservice))
                     toRemove.add(microservice);
                 else
-                    placementRequest.getPlacedMicroservices().put(microservice, mappedMicroservices.get(placementRequest.getSensorId()).get(microservice));
+                    placementRequest.getPlacedServices().put(microservice, mappedMicroservices.get(placementRequest.getSensorId()).get(microservice));
             }
             for (String microservice : toRemove)
                 mappedMicroservices.get(placementRequest.getSensorId()).remove(microservice);
@@ -117,7 +117,7 @@ public class MyOfflinePOCPlacementLogic implements MicroservicePlacementLogic {
                     int deviceID = placement.get(prID).get(microserviceName);
 
                     //service discovery info propagation
-                    List<Integer> clientDevices = getClientServiceNodeIds(application, microserviceName, placementRequest.getPlacedMicroservices(), placement.get(prID));
+                    List<Integer> clientDevices = getClientServiceNodeIds(application, microserviceName, placementRequest.getPlacedServices(), placement.get(prID));
                     for (int clientDevice : clientDevices) {
                         if (serviceDiscoveryInfo.containsKey(clientDevice))
                             serviceDiscoveryInfo.get(clientDevice).add(new Pair<>(microserviceName, deviceID));
@@ -211,7 +211,7 @@ public class MyOfflinePOCPlacementLogic implements MicroservicePlacementLogic {
             deviceToPlace.put(placementRequest, getDevice(placementRequest.getRequester()).getParentId());
 
             // already placed modules
-            mappedMicroservices.put(placementRequest.getSensorId(), new HashMap<>(placementRequest.getPlacedMicroservices()));
+            mappedMicroservices.put(placementRequest.getSensorId(), new HashMap<>(placementRequest.getPlacedServices()));
 
             //special modules  - predefined cloud placements
             Application app =  applicationInfo.get(placementRequest.getApplicationId());

@@ -762,8 +762,8 @@ public class MyMicroservicesController extends SimEntity {
         }
         
         String moduleToCheck = null;
-        for (String module : pr.getPlacedMicroservices().keySet()) {
-            if (pr.getPlacedMicroservices().get(module) == userId) {
+        for (String module : pr.getPlacedServices().keySet()) {
+            if (pr.getPlacedServices().get(module) == userId) {
                 moduleToCheck = module;
                 break;
             }

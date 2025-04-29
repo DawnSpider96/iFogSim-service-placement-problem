@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class PlacementRequest {
     private String applicationId;
-    private Map<String,Integer> placedMicroservices; // microservice name to placed device id
+    private Map<String,Integer> placedServices; // microservice name to placed device id
     private int sensorId; //sensor Id
     private int requester; //device generating the request
 
@@ -13,14 +13,14 @@ public class PlacementRequest {
         this.applicationId = applicationId;
         this.sensorId = sensorId;
         this.requester = requester;
-        this.placedMicroservices = placedMicroservicesMap;
+        this.placedServices = placedMicroservicesMap;
     }
 
     public PlacementRequest(String applicationId, int sensorId, int requester){
         this.applicationId = applicationId;
         this.sensorId = sensorId;
         this.requester = requester;
-        this.placedMicroservices = new HashMap<>();
+        this.placedServices = new HashMap<>();
     }
 
     public String getApplicationId(){
@@ -35,7 +35,7 @@ public class PlacementRequest {
         return requester;
     }
 
-    public Map<String, Integer> getPlacedMicroservices() {
-        return placedMicroservices;
+    public Map<String, Integer> getPlacedServices() {
+        return placedServices;
     }
 }

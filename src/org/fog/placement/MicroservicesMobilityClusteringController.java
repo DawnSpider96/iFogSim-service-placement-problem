@@ -218,7 +218,7 @@ public class MicroservicesMobilityClusteringController extends MicroservicesCont
                 serviceDiscoveryUpdate(fogDevice, migratingModules, applicationName, newParent.getId(), upDelays, downDelays);
                 for (String moduleName : migratingModules.keySet()) {
                     //because modules are moved to next parent
-                    perClientDevicePrs.get(fogDevice.getId()).get(applicationName).getPlacedMicroservices().put(moduleName, newParent.getId());
+                    perClientDevicePrs.get(fogDevice.getId()).get(applicationName).getPlacedServices().put(moduleName, newParent.getId());
                 }
             }
 
@@ -278,12 +278,12 @@ public class MicroservicesMobilityClusteringController extends MicroservicesCont
                 JSONObject serviceDiscoveryRemove = new JSONObject();
                 serviceDiscoveryRemove.put("service data", new Pair<>(m, migratingModules.get(m)));
                 serviceDiscoveryRemove.put("action", "REMOVE");
-                send(pr.getPlacedMicroservices().get(clientM), downDelays.get(m), FogEvents.UPDATE_SERVICE_DISCOVERY, serviceDiscoveryRemove);
+                send(pr.getPlacedServices().get(clientM), downDelays.get(m), FogEvents.UPDATE_SERVICE_DISCOVERY, serviceDiscoveryRemove);
             }
         }
 
-        for (String m : pr.getPlacedMicroservices().keySet()) {
-            if (pr.getPlacedMicroservices().get(m) == fogDevice.getId()) {
+        for (String m : pr.getPlacedServices().keySet()) {
+            if (pr.getPlacedServices().get(m) == fogDevice.getId()) {
                 List<String> services = getServiceMicroservice(m, applicationName);
                 for (String service : services) {
                     if (migratingModules.containsKey(service)) {
@@ -305,7 +305,7 @@ public class MicroservicesMobilityClusteringController extends MicroservicesCont
                     serviceDiscoveryAdd.put("action", "ADD");
                     send(newParent, upDelays.get(service), FogEvents.UPDATE_SERVICE_DISCOVERY, serviceDiscoveryAdd);
                 } else {
-                    int d = pr.getPlacedMicroservices().get(service);
+                    int d = pr.getPlacedServices().get(service);
                     JSONObject serviceDiscoveryAdd = new JSONObject();
                     serviceDiscoveryAdd.put("service data", new Pair<>(service, d));
                     serviceDiscoveryAdd.put("action", "ADD");
@@ -343,8 +343,8 @@ public class MicroservicesMobilityClusteringController extends MicroservicesCont
         Map<String, Integer> migratingModules = new HashMap<>();
 
         PlacementRequest pr = perClientDevicePrs.get(mobileDevice.getId()).get(applicationName);
-        for (String microservice : pr.getPlacedMicroservices().keySet()) {
-            int deviceid = pr.getPlacedMicroservices().get(microservice);
+        for (String microservice : pr.getPlacedServices().keySet()) {
+            int deviceid = pr.getPlacedServices().get(microservice);
             if (deviceid != mobileDevice.getId() && beforeCommonAncestor(deviceid, commonAncestor)) {
                 migratingModules.put(microservice, deviceid);
             }

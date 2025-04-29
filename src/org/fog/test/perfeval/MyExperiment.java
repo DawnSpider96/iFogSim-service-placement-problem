@@ -52,7 +52,7 @@ import java.util.stream.IntStream;
  */
 public class MyExperiment {
 //    private static final String outputFile = "./output/resourceDist_Comfortable_R_Beta.csv";
-    private static final String outputFile = "./output/GreenBaby_Mobile_10k.csv";
+    private static final String outputFile = "./output/CMoon_Mobile_10k.csv";
     // The configuration file now uses string-based placement logic identifiers instead of integers
     private static final String CONFIG_FILE = "./dataset/MyExperimentConfigs.yaml";
 
@@ -316,7 +316,9 @@ public class MyExperiment {
                     application.setUserId(broker.getId());
                     applicationPool.add(application);
                     
-                    // Configure broker with application's modules
+                    // Configure broker with application's module
+                    FogBroker.getApplicationInfo().put(application.getAppId(), application);
+
                     String clientModuleName = appId + "_clientModule";
                     FogBroker.getApplicationToFirstMicroserviceMap().put(application, clientModuleName);
                     

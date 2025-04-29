@@ -30,9 +30,12 @@ public class FogBroker extends PowerDatacenterBroker{
 	// Track the number of VMs created for debugging
 	private static int vmCounter = 0;
 
+	// Cloud ID for routing tuples through the cloud
+	private static int cloudId = -1;
 
 	private static int cycleNumber = 1;
 
+	private static final Map<String, Application> applicationInfo = new HashMap<>();
 	private static final Map<Application, String> applicationToFirstMicroserviceMap = new HashMap<>();
 	private static final Map<Application, List<String>> applicationToSecondMicroservicesMap = new HashMap<>();
 
@@ -42,6 +45,7 @@ public class FogBroker extends PowerDatacenterBroker{
 
 	// Simon (130325) says clear FogBroker for Experiment purposes
 	public static void clear(){
+		applicationInfo.clear();
 		applicationToFirstMicroserviceMap.clear();
 		applicationToSecondMicroservicesMap.clear();
 		setCycleNumber(1);
@@ -60,10 +64,13 @@ public class FogBroker extends PowerDatacenterBroker{
 	protected void processOtherEvent(SimEvent ev) {
 		switch (ev.getTag()) {
 			case FogEvents.RECEIVE_PLACEMENT_DECISION:
+				if (cloudId == -1) cloudId = ev.getSource();
+				else if (cloudId != ev.getSource()) throw new NullPointerException("There should be only one cloud communicating with FogBroker");
 				processPlacementDecision(ev);
 				break;
 			case FogEvents.RECEIVE_INSTALL_NOTIF:
-				handleInstallationNotification(ev.getSource(), (int) ev.getData());
+				JSONObject js = (JSONObject) ev.getData();
+				handleInstallationNotification((int) js.get("deviceId"), (int) js.get("cycleNumber"));
 				break;
 			case FogEvents.EXECUTION_TIMEOUT:
 				handleExecutionTimeout((int) ev.getData());
@@ -119,6 +126,7 @@ public class FogBroker extends PowerDatacenterBroker{
 				triggerExecution(cycleNumber); // Start tuple execution
 			}
 		}
+		else throw new NullPointerException("checklist does not contain deviceId");
 	}
 
 	private boolean allAcknowledged(int cycleNumber) {
@@ -139,17 +147,11 @@ public class FogBroker extends PowerDatacenterBroker{
 			if (deviceId == null) {
 				Logger.error("Missing Key Error", "toSend state was not updated properly.");
 			}
-			boolean transmitted = false;
-			for (Application a : applicationToFirstMicroserviceMap.keySet()) {
-				if (a.getAppId() == pr.getApplicationId()) {
-					// Simon (020425) says pr conveniently contains (sensorId, prIndex) to populate Tuple with
-					transmit(deviceId, a, pr);
-					transmitted = true;
-					break;
-				}
-			}
-			if (!transmitted) {
-				Logger.error("Missing Key Error", "Placement Request app id not found in known Applications!");
+			Application a = applicationInfo.get(pr.getApplicationId());
+			if (a != null) {
+				transmit(deviceId, a, pr);
+			} else {
+				throw new NullPointerException("Placement Request app id not found in known Applications!");
 			}
 		}
 	}
@@ -184,7 +186,7 @@ public class FogBroker extends PowerDatacenterBroker{
 		// Queries and mutates activatedVMs
 		// NOTE This determines the instance of clientModule (first microservice) that the
 		//  tuple will END on.
-		AppModule firstMicroserviceModule = getAppModule(pr, firstMicroservice);
+		AppModule firstMicroserviceModule = getTargetVM(pr, firstMicroservice);
 
 		// Simon (180125) says this is a bit hacky
 		// We are pretending the Tuple passed through clientModule though it didn't
@@ -207,10 +209,22 @@ public class FogBroker extends PowerDatacenterBroker{
 		int actualTupleId = updateTimings(firstMicroservice, tuple.getDestModuleName(), app);
 		tuple.setActualTupleId(actualTupleId);
 
-		sendNow(targetId, FogEvents.TUPLE_ARRIVAL, tuple);
+		// Instead of sending directly to the target device, send through cloud
+		if (cloudId == -1) {
+			throw new NullPointerException("Cloud ID not set in FogBroker. Cannot route tuples through cloud.");
+		}
+		
+		// Create a management tuple to carry the starting tuple
+		ManagementTuple managementTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.TUPLE_FORWARDING);
+		managementTuple.setSourceDeviceId(getId());
+		managementTuple.setDestinationDeviceId(targetId);
+		managementTuple.setStartingTuple(tuple);
+		
+		// Send to cloud (costless since FogBroker is attached to cloud)
+		sendNow(cloudId, FogEvents.MANAGEMENT_TUPLE_ARRIVAL, managementTuple);
 	}
 
-	private static AppModule getAppModule(PlacementRequest pr, String targetService) {
+	private static AppModule getTargetVM(PlacementRequest pr, String targetService) {
 		int deviceId = pr.getRequester();
 		MyFogDevice device = (MyFogDevice) CloudSim.getEntity(deviceId);
 		if (!activatedVMs.containsKey(deviceId)) activatedVMs.put(deviceId, new HashSet<Integer>());
@@ -288,6 +302,10 @@ public class FogBroker extends PowerDatacenterBroker{
 		FogBroker.cycleNumber = cycleNumber;
 	}
 
+	public static Map<String, Application> getApplicationInfo() {
+		return applicationInfo;
+	}
+
 	public static Map<Application, String> getApplicationToFirstMicroserviceMap() {
 		return applicationToFirstMicroserviceMap;
 	}
@@ -302,5 +320,13 @@ public class FogBroker extends PowerDatacenterBroker{
 
 	public static Map<Integer, Map<Integer, Boolean>> getChecklist() {
 		return checklist;
+	}
+
+	public static int getCloudId() {
+		return cloudId;
+	}
+	
+	public static void setCloudId(int cloudId) {
+		FogBroker.cloudId = cloudId;
 	}
 }
