@@ -2,7 +2,6 @@ package org.fog.test.perfeval;
 
 import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.core.CloudSim;
-import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.power.PowerHost;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
 import org.cloudbus.cloudsim.sdn.example.policies.VmSchedulerTimeSharedEnergy;
@@ -16,7 +15,7 @@ import org.fog.application.selectivity.FractionalSelectivity;
 import org.fog.entities.*;
 import org.fog.mobilitydata.Location;
 import org.fog.mobilitydata.References;
-import org.fog.placement.MyMicroservicesController;
+import org.fog.placement.PlacementSimulationController;
 import org.fog.placement.PlacementLogicFactory;
 import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.utils.*;
@@ -50,11 +49,11 @@ import java.util.stream.IntStream;
  * ENABLE_RESOURCE_DATA_SHARING -> false (not needed as FONs placed at the highest level.
  * DYNAMIC_CLUSTERING -> true (for clustered) and false (for not clustered) * (also compatible with static clustering)
  */
-public class MyExperiment {
+public class SPPExperiment {
 //    private static final String outputFile = "./output/resourceDist_Comfortable_R_Beta.csv";
-    private static final String outputFile = "./output/CMoon_Mobile_10k.csv";
+    private static final String outputFile = "./output/CMoon_Mobile_10k_60.csv";
     // The configuration file now uses string-based placement logic identifiers instead of integers
-    private static final String CONFIG_FILE = "./dataset/MyExperimentConfigs.yaml";
+    private static final String CONFIG_FILE = "./dataset/SPPExperimentConfigs.yaml";
 
     static List<FogDevice> fogDevices = new ArrayList<FogDevice>();
     static List<Sensor> sensors = new ArrayList<Sensor>();
@@ -80,7 +79,7 @@ public class MyExperiment {
         System.out.println("=================================\n");
 
         // (170225) For ease of debugging only
-        MyMonitor mm = MyMonitor.getInstance();
+        SPPMonitor mm = SPPMonitor.getInstance();
 
         try {
             // Combined metric collection approach
@@ -131,7 +130,7 @@ public class MyExperiment {
     private static List<SimulationConfig> loadConfigurationsFromYaml() {
         List<SimulationConfig> configs = new ArrayList<>();
 
-        try (InputStream inputStream = new FileInputStream(MyExperiment.CONFIG_FILE)) {
+        try (InputStream inputStream = new FileInputStream(SPPExperiment.CONFIG_FILE)) {
             Yaml yaml = new Yaml();
             List<Map<String, Object>> yamlConfigs = yaml.load(inputStream);
 
@@ -236,9 +235,9 @@ public class MyExperiment {
                 }
             }
 
-            System.out.println("Loaded " + configs.size() + " configurations from " + MyExperiment.CONFIG_FILE);
+            System.out.println("Loaded " + configs.size() + " configurations from " + SPPExperiment.CONFIG_FILE);
         } catch (IOException e) {
-            System.err.println("Error loading configurations from " + MyExperiment.CONFIG_FILE);
+            System.err.println("Error loading configurations from " + SPPExperiment.CONFIG_FILE);
             e.printStackTrace();
         }
 
@@ -363,7 +362,7 @@ public class MyExperiment {
             /**
              * Central controller for performing preprocessing functions
              */
-            MyMicroservicesController microservicesController;
+            PlacementSimulationController microservicesController;
             
             // Get interval values from the configuration
             Map<String, Integer> intervalValues = simulationConfig.getIntervalValues();
@@ -371,7 +370,7 @@ public class MyExperiment {
             if (intervalValues != null && !intervalValues.isEmpty()) {
                 System.out.println("Using interval values for Poisson distribution: " + intervalValues);
                 
-                microservicesController = new MyMicroservicesController(
+                microservicesController = new PlacementSimulationController(
                     "controller",
                     fogDevices,
                     sensors,
@@ -411,7 +410,7 @@ public class MyExperiment {
             }
 
             List<PlacementRequest> placementRequests = new ArrayList<>();
-            for (MyFogDevice device : microservicesController.getUserDevices()) {
+            for (SPPFogDevice device : microservicesController.getUserDevices()) {
                 try {
                     PlacementRequest prototypePR = microservicesController.createNewPlacementRequestForDevice(device.getId());
                     if (prototypePR != null) {
@@ -437,7 +436,7 @@ public class MyExperiment {
             CloudSim.startSimulation();
 //            CloudSim.stopSimulation();
             // TODO Possible mega cleanup/metric collection function
-            MyMonitor.getInstance().incrementSimulationRoundNumber();
+            SPPMonitor.getInstance().incrementSimulationRoundNumber();
             System.out.println("Simon app finished!");
             
             // Reset controller's sequence counters after simulation finishes
@@ -463,7 +462,7 @@ public class MyExperiment {
                                          int numberOfEdge, Map<String, Integer> usersPerType, 
                                          SimulationConfig simulationConfig) {
         // Create cloud device at the top of the hierarchy
-        MyFogDevice cloud = createFogDevice("cloud", 44800, -1, 40000, 100, 10000, 0.01, 16 * 103, 16 * 83.25, MyFogDevice.CLOUD);
+        SPPFogDevice cloud = createFogDevice("cloud", 44800, -1, 40000, 100, 10000, 0.01, 16 * 103, 16 * 83.25, SPPFogDevice.CLOUD);
         cloud.setParentId(References.NOT_SET);
         cloud.setLevel(0);
         fogDevices.add(cloud);
@@ -472,7 +471,7 @@ public class MyExperiment {
         // Create gateway devices
         for (int i = 0; i < numberOfEdge; i++) {
             // todo 1000-4000 mips, 1000 - 32000 mb ram (mb because value must be int)
-            MyFogDevice gateway = createFogDevice(
+            SPPFogDevice gateway = createFogDevice(
                     "gateway_" + i,
                     random.nextInt(3001) + 1000,
                     -1, // Undefined. Let Location Manager determine.
@@ -482,7 +481,7 @@ public class MyExperiment {
                     0.0,
                     107.339,
                     83.4333,
-                    MyFogDevice.FCN
+                    SPPFogDevice.FCN
             );
             gateway.setParentId(cloud.getId());
             // Let latency be set by LocationManager in connectWithLatencies
@@ -492,10 +491,10 @@ public class MyExperiment {
 
         for (String userType : usersPerType.keySet()) {
             // todo This is a hardcoded check. Edit based on your user types.
-            if (!(Objects.equals(userType, MyFogDevice.GENERIC_USER) ||
-                Objects.equals(userType, MyFogDevice.AMBULANCE_USER) ||
-                Objects.equals(userType, MyFogDevice.OPERA_USER) ||
-                Objects.equals(userType, MyFogDevice.IMMOBILE_USER))) {
+            if (!(Objects.equals(userType, SPPFogDevice.GENERIC_USER) ||
+                Objects.equals(userType, SPPFogDevice.AMBULANCE_USER) ||
+                Objects.equals(userType, SPPFogDevice.OPERA_USER) ||
+                Objects.equals(userType, SPPFogDevice.IMMOBILE_USER))) {
                 throw new NullPointerException("Invalid Type");
             }
 
@@ -535,8 +534,8 @@ public class MyExperiment {
      * @param idlePower
      * @return
      */
-    private static MyFogDevice createFogDevice(String nodeName, long mips, double upLinkLatency,
-                                               int ram, long upBw, long downBw, double ratePerMips, double busyPower, double idlePower, String deviceType) {
+    private static SPPFogDevice createFogDevice(String nodeName, long mips, double upLinkLatency,
+                                                int ram, long upBw, long downBw, double ratePerMips, double busyPower, double idlePower, String deviceType) {
 
         // Debug: Print entity ID before creating device
         System.out.println("Creating fog device '" + nodeName + "', ENTITY_ID before: " + FogUtils.getCurrentEntityId());
@@ -581,9 +580,9 @@ public class MyExperiment {
                 arch, os, vmm, host, time_zone, cost, costPerMem,
                 costPerStorage, costPerBw);
 
-        MyFogDevice fogdevice = null;
+        SPPFogDevice fogdevice = null;
         try {
-            fogdevice = new MyFogDevice(
+            fogdevice = new SPPFogDevice(
                     nodeName,
                     characteristics,
                     new AppModuleAllocationPolicy(hostList),
@@ -605,12 +604,12 @@ public class MyExperiment {
 
     private static FogDevice addUser(String userType, String name, int brokerId, Application app, int parentId) {
         // NOTE: Assumes userType has been verified before calling addUser.
-        MyFogDevice mobile = createFogDevice(name, 200, -1, 200, 10000, 270, 0, 87.53, 82.44, userType);
+        SPPFogDevice mobile = createFogDevice(name, 200, -1, 200, 10000, 270, 0, 87.53, 82.44, userType);
         mobile.setParentId(parentId);
         
         if (app != null) {
             // Create sensor and actuator with specific application
-            Sensor mobileSensor = new MySensor("s-" + name, "SENSOR", brokerId, app.getAppId(), new DeterministicDistribution(SENSOR_TRANSMISSION_TIME));
+            Sensor mobileSensor = new PassiveSensor("s-" + name, "SENSOR", brokerId, app.getAppId(), new DeterministicDistribution(SENSOR_TRANSMISSION_TIME));
             mobileSensor.setApp(app);
             sensors.add(mobileSensor);
             
@@ -626,7 +625,7 @@ public class MyExperiment {
         } else {
             // If no app create sensor and actuator without specific application
             // The application will be randomly assigned during placement request generation
-            Sensor mobileSensor = new MySensor("s-" + name, "SENSOR", brokerId, null, new DeterministicDistribution(SENSOR_TRANSMISSION_TIME));
+            Sensor mobileSensor = new PassiveSensor("s-" + name, "SENSOR", brokerId, null, new DeterministicDistribution(SENSOR_TRANSMISSION_TIME));
             sensors.add(mobileSensor);
             
             Actuator mobileDisplay = new Actuator("a-" + name, brokerId, null, "DISPLAY");

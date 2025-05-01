@@ -118,27 +118,27 @@ public class PlacementLogicFactory {
             case DISTRIBUTED_MICROSERVICES_PLACEMENT:
                 return new DistributedMicroservicePlacementLogic(fonId);
             case MY_MICROSERVICES_PLACEMENT:
-                return new MyMicroservicePlacementLogic(fonId);
+                return new SPPMicroservicePlacementLogic(fonId);
             case MY_OFFLINE_POC_PLACEMENT:
-                return new MyOfflinePOCPlacementLogic(fonId);
+                return new OfflinePOCPlacementLogic(fonId);
             case MY_ONLINE_POC_PLACEMENT:
-                return new MyOnlinePOCPlacementLogicCopy(fonId);
+                return new OnlinePOCPlacementLogicSPP(fonId);
             case BEST_FIT:
-                return new MyBestFitHeuristic(fonId);
+                return new BestFitHeuristic(fonId);
             case CLOSEST_FIT:
-                return new MyClosestFitHeuristic(fonId);
+                return new ClosestFitHeuristic(fonId);
             case MAX_FIT:
-                return new MyMaxFitHeuristic(fonId);
+                return new MaxFitHeuristic(fonId);
             case RANDOM:
-                return new MyRandomHeuristic(fonId);
+                return new RandomHeuristic(fonId);
             case MULTI_OPT:
-                return new MyMultiOptHeuristic(fonId);
+                return new MultiOptHeuristic(fonId);
             case SIMULATED_ANNEALING:
-                return new MySimulatedAnnealingHeuristic(fonId);
+                return new SimulatedAnnealingHeuristic(fonId);
             case ACO:
-                return new MyACO(fonId);
+                return new SPPACO(fonId);
             case ILP:
-                return new MyILPHeuristic(fonId);
+                return new ILPHeuristic(fonId);
         }
 
         Logger.error("Placement Logic Error", "Error initializing placement logic, unknown code: " + logic);

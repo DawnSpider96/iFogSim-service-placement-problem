@@ -1,9 +1,8 @@
 package org.fog.utils;
 
-import com.google.protobuf.MapEntry;
 import org.fog.entities.PlacementRequest;
-import org.fog.entities.MyPlacementRequest;
-import org.fog.placement.MyHeuristic;
+import org.fog.entities.ContextPlacementRequest;
+import org.fog.placement.SPPHeuristic;
 import org.fog.placement.PlacementLogicFactory;
 import org.fog.test.perfeval.SimulationConfig;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -38,7 +37,7 @@ public class MetricUtils {
      *
      * @return resource utilisation
      */
-    public static double computeResourceUtilisation(List<MyHeuristic.DeviceState> edgeServers) {
+    public static double computeResourceUtilisation(List<SPPHeuristic.DeviceState> edgeServers) {
         double resourceUtilisation = 0.0;
         double[] cpuUtil = new double[edgeServers.size()];
         double[] ramUtil = new double[edgeServers.size()];
@@ -303,8 +302,8 @@ public class MetricUtils {
                 
                 // Extract userType if it's a MyPlacementRequest
                 String userType = "unknown";
-                if (pr instanceof MyPlacementRequest) {
-                    userType = ((MyPlacementRequest) pr).getUserType();
+                if (pr instanceof ContextPlacementRequest) {
+                    userType = ((ContextPlacementRequest) pr).getUserType();
                 }
                 
                 // Add the value to the appropriate list
@@ -333,8 +332,8 @@ public class MetricUtils {
                 
                 // Extract userType if it's a MyPlacementRequest
                 String userType = "unknown";
-                if (pr instanceof MyPlacementRequest) {
-                    userType = ((MyPlacementRequest) pr).getUserType();
+                if (pr instanceof ContextPlacementRequest) {
+                    userType = ((ContextPlacementRequest) pr).getUserType();
                 }
                 
                 // Add the value to the appropriate list
@@ -372,8 +371,8 @@ public class MetricUtils {
                 
                 // Extract userType
                 String userType = "unknown";
-                if (pr instanceof MyPlacementRequest) {
-                    userType = ((MyPlacementRequest) pr).getUserType();
+                if (pr instanceof ContextPlacementRequest) {
+                    userType = ((ContextPlacementRequest) pr).getUserType();
                 }
                 
                 // Initialize maps if needed

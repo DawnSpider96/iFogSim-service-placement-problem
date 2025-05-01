@@ -3,17 +3,15 @@ package org.fog.placement;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
-import org.fog.entities.FogBroker;
 import org.fog.entities.FogDevice;
 import org.fog.entities.PlacementRequest;
-import org.fog.entities.MyPlacementRequest;
+import org.fog.entities.ContextPlacementRequest;
 import org.fog.utils.Logger;
 import org.fog.utils.MicroservicePlacementConfig;
-import org.fog.utils.ModuleLaunchConfig;
 
 import java.util.*;
 
-public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
+public class SPPACO extends SPPHeuristic implements MicroservicePlacementLogic {
     @Override
     public String getName() {
         return "ACO";
@@ -28,7 +26,7 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
 //    private Map<Integer, MECSystemEntity> mecSystems;
 //    private Long requestReceiver;
 
-    public MyACO(int fonID) {
+    public SPPACO(int fonID) {
         super(fonID);
     }
 
@@ -102,7 +100,7 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
             // Create a key for this placement request
             PlacementRequestKey prKey = new PlacementRequestKey(
                 placementRequest.getSensorId(), 
-                ((MyPlacementRequest)placementRequest).getPrIndex()
+                ((ContextPlacementRequest)placementRequest).getPrIndex()
             );
             
             // Ensure the key exists in mappedMicroservices
@@ -120,7 +118,7 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
                         CloudSim.getEntityName(deviceId),
                         deviceId,
                         placementRequest.getSensorId(),
-                        ((MyPlacementRequest) placementRequest).getPrIndex()));
+                        ((ContextPlacementRequest) placementRequest).getPrIndex()));
 
                 // DeviceStates will go into future ACOHelper objects
                 // Then all the "copy" DeviceStates will contain the updated resource information
@@ -241,7 +239,7 @@ public class MyACO extends MyHeuristic implements MicroservicePlacementLogic {
             this.heuristic = new double[edgeServers.size()][microservices.size()];
             this.tau0 = tau0;
             this.requestReceiver = requestReceiver;
-            this.random = MyACO.this.getRandom();
+            this.random = SPPACO.this.getRandom();
             initAnts();
             initPheromones();
         }

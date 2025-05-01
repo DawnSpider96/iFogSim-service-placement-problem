@@ -3,7 +3,6 @@ package org.fog.placement;
 import org.apache.commons.math3.util.Pair;
 import org.fog.application.Application;
 import org.fog.entities.PlacementRequest;
-import org.fog.utils.MicroservicePlacementConfig;
 import org.fog.utils.ModuleLaunchConfig;
 
 import java.util.HashMap;
@@ -21,7 +20,7 @@ public class PlacementLogicOutput {
     Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice = new HashMap<>();
 
     Map<Integer, List<Pair<String, Integer>>> serviceDiscoveryInfo = new HashMap<>();
-    Map<Integer, List<MyHeuristic.PRContextAwareEntry>> serviceDiscoveryInfoV2 = new HashMap<>();
+    Map<Integer, List<SPPHeuristic.PRContextAwareEntry>> serviceDiscoveryInfoV2 = new HashMap<>();
 
     //Integer indicates next device to send the placement request (-1 for finished, or device id for others )
     Map<PlacementRequest, Integer> prStatus = new HashMap<>();
@@ -52,7 +51,7 @@ public class PlacementLogicOutput {
         return prStatus;
     }
 
-    public Map<Integer, List<MyHeuristic.PRContextAwareEntry>> getServiceDiscoveryInfoV2() {
+    public Map<Integer, List<SPPHeuristic.PRContextAwareEntry>> getServiceDiscoveryInfoV2() {
         return serviceDiscoveryInfoV2;
     }
 

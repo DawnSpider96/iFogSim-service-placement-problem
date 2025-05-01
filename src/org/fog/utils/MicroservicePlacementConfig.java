@@ -12,7 +12,8 @@ public class MicroservicePlacementConfig {
     public static String PR_PROCESSING_MODE = PERIODIC;
 
     // For periodic placement
-    public static final double PLACEMENT_PROCESS_INTERVAL = 300;
+    public static final double PLACEMENT_PROCESS_INTERVAL = 60;
+    // Simon says we don't use this for service placement problem anymore.
     public static final double PLACEMENT_GENERATE_INTERVAL = 300;
 //    public static final double PLACEMENT_PROCESS_INTERVAL = 10;
 //    public static final double PLACEMENT_GENERATE_INTERVAL = 70;

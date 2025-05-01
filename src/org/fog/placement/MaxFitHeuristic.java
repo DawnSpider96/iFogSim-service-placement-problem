@@ -3,25 +3,23 @@ package org.fog.placement;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
-import org.fog.entities.FogBroker;
 import org.fog.entities.FogDevice;
 import org.fog.entities.PlacementRequest;
-import org.fog.entities.MyPlacementRequest;
-import org.fog.utils.Logger;
-import org.fog.utils.ModuleLaunchConfig;
+import org.fog.entities.ContextPlacementRequest;
 
 import java.util.*;
 
-public class MyMultiOptHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
+public class MaxFitHeuristic extends SPPHeuristic implements MicroservicePlacementLogic {
+
     @Override
     public String getName() {
-        return "MultiOpt";
+        return "MaxFit";
     }
 
     /**
      * Fog network related details
      */
-    public MyMultiOptHeuristic(int fonID) {
+    public MaxFitHeuristic(int fonID) {
         super(fonID);
     }
 
@@ -29,30 +27,6 @@ public class MyMultiOptHeuristic extends MyHeuristic implements MicroservicePlac
 
     @Override
     public void postProcessing() {
-    }
-
-    class Result implements Comparable<Result> {
-
-        private int index;
-        private double score;
-
-        public Result(int index, double score) {
-            this.index = index;
-            this.score = score;
-        }
-
-        public int getIndex() {
-            return index;
-        }
-
-        public double getScore() {
-            return score;
-        }
-
-        @Override
-        public int compareTo(Result arg0) {
-            return this.score < arg0.getScore() ? -1 : this.score == arg0.getScore() ? 0 : 1;
-        }
     }
 
     @Override
@@ -94,45 +68,42 @@ public class MyMultiOptHeuristic extends MyHeuristic implements MicroservicePlac
 
     @Override
     protected int doTryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
-        // Initialize temporary state
         int[] placed = new int[microservices.size()];
         for (int i = 0 ; i < microservices.size() ; i++) {
             placed[i] = -1;
         }
 
-        List<DeviceState> servers = DeviceStates;
-
-        for (int i = 0; i < placed.length; i++) {
-            List<Result> results = new ArrayList<>();
-            String s = microservices.get(i);
+        for (int j = 0 ; j < microservices.size() ; j++) {
+            String s = microservices.get(j);
             AppModule service = getModule(s, app);
+            Collections.sort(DeviceStates);
+            Collections.reverse(DeviceStates);
 
-            for (int j = 0; j < servers.size(); j++) {
-                if (servers.get(j).canFit(service.getMips(), service.getRam(), service.getSize())) {
-                    double rateCPU = (servers.get(j).getCPUUtil() * 100) / (1 - (servers.get(j).getCPUUtil() * 100));
-                    double rateRAM = (servers.get(j).getRAMUtil() * 100) / (1 - (servers.get(j).getRAMUtil() * 100));
-                    double score = 0.5 * rateCPU + 0.5 * rateRAM;
-                    results.add(new Result(j, score));
+            for (int i = 0; i < DeviceStates.size(); i++) {
+                // Try to place
+                if (DeviceStates.get(i).canFit(service.getMips(), service.getRam(), service.getSize())) {
+
+                    DeviceStates.get(i).allocate(service.getMips(), service.getRam(), service.getSize());
+                    // Update temporary state
+                    placed[j]  = DeviceStates.get(i).getId();
+                    break;
                 }
             }
 
-            if (!results.isEmpty()) {
-                Collections.sort(results);
-                DeviceState edgeServer = servers.get(results.get(0).getIndex());
-                placed[i] = edgeServer.getId();
-                servers.get(results.get(0).getIndex()).allocate(service.getMips(), service.getRam(), service.getSize());
-            }
-
-            if (placed[i] < 0) {
+            if (placed[j] < 0) {
                 // todo Simon says what do we do when failure?
                 //  (160125) Nothing. Because (aggregated) failure will be determined outside the for loop
-                System.out.println("Failed to place module " + s + "on PR " + placementRequest.getSensorId());
-                System.out.println("Failed placement sensorId " + placementRequest.getSensorId() + ", prIndex " + ((MyPlacementRequest) placementRequest).getPrIndex());
+                ContextPlacementRequest mpr = (ContextPlacementRequest) placementRequest;
+                System.out.printf("Failed to place module %s on PR %d, cycle %d%n",
+                        s,
+                        mpr.getSensorId(),
+                        mpr.getPrIndex());
+                System.out.println("Failed placement " + placementRequest.getSensorId());
 
                 // Undo every "placement" recorded in placed. Only deviceStates was changed, so we change it back
-                for (int k = 0 ; k < placed.length ; k++) {
-                    int deviceId = placed[k];
-                    String microservice = microservices.get(k);
+                for (int i = 0 ; i < placed.length ; i++) {
+                    int deviceId = placed[i];
+                    String microservice = microservices.get(i);
                     if (deviceId != -1) {
                         DeviceState targetDeviceState = null;
                         for (DeviceState DeviceState : DeviceStates) {
@@ -159,7 +130,7 @@ public class MyMultiOptHeuristic extends MyHeuristic implements MicroservicePlac
             // Create a key for this placement request
             PlacementRequestKey prKey = new PlacementRequestKey(
                 placementRequest.getSensorId(), 
-                ((MyPlacementRequest)placementRequest).getPrIndex()
+                ((ContextPlacementRequest)placementRequest).getPrIndex()
             );
             
             // Ensure the key exists in mappedMicroservices
@@ -177,7 +148,7 @@ public class MyMultiOptHeuristic extends MyHeuristic implements MicroservicePlac
                         CloudSim.getEntityName(deviceId),
                         deviceId,
                         placementRequest.getSensorId(),
-                        ((MyPlacementRequest) placementRequest).getPrIndex());
+                        ((ContextPlacementRequest) placementRequest).getPrIndex());
 
                 moduleToApp.put(s, app.getAppId());
 

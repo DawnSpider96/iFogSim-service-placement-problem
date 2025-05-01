@@ -3,31 +3,27 @@ package org.fog.placement;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
-import org.fog.entities.FogBroker;
 import org.fog.entities.FogDevice;
+import org.fog.entities.ContextPlacementRequest;
 import org.fog.entities.PlacementRequest;
-import org.fog.entities.MyPlacementRequest;
 import org.fog.utils.Logger;
-import org.fog.utils.ModuleLaunchConfig;
 
 import java.util.*;
 
-public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
+public class BestFitHeuristic extends SPPHeuristic implements MicroservicePlacementLogic {
     @Override
     public String getName() {
-        return "ClosestFit";
+        return "BestFit";
     }
 
     /**
      * Fog network related details
      */
-    public MyClosestFitHeuristic(int fonID) {
+    public BestFitHeuristic(int fonID) {
         super(fonID);
     }
 
-    // Add DeviceStates field to match other implementations
     private List<DeviceState> DeviceStates = new ArrayList<>();
-    private Map<Integer, DeviceState> deviceStateMap = new LinkedHashMap<>();
 
     @Override
     public void postProcessing() {
@@ -37,29 +33,16 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
     protected Map<PlacementRequest, Integer> mapModules() {
         Map<PlacementRequest, List<String>> toPlace = new LinkedHashMap<>();
 
-        if(cloudIndex < 0) {
-            Logger.error("Control Flow Error", "Cloud index should have value.");
-        }
-
         int placementCompleteCount = 0;
         if (toPlace.isEmpty()) {
             // Update toPlace and placementCompleteCount
             placementCompleteCount = fillToPlace(placementCompleteCount, toPlace, placementRequests);
         }
 
-        // Initialize DeviceStates similar to other implementations
         DeviceStates = new ArrayList<>();
-        deviceStateMap = new LinkedHashMap<>();
         for (FogDevice fogDevice : edgeFogDevices) {
-            DeviceState state = new DeviceState(
-                fogDevice.getId(), 
-                resourceAvailability.get(fogDevice.getId()),
-                fogDevice.getHost().getTotalMips(), 
-                fogDevice.getHost().getRam(), 
-                fogDevice.getHost().getStorage()
-            );
-            DeviceStates.add(state);
-            deviceStateMap.put(fogDevice.getId(), state);
+            DeviceStates.add(new DeviceState(fogDevice.getId(), resourceAvailability.get(fogDevice.getId()),
+                    fogDevice.getHost().getTotalMips(), fogDevice.getHost().getRam(), fogDevice.getHost().getStorage()));
         }
 
         Map<PlacementRequest, Integer> prStatus = new LinkedHashMap<>();
@@ -68,7 +51,8 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
             PlacementRequest placementRequest = entry.getKey();
             Application app = applicationInfo.get(placementRequest.getApplicationId());
             List<String> microservices = entry.getValue();
-            // -1 if success, cloudId if failure
+
+            // status is -1 if success, cloudId if failure
             // Cloud will resend to itself
             // Type int for flexibility: In more complex simulations there may be more FON heads, not just the cloud.
             int status = tryPlacingOnePr(microservices, app, placementRequest);
@@ -79,63 +63,66 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
 
     @Override
     protected List<DeviceState> getCurrentDeviceStates() {
-        return new ArrayList<>(deviceStateMap.values());
+        return DeviceStates;
     }
 
     @Override
     protected int doTryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
-
-        // Simon says the closest node changes with every PR
-        // Hence `nodes` needs to be remade repeatedly
-        List<RelativeLatencyDeviceState> nodes = new ArrayList<>();
-        FogDevice closestFogDevice = getDevice(closestNodes.get(placementRequest));
-
-        for (FogDevice fogDevice : edgeFogDevices) {
-            nodes.add(new RelativeLatencyDeviceState(fogDevice, closestFogDevice, globalLatencies));
-        }
-
-        Collections.sort(nodes);
-
-        // Initialize temporary state
         int[] placed = new int[microservices.size()];
-        for (int j = 0 ; j < microservices.size() ; j++) {
-            placed[j] = -1;
+        for (int i = 0 ; i < microservices.size() ; i++) {
+            placed[i] = -1;
         }
-
 
         for (int j = 0 ; j < microservices.size() ; j++) {
             String s = microservices.get(j);
             AppModule service = getModule(s, app);
+            Collections.sort(DeviceStates);
 
-            for (int i = 0; i < nodes.size(); i++) {
-                int deviceId = nodes.get(i).fogDevice.getId();
-                DeviceState deviceState = deviceStateMap.get(deviceId);
-                if (deviceState.canFit(service.getMips(), service.getRam(), service.getSize())) {
-                    deviceState.allocate(service.getMips(), service.getRam(), service.getSize());
-                    placed[j] = deviceId;
+            if (!DeviceStates.get(0).canFit(service.getMips(), service.getRam(), service.getSize())) {
+                Logger.error("Simulation CPU limitation problem", "FogDevices have no CPU! Check DeviceStates.");
+            }
+
+            for (int i = 0; i < DeviceStates.size(); i++) {
+                // Try to place
+                if (DeviceStates.get(i).canFit(service.getMips(), service.getRam(), service.getSize())) {
+
+                    DeviceStates.get(i).allocate(service.getMips(), service.getRam(), service.getSize());
+//                    addToCpu.accept(getModule(microservice, app).getMips());
+//                    addToRam.accept(getModule(microservice, app).getRam());
+//                    addToStorage.accept(getModule(microservice, app).getSize());
+//                    markAsPlaced.accept(microservice);
+
+                    // Update temporary state
+                    placed[j]  = DeviceStates.get(i).getId();
                     break;
                 }
             }
 
             if (placed[j] < 0) {
-                MyPlacementRequest mpr = (MyPlacementRequest) placementRequest;
+                ContextPlacementRequest mpr = (ContextPlacementRequest) placementRequest;
+                // todo Simon says what do we do when failure?
+                //  (160125) Nothing. Because (aggregated) failure will be determined outside the for loop
                 System.out.printf("Failed to place module %s on PR %d, cycle %d%n",
                         s,
                         mpr.getSensorId(),
                         mpr.getPrIndex());
-                System.out.println("Failed placement " + placementRequest.getSensorId());
+//                System.out.println("Failed placement " + placementRequest.getSensorId());
 
-                // Undo every "placement" recorded in placed using DeviceStates
+                // Undo every "placement" recorded in placed. Only deviceStates was changed, so we change it back
                 for (int i = 0 ; i < placed.length ; i++) {
                     int deviceId = placed[i];
+                    String microservice = microservices.get(i);
                     if (deviceId != -1) {
-                        String microservice = microservices.get(i);
+                        DeviceState targetDeviceState = null;
+                        for (DeviceState DeviceState : DeviceStates) {
+                            if (DeviceState.getId() == deviceId) {
+                                targetDeviceState = DeviceState;
+                                break;
+                            }
+                        }
+                        assert targetDeviceState != null;
                         AppModule placedService = getModule(microservice, app);
-                        deviceStateMap.get(deviceId).deallocate(
-                            placedService.getMips(), 
-                            placedService.getRam(), 
-                            placedService.getSize()
-                        );
+                        targetDeviceState.deallocate(placedService.getMips(), placedService.getRam(), placedService.getSize());
                     }
                 }
                 break;
@@ -151,7 +138,7 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
             // Create a key for this placement request
             PlacementRequestKey prKey = new PlacementRequestKey(
                 placementRequest.getSensorId(), 
-                ((MyPlacementRequest)placementRequest).getPrIndex()
+                ((ContextPlacementRequest)placementRequest).getPrIndex()
             );
             
             // Ensure the key exists in mappedMicroservices
@@ -164,12 +151,12 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
                 AppModule service = getModule(s, app);
                 int deviceId = placed[i];
 
-                System.out.printf("Placement of operator %s on device %s successful. Device id: %d, sensorId: %d, prIndex: %d%n",
+                Logger.debug("Placement Success", String.format("Operator %s on device %s, Device id: %d, sensorId: %d, prIndex: %d%n",
                         s,
                         CloudSim.getEntityName(deviceId),
                         deviceId,
                         placementRequest.getSensorId(),
-                        ((MyPlacementRequest) placementRequest).getPrIndex());
+                        ((ContextPlacementRequest) placementRequest).getPrIndex()));
 
                 moduleToApp.put(s, app.getAppId());
 
@@ -191,7 +178,7 @@ public class MyClosestFitHeuristic extends MyHeuristic implements MicroservicePl
                     currentModuleInstanceNum.get(deviceId).put(s, currentModuleInstanceNum.get(deviceId).get(s) + 1);
             }
         }
-
+        // Else do nothing
         if (allPlaced) return -1;
         else return getFonID();
     }

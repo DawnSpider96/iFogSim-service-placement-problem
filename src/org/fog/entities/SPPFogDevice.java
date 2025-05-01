@@ -8,8 +8,8 @@ import org.cloudbus.cloudsim.core.SimEvent;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.placement.MicroservicePlacementLogic;
-import org.fog.placement.MyHeuristic;
-import org.fog.placement.MyPlacementLogicOutput;
+import org.fog.placement.SPPHeuristic;
+import org.fog.placement.ContextAwarePlacement;
 import org.fog.scheduler.TupleScheduler;
 import org.fog.utils.*;
 import org.json.simple.JSONObject;
@@ -19,7 +19,7 @@ import java.util.*;
 /**
  * Created by Joseph Poon.
  */
-public class MyFogDevice extends FogDevice {
+public class SPPFogDevice extends FogDevice {
 
 	/**
 	 * Device type (1.client device 2.FCN 3.FON 4.Cloud)
@@ -55,7 +55,7 @@ public class MyFogDevice extends FogDevice {
 
 	protected List<PlacementRequest> placementRequests = new ArrayList<>();
 
-	public MyFogDevice(String name, FogDeviceCharacteristics characteristics, VmAllocationPolicy vmAllocationPolicy, List<Storage> storageList, double schedulingInterval, double uplinkBandwidth, double downlinkBandwidth, double clusterLinkBandwidth, double uplinkLatency, double ratePerMips, String deviceType) throws Exception {
+	public SPPFogDevice(String name, FogDeviceCharacteristics characteristics, VmAllocationPolicy vmAllocationPolicy, List<Storage> storageList, double schedulingInterval, double uplinkBandwidth, double downlinkBandwidth, double clusterLinkBandwidth, double uplinkLatency, double ratePerMips, String deviceType) throws Exception {
 		super(name, characteristics, vmAllocationPolicy, storageList, schedulingInterval, uplinkBandwidth, downlinkBandwidth, uplinkLatency, ratePerMips);
 		setClusterLinkBandwidth(clusterLinkBandwidth);
 		setDeviceType(deviceType);
@@ -177,8 +177,8 @@ public class MyFogDevice extends FogDevice {
 		this.deviceType = deviceType;
 		
 		// Then validate it's a known type
-		if (isUserDevice() || deviceType.equals(MyFogDevice.FCN) ||
-				deviceType.equals(MyFogDevice.FON) || deviceType.equals(MyFogDevice.CLOUD))
+		if (isUserDevice() || deviceType.equals(SPPFogDevice.FCN) ||
+				deviceType.equals(SPPFogDevice.FON) || deviceType.equals(SPPFogDevice.CLOUD))
 			this.deviceType = deviceType;
 		else {
 			// Reset to null since it wasn't valid
@@ -209,7 +209,7 @@ public class MyFogDevice extends FogDevice {
 		// Simon (030425) says the cloud traffic might be worth capturing as metric
 		//  Especially since our network is flower-shaped.
 		//  However, currently there is no support.
-		if (deviceType.equals(MyFogDevice.CLOUD)) {
+		if (deviceType.equals(SPPFogDevice.CLOUD)) {
 			updateCloudTraffic();
 		}
 
@@ -247,7 +247,7 @@ public class MyFogDevice extends FogDevice {
 //			}
 //		}
 
-		if (deviceType.equals(MyFogDevice.CLOUD) && tuple.getDestModuleName() == null) {
+		if (deviceType.equals(SPPFogDevice.CLOUD) && tuple.getDestModuleName() == null) {
 			sendNow(getControllerId(), FogEvents.TUPLE_FINISHED, null);
 		}
 
@@ -533,7 +533,7 @@ public class MyFogDevice extends FogDevice {
 	 * Both cloud and FON participates in placement process. But Simon says there are no FON devices.
 	 */
 	public void initializeController(LoadBalancer loadBalancer, MicroservicePlacementLogic mPlacement, Map<Integer, Map<String, Double>> resourceAvailability, Map<String, Application> applications, List<FogDevice> fogDevices) {
-		if (getDeviceType() == MyFogDevice.FON || getDeviceType() == MyFogDevice.CLOUD) {
+		if (getDeviceType() == SPPFogDevice.FON || getDeviceType() == SPPFogDevice.CLOUD) {
 			controllerComponent = new ControllerComponent(getId(), loadBalancer, mPlacement, resourceAvailability, applications, fogDevices);
 		} else
 			Logger.error("Controller init failed", "Wrong device type: " + getDeviceType());
@@ -543,7 +543,7 @@ public class MyFogDevice extends FogDevice {
 	 * FCN and Client devices
 	 */
 	public void initializeController(LoadBalancer loadBalancer) {
-		if (getDeviceType() != MyFogDevice.CLOUD) {
+		if (getDeviceType() != SPPFogDevice.CLOUD) {
 			controllerComponent = new ControllerComponent(getId(), loadBalancer);
 
 			// Initialize resource map directly instead of updateResources calls
@@ -570,7 +570,7 @@ public class MyFogDevice extends FogDevice {
 
 	protected void processPlacementRequests() {
 
-		if (!this.deviceType.equals(MyFogDevice.CLOUD)) {
+		if (!this.deviceType.equals(SPPFogDevice.CLOUD)) {
 			Logger.error("FON exists error", "Placement Request NOT being processed by cloud! Check if device type is FON.");
 		}
 
@@ -590,12 +590,12 @@ public class MyFogDevice extends FogDevice {
 			this.placementRequests.remove(0);
 		}
 
-		MyPlacementLogicOutput placementLogicOutput = (MyPlacementLogicOutput) getControllerComponent().executeApplicationPlacementLogic(placementRequests);
+		ContextAwarePlacement placementLogicOutput = (ContextAwarePlacement) getControllerComponent().executeApplicationPlacementLogic(placementRequests);
 		long endTime = System.nanoTime();
 		System.out.println("Placement Algorithm Completed. Time : " + (endTime - startTime) / 1e6);
 
 		Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice = placementLogicOutput.getPerDevice();
-		Map<Integer, List<MyHeuristic.PRContextAwareEntry>> serviceDiscovery = placementLogicOutput.getServiceDiscoveryInfoV2();
+		Map<Integer, List<SPPHeuristic.PRContextAwareEntry>> serviceDiscovery = placementLogicOutput.getServiceDiscoveryInfoV2();
 		Map<PlacementRequest, Integer> placementRequestStatus = placementLogicOutput.getPrStatus();
 		Map<PlacementRequest, Integer> targets = placementLogicOutput.getTargets();
 		int fogDeviceCount = 0; // todo Simon says I still don't know what this variable does. Currently unused (050125).
@@ -614,7 +614,7 @@ public class MyFogDevice extends FogDevice {
 		// Propagate service discovery entries to relevant FogDevices
 		for (int clientDevice : serviceDiscovery.keySet()) {
 			if (Objects.equals(MicroservicePlacementConfig.SIMULATION_MODE, "DYNAMIC")) {
-				for (MyHeuristic.PRContextAwareEntry entry : serviceDiscovery.get(clientDevice)) {
+				for (SPPHeuristic.PRContextAwareEntry entry : serviceDiscovery.get(clientDevice)) {
 					transmitServiceDiscoveryData(clientDevice, entry);
 				}
 			}
@@ -625,8 +625,8 @@ public class MyFogDevice extends FogDevice {
 
 		// Inform edge servers to install modules
 		for (int deviceID : perDevice.keySet()) {
-			MyFogDevice f = (MyFogDevice) CloudSim.getEntity(deviceID);
-			if (!f.getDeviceType().equals(MyFogDevice.CLOUD))
+			SPPFogDevice f = (SPPFogDevice) CloudSim.getEntity(deviceID);
+			if (!f.getDeviceType().equals(SPPFogDevice.CLOUD))
 				fogDeviceCount++;
 			placementString.append(CloudSim.getEntity(deviceID).getName() + " : ");
 			if (Objects.equals(MicroservicePlacementConfig.SIMULATION_MODE, "DYNAMIC")) {
@@ -680,7 +680,7 @@ public class MyFogDevice extends FogDevice {
 	 */
 	protected void updateServiceDiscovery(SimEvent ev) {
 		JSONObject object = (JSONObject) ev.getData();
-		MyHeuristic.PRContextAwareEntry entry = (MyHeuristic.PRContextAwareEntry) object.get("service data");
+		SPPHeuristic.PRContextAwareEntry entry = (SPPHeuristic.PRContextAwareEntry) object.get("service data");
 		String action = (String) object.get("action");
 
 		if (action.equals("ADD")) { // Upon installation
@@ -896,7 +896,7 @@ public class MyFogDevice extends FogDevice {
 		sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, prTuple);
 	}
 
-	private void transmitServiceDiscoveryData(int clientDevice, MyHeuristic.PRContextAwareEntry entry) {
+	private void transmitServiceDiscoveryData(int clientDevice, SPPHeuristic.PRContextAwareEntry entry) {
 		System.out.printf("Sending service discovery entry to %d (%s), microservice %s, sensorId %d, prIndex %d%n",
 				clientDevice,
 				CloudSim.getEntityName(clientDevice),
@@ -956,7 +956,7 @@ public class MyFogDevice extends FogDevice {
 				case ManagementTuple.INSTALL_NOTIFICATION:
 					// Cloud forwards installation notification to FogBroker without network cost,
 					// because FogBroker is attached to cloud.
-					if (deviceType.equals(MyFogDevice.CLOUD)) {
+					if (deviceType.equals(SPPFogDevice.CLOUD)) {
 						JSONObject js = new JSONObject();
 						js.put("deviceId", tuple.getSourceDeviceId());
 						js.put("cycleNumber", tuple.getCycleNumber());
@@ -968,7 +968,7 @@ public class MyFogDevice extends FogDevice {
 				case ManagementTuple.TUPLE_FORWARDING:
 					Tuple startingTuple = tuple.getStartingTuple();
 					
-					if (deviceType.equals(MyFogDevice.CLOUD)) {
+					if (deviceType.equals(SPPFogDevice.CLOUD)) {
 //						startingTuple.setSourceDeviceId(getId());
 //						sendNow(getId(), FogEvents.TUPLE_ARRIVAL, startingTuple);
 						throw new NullPointerException("Control flow error.");
@@ -1017,7 +1017,7 @@ public class MyFogDevice extends FogDevice {
 		}
 		
 		// Send installation notification with appropriate network delay
-		if (!deviceType.equals(MyFogDevice.CLOUD)) {
+		if (!deviceType.equals(SPPFogDevice.CLOUD)) {
 			// Create installation notification tuple for non-cloud devices
 			ManagementTuple installNotifTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.INSTALL_NOTIFICATION);
 			installNotifTuple.setSourceDeviceId(getId());

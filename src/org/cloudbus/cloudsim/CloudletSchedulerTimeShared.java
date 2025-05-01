@@ -8,14 +8,10 @@
 package org.cloudbus.cloudsim;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.entities.Tuple;
-import org.fog.utils.Logger;
-import org.fog.utils.MyMonitor;
 
 /**
  * CloudletSchedulerTimeShared implements a policy of scheduling performed by a virtual machine.

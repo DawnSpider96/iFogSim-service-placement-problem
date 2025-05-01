@@ -2,14 +2,13 @@ package org.fog.placement;
 
 import org.fog.application.Application;
 import org.fog.entities.FogDevice;
-import org.fog.entities.MyPlacementRequest;
+import org.fog.entities.ContextPlacementRequest;
 import org.fog.entities.PlacementRequest;
 import org.fog.utils.Logger;
-import org.fog.utils.ModuleLaunchConfig;
 
 import java.util.*;
 
-public class MyOnlinePOCPlacementLogicCopy extends MyHeuristic implements MicroservicePlacementLogic {
+public class OnlinePOCPlacementLogicSPP extends SPPHeuristic implements MicroservicePlacementLogic {
     @Override
     public String getName() {
         return "Original iFogSim Placement Logic";
@@ -18,7 +17,7 @@ public class MyOnlinePOCPlacementLogicCopy extends MyHeuristic implements Micros
     /**
      * Fog network related details
      */
-    public MyOnlinePOCPlacementLogicCopy(int fonID) {
+    public OnlinePOCPlacementLogicSPP(int fonID) {
         super(fonID);
     }
 
@@ -56,7 +55,7 @@ public class MyOnlinePOCPlacementLogicCopy extends MyHeuristic implements Micros
             // Create a key for this placement request
             PlacementRequestKey prKey = new PlacementRequestKey(
                 placementRequest.getSensorId(), 
-                ((MyPlacementRequest)placementRequest).getPrIndex()
+                ((ContextPlacementRequest)placementRequest).getPrIndex()
             );
             
             // Skip if this placement request doesn't have an entry in mappedMicroservices yet
@@ -106,7 +105,7 @@ public class MyOnlinePOCPlacementLogicCopy extends MyHeuristic implements Micros
                         for (String microservice : toPlace.get(placementRequest)) {
                             PlacementRequestKey prKey = new PlacementRequestKey(
                                     placementRequest.getSensorId(),
-                                    ((MyPlacementRequest)placementRequest).getPrIndex()
+                                    ((ContextPlacementRequest)placementRequest).getPrIndex()
                             );
                             tryPlacingMicroserviceNoAggregate(microservice, device, app, placed::add, prKey);
                         }

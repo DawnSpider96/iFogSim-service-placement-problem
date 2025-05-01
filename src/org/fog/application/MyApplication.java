@@ -41,12 +41,4 @@ public class MyApplication extends Application {
 		this.additionalMipsInfo = additionalMipsInfo;
 	}
 	
-//	public void setDeadlineInfo(Map<Integer, Map<String, Double>> deadlineInfo) {
-//		this.deadlineInfo = deadlineInfo;
-//	}
-	
-//	public Map<Integer, Map<String, Double>> getDeadlineInfo() {
-//		return deadlineInfo;
-//	}
-	
 }

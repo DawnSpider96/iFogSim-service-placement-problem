@@ -1,11 +1,7 @@
 package org.fog.mobility;
 
-import org.cloudbus.cloudsim.core.SimEntity;
 import org.fog.entities.FogDevice;
-import org.fog.entities.MyFogDevice;
 import org.fog.placement.LocationManager;
-import org.fog.mobility.WayPoint;
-import org.fog.mobility.Attractor;
 
 import java.util.List;
 import java.util.Map;

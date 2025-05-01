@@ -2,7 +2,7 @@ package org.fog.entities;
 
 import java.util.Map;
 
-public class MyPlacementRequest extends PlacementRequest{
+public class ContextPlacementRequest extends PlacementRequest{
 
     // Simon (010425) says handling for generation of new PR with unique ID
     //  is handled in MyMicroservicesController
@@ -10,13 +10,13 @@ public class MyPlacementRequest extends PlacementRequest{
     private int prIndex; //
     private String userType; // Added userType field to classify placement requests
 
-    public MyPlacementRequest(String applicationId, int sensorId, int prIndex, int requester, String userType, Map<String,Integer> placedMicroservicesMap){
+    public ContextPlacementRequest(String applicationId, int sensorId, int prIndex, int requester, String userType, Map<String,Integer> placedMicroservicesMap){
         super(applicationId, sensorId, requester, placedMicroservicesMap);
         this.prIndex = prIndex;
         this.userType = userType;
     }
 
-    public MyPlacementRequest(String applicationId, int sensorId, int prIndex, int requester, String userType){
+    public ContextPlacementRequest(String applicationId, int sensorId, int prIndex, int requester, String userType){
         super(applicationId, sensorId, requester);
         this.prIndex = prIndex;
         this.userType = userType;

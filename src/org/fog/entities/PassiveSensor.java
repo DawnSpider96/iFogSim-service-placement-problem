@@ -4,24 +4,25 @@ import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.fog.utils.FogEvents;
 import org.fog.utils.GeoLocation;
-import org.fog.utils.Logger;
 import org.fog.utils.distribution.Distribution;
 
 import java.util.Objects;
 
-public class MySensor extends Sensor {
+public class PassiveSensor extends Sensor {
+
+    // This child of Sensor does NOT perform Placement Request generation or Tuple generation.
 
     String userType;
 
-    public MySensor(String name, int userId, String appId, int gatewayDeviceId, double latency, GeoLocation geoLocation, Distribution transmitDistribution, int cpuLength, int nwLength, String tupleType, String destModuleName) {
+    public PassiveSensor(String name, int userId, String appId, int gatewayDeviceId, double latency, GeoLocation geoLocation, Distribution transmitDistribution, int cpuLength, int nwLength, String tupleType, String destModuleName) {
         super(name, userId, appId, gatewayDeviceId, latency, geoLocation, transmitDistribution, cpuLength, nwLength, tupleType, destModuleName);
     }
 
-    public MySensor(String name, int userId, String appId, int gatewayDeviceId, double latency, GeoLocation geoLocation, Distribution transmitDistribution, String tupleType) {
+    public PassiveSensor(String name, int userId, String appId, int gatewayDeviceId, double latency, GeoLocation geoLocation, Distribution transmitDistribution, String tupleType) {
         super(name, userId, appId, gatewayDeviceId, latency, geoLocation, transmitDistribution, tupleType);
     }
 
-    public MySensor(String name, String tupleType, int userId, String appId, Distribution transmitDistribution) {
+    public PassiveSensor(String name, String tupleType, int userId, String appId, Distribution transmitDistribution) {
         super(name, tupleType, userId, appId, transmitDistribution);
 
         // NOTE: THIS ASSUMES that the sensor's name ALWAYS starts with "s-"
@@ -29,9 +30,9 @@ public class MySensor extends Sensor {
         String userType = name.substring(2).split("_")[0];
 
         // todo This is a hardcoded check. Edit based on your user types.
-        if (!(Objects.equals(userType, MyFogDevice.GENERIC_USER) ||
-                Objects.equals(userType, MyFogDevice.AMBULANCE_USER) ||
-                Objects.equals(userType, MyFogDevice.OPERA_USER))) {
+        if (!(Objects.equals(userType, SPPFogDevice.GENERIC_USER) ||
+                Objects.equals(userType, SPPFogDevice.AMBULANCE_USER) ||
+                Objects.equals(userType, SPPFogDevice.OPERA_USER))) {
             throw new NullPointerException("Invalid Type");
         }
 
@@ -68,7 +69,7 @@ public class MySensor extends Sensor {
     // Hence, sensors will be useless for now (140125)
     @Override
     public void transmit(){
-        Logger.error("Unintended event error", "Sensors should not be emitting tuples.");
+        throw new NullPointerException("Sensor should not be emitting tuples");
     }
 
 

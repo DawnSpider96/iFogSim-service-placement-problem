@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MyMonitor {
+public class SPPMonitor {
 
     // TODO Simon says we want the CPU and RAM usage of EVERY FogDevice after EVERY Placement-execution cycle
 
@@ -25,14 +25,14 @@ public class MyMonitor {
 
     //    private static Map<> ramUsages = new HashMap<>();
 
-    private MyMonitor(){
+    private SPPMonitor(){
     }
 
     private static class MyMonitorHolder {
-        private static final MyMonitor INSTANCE = new MyMonitor();
+        private static final SPPMonitor INSTANCE = new SPPMonitor();
     }
 
-    public static MyMonitor getInstance() {
+    public static SPPMonitor getInstance() {
         return MyMonitorHolder.INSTANCE;
     }
 

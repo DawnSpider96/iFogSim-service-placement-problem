@@ -3,12 +3,10 @@ package org.fog.placement;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
-import org.fog.entities.FogBroker;
 import org.fog.entities.FogDevice;
 import org.fog.entities.PlacementRequest;
-import org.fog.entities.MyPlacementRequest;
+import org.fog.entities.ContextPlacementRequest;
 import org.fog.utils.Logger;
-import org.fog.utils.ModuleLaunchConfig;
 
 import org.btrplace.model.DefaultModel;
 import org.btrplace.model.Mapping;
@@ -24,7 +22,7 @@ import org.btrplace.scheduler.choco.DefaultChocoScheduler;
 
 import java.util.*;
 
-public class MyILPHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
+public class ILPHeuristic extends SPPHeuristic implements MicroservicePlacementLogic {
     /**
      * Fog network related details
      */
@@ -36,7 +34,7 @@ public class MyILPHeuristic extends MyHeuristic implements MicroservicePlacement
         return "ILP";
     }
 
-    public MyILPHeuristic(int fonID) {
+    public ILPHeuristic(int fonID) {
         super(fonID);
     }
 
@@ -184,7 +182,7 @@ public class MyILPHeuristic extends MyHeuristic implements MicroservicePlacement
             // Create a key for this placement request
             PlacementRequestKey prKey = new PlacementRequestKey(
                 placementRequest.getSensorId(), 
-                ((MyPlacementRequest)placementRequest).getPrIndex()
+                ((ContextPlacementRequest)placementRequest).getPrIndex()
             );
             
             // Ensure the key exists in mappedMicroservices
@@ -202,7 +200,7 @@ public class MyILPHeuristic extends MyHeuristic implements MicroservicePlacement
                         CloudSim.getEntityName(deviceId),
                         deviceId,
                         placementRequest.getSensorId(),
-                        ((MyPlacementRequest) placementRequest).getPrIndex());
+                        ((ContextPlacementRequest) placementRequest).getPrIndex());
 
                 moduleToApp.put(s, app.getAppId());
 

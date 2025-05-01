@@ -7,14 +7,14 @@ import org.fog.entities.*;
 import org.fog.utils.Logger;
 import org.fog.utils.MicroservicePlacementConfig;
 import org.fog.utils.ModuleLaunchConfig;
-import org.fog.utils.MyMonitor;
+import org.fog.utils.SPPMonitor;
 import org.fog.utils.MetricUtils;
 
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.Objects;
 
-public abstract class MyHeuristic implements MicroservicePlacementLogic {
+public abstract class SPPHeuristic implements MicroservicePlacementLogic {
     public abstract String getName();
     /**
      * Fog network related details
@@ -87,7 +87,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
     protected long seed = 33;
     protected Random random = new Random(seed);
 
-    public MyHeuristic(int fonID) {
+    public SPPHeuristic(int fonID) {
         setFONId(fonID);
     }
 
@@ -122,7 +122,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             // Create a composite key for this placement request
             PlacementRequestKey prKey = new PlacementRequestKey(
                 placementRequest.getSensorId(), 
-                ((MyPlacementRequest)placementRequest).getPrIndex()
+                ((ContextPlacementRequest)placementRequest).getPrIndex()
             );
 
             // already placed modules
@@ -207,8 +207,8 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         // Sort placementRequests by a deterministic key to ensure consistent processing order
         List<PlacementRequest> sortedRequests = new ArrayList<>(placementRequests);
         sortedRequests.sort((pr1, pr2) -> {
-            MyPlacementRequest mpr1 = (MyPlacementRequest) pr1;
-            MyPlacementRequest mpr2 = (MyPlacementRequest) pr2;
+            ContextPlacementRequest mpr1 = (ContextPlacementRequest) pr1;
+            ContextPlacementRequest mpr2 = (ContextPlacementRequest) pr2;
             
             // First compare by sensorId
             int sensorCompare = Integer.compare(mpr1.getSensorId(), mpr2.getSensorId());
@@ -224,7 +224,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             // Create a key for this placement request
             PlacementRequestKey prKey = new PlacementRequestKey(
                 placementRequest.getSensorId(),
-                ((MyPlacementRequest)placementRequest).getPrIndex()
+                ((ContextPlacementRequest)placementRequest).getPrIndex()
             );
             
             // Skip if this placement request doesn't have an entry in mappedMicroservices yet
@@ -309,8 +309,8 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
 
         Set<Integer> deviceIdsToInclude = new HashSet<>();
         for (FogDevice fogDevice : fogDevices) {
-            MyFogDevice mfd = (MyFogDevice) fogDevice;
-            if (Objects.equals(mfd.getDeviceType(), MyFogDevice.FCN)) {
+            SPPFogDevice mfd = (SPPFogDevice) fogDevice;
+            if (Objects.equals(mfd.getDeviceType(), SPPFogDevice.FCN)) {
                 deviceIdsToInclude.add(mfd.getId());
             }
         }
@@ -361,7 +361,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         // Initialize placementRequestMap for efficient lookups
         placementRequestMap = new LinkedHashMap<>();
         for (PlacementRequest pr : prs) {
-            MyPlacementRequest myPr = (MyPlacementRequest) pr;
+            ContextPlacementRequest myPr = (ContextPlacementRequest) pr;
             PlacementRequestKey key = new PlacementRequestKey(myPr.getSensorId(), myPr.getPrIndex());
             placementRequestMap.put(key, myPr);
         }
@@ -423,7 +423,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
 
         double utilization = MetricUtils.computeResourceUtilisation(currentDeviceStates);
 
-        MyMonitor.getInstance().recordUtilizationForPR(pr, timestamp, utilization);
+        SPPMonitor.getInstance().recordUtilizationForPR(pr, timestamp, utilization);
     }
 
     /**
@@ -467,14 +467,14 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         Map<PlacementRequest, Double> latencies = new LinkedHashMap<>();
 
         // Collect Total PRs metric. Failed PRs metric collected below.
-        MyMonitor.getInstance().recordTotalPRs(placementRequests.size(), CloudSim.clock());
+        SPPMonitor.getInstance().recordTotalPRs(placementRequests.size(), CloudSim.clock());
 
         for (PlacementRequest placementRequest : placementRequests) {
             if (prStatus.get(placementRequest) == -1) {
                 // Create a key for this placement request
                 PlacementRequestKey prKey = new PlacementRequestKey(
                         placementRequest.getSensorId(),
-                        ((MyPlacementRequest) placementRequest).getPrIndex()
+                        ((ContextPlacementRequest) placementRequest).getPrIndex()
                 );
 
                 // Skip if this placement request has no entries in mappedMicroservices
@@ -507,11 +507,11 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
                 // Otherwise, do collection of failed PR metrics
                 Logger.error("PR failed because ", failureReason
                         + ", sensorId " + placementRequest.getSensorId()
-                        + ", prIndex " + ((MyPlacementRequest) placementRequest).getPrIndex());
-                MyMonitor.getInstance().recordFailedPR(placementRequest, failureReason);
+                        + ", prIndex " + ((ContextPlacementRequest) placementRequest).getPrIndex());
+                SPPMonitor.getInstance().recordFailedPR(placementRequest, failureReason);
             }
         }
-        MyMonitor.getInstance().getLatencies().put(CloudSim.clock(), latencies);
+        SPPMonitor.getInstance().getLatencies().put(CloudSim.clock(), latencies);
         return placement;
     }
 
@@ -527,7 +527,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
      *  - prStatus
      *  - Targets
      */
-    protected MyPlacementLogicOutput generatePlacementDecision(Map<PlacementRequest, Integer> prStatus) {
+    protected ContextAwarePlacement generatePlacementDecision(Map<PlacementRequest, Integer> prStatus) {
         // placements: PlacementRequestKey -> Map(microservice name -> target deviceId)
         Map<PlacementRequestKey, Map<String, Integer>> placements = cleanPlacementRequests(placementRequests, mappedMicroservices, prStatus);
 
@@ -545,9 +545,9 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
                     continue;
                 }
                 
-                MyPlacementRequest myPlacementRequest = (MyPlacementRequest) placementRequest;
-                int sensorId = myPlacementRequest.getSensorId();
-                int prIndex = myPlacementRequest.getPrIndex();
+                ContextPlacementRequest contextPlacementRequest = (ContextPlacementRequest) placementRequest;
+                int sensorId = contextPlacementRequest.getSensorId();
+                int prIndex = contextPlacementRequest.getPrIndex();
 
                 // Check if placementRequest was a failure.
                 if (prStatus.containsKey(placementRequest) && prStatus.get(placementRequest) != -1) {
@@ -594,7 +594,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
                                 microserviceName,
                                 deviceID,
                                 placementRequest.getSensorId(),
-                                ((MyPlacementRequest)placementRequest).getPrIndex()
+                                ((ContextPlacementRequest)placementRequest).getPrIndex()
                         );
                         if (serviceDiscoveryInfo.containsKey(clientDevice)) {
                             serviceDiscoveryInfo.get(clientDevice).add(entry);
@@ -634,7 +634,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
 
         Map<PlacementRequest, Integer> targets = determineTargets(perDevice, prStatus);
 
-        return new MyPlacementLogicOutput(perDevice, serviceDiscoveryInfo, prStatus, targets);
+        return new ContextAwarePlacement(perDevice, serviceDiscoveryInfo, prStatus, targets);
     }
 
 
@@ -845,11 +845,11 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         if (l >= 0) return l;
 
         if (MicroservicePlacementConfig.NETWORK_TOPOLOGY != MicroservicePlacementConfig.CENTRALISED) throw new NullPointerException("Wrong topology.");
-        MyFogDevice src = (MyFogDevice) getDevice(srcId);
-        MyFogDevice dest = (MyFogDevice) getDevice(destId);
+        SPPFogDevice src = (SPPFogDevice) getDevice(srcId);
+        SPPFogDevice dest = (SPPFogDevice) getDevice(destId);
 
 
-        if (Objects.equals(src.getDeviceType(), MyFogDevice.FCN) && Objects.equals(dest.getDeviceType(), MyFogDevice.FCN)){
+        if (Objects.equals(src.getDeviceType(), SPPFogDevice.FCN) && Objects.equals(dest.getDeviceType(), SPPFogDevice.FCN)){
             return globalLatencies[srcIndex][cloudIndex] + globalLatencies[cloudIndex][destIndex];
         }
         else { // dest is user device

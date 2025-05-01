@@ -4,13 +4,16 @@ import org.apache.commons.math3.util.Pair;
 import org.fog.application.AppEdge;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
-import org.fog.entities.*;
+import org.fog.entities.ControllerComponent;
+import org.fog.entities.FogDevice;
+import org.fog.entities.PlacementRequest;
+import org.fog.entities.Tuple;
 import org.fog.utils.Logger;
 import org.fog.utils.ModuleLaunchConfig;
 
 import java.util.*;
 
-public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
+public class OfflinePOCPlacementLogic implements MicroservicePlacementLogic {
     /**
      * Fog network related details
      */
@@ -23,17 +26,14 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
     int fonID;
 
     protected Map<Integer, Double> currentCpuLoad;
-    protected Map<Integer, Double> currentRamLoad;
-    protected Map<Integer, Double> currentStorageLoad;
     protected Map<Integer, List<String>> currentModuleMap = new HashMap<>();
     protected Map<Integer, Map<String, Double>> currentModuleLoadMap = new HashMap<>();
     protected Map<Integer, Map<String, Integer>> currentModuleInstanceNum = new HashMap<>();
 
-    // todo Simon says we shall initialise mappedMicroservices before every PRP cycle
     Map<Integer, Map<String, Integer>> mappedMicroservices = new HashMap<>();
     ; //mappedMicroservice
 
-    public MyOnlinePOCPlacementLogic(int fonID) {
+    public OfflinePOCPlacementLogic(int fonID) {
         setFONId(fonID);
     }
 
@@ -53,22 +53,16 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
         this.applicationInfo = applicationInfo;
 
         setCurrentCpuLoad(new HashMap<Integer, Double>());
-        setCurrentRamLoad(new HashMap<Integer, Double>());
-        setCurrentStorageLoad(new HashMap<Integer, Double>());
         setCurrentModuleMap(new HashMap<>());
         for (FogDevice dev : fogDevices) {
             getCurrentCpuLoad().put(dev.getId(), 0.0);
-            getCurrentRamLoad().put(dev.getId(), 0.0);
-            getCurrentStorageLoad().put(dev.getId(), 0.0);
             getCurrentModuleMap().put(dev.getId(), new ArrayList<>());
             currentModuleLoadMap.put(dev.getId(), new HashMap<String, Double>());
             currentModuleInstanceNum.put(dev.getId(), new HashMap<String, Integer>());
         }
-        // todo Simon says we initialise mappedMicroservices before every PRP cycle along with currentModuleLoadMap and currentModuleInstanceNum
-        mappedMicroservices = new HashMap<>();
 
         mapModules();
-        PlacementLogicOutput placement = generatePlacementDecision();
+        PlacementLogicOutput placement = generatePlacementMap();
         updateResources(resourceAvailability);
         postProcessing();
         return placement;
@@ -83,15 +77,11 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
                 AppModule module = app.getModuleByName(moduleName);
                 double mips = resourceAvailability.get(deviceId).get(ControllerComponent.CPU) - (module.getMips() * moduleCount.get(moduleName));
                 resourceAvailability.get(deviceId).put(ControllerComponent.CPU, mips);
-                double ram = resourceAvailability.get(deviceId).get(ControllerComponent.RAM) - (module.getRam() * moduleCount.get(moduleName));
-                resourceAvailability.get(deviceId).put(ControllerComponent.RAM, ram);
-                double storage = resourceAvailability.get(deviceId).get(ControllerComponent.STORAGE) - (module.getSize() * moduleCount.get(moduleName));
-                resourceAvailability.get(deviceId).put(ControllerComponent.STORAGE, storage);
             }
         }
     }
 
-    private PlacementLogicOutput generatePlacementDecision() {
+    private PlacementLogicOutput generatePlacementMap() {
         Map<Integer, Map<String, Integer>> placement = new HashMap<>();
         for (PlacementRequest placementRequest : placementRequests) {
             List<String> toRemove = new ArrayList<>();
@@ -112,50 +102,29 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
         //todo it assumed that modules are not shared among applications.
         // <deviceid, < app, list of modules to deploy > this is to remove deploying same module more than once on a certain device.
         Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice = new HashMap<>();
-        Map<Integer, List<MyHeuristic.PRContextAwareEntry>> serviceDiscoveryInfo = new HashMap<>();
+        Map<Integer, List<Pair<String, Integer>>> serviceDiscoveryInfo = new HashMap<>();
         Map<PlacementRequest, Integer> prStatus = new HashMap<>();
         if (placement != null) {
             for (int prID : placement.keySet()) {
-                MyPlacementRequest placementRequest = null;
+                //retrieve application
+                PlacementRequest placementRequest = null;
                 for (PlacementRequest pr : placementRequests) {
-                    if (pr.getSensorId() == prID) {
-                        placementRequest = (MyPlacementRequest) pr;
-                        break;
-                    }
-                }
-
-                if (placementRequest == null) {
-                    Logger.error("PlacementRequest query Error", "Could not find placement request for prID: " + prID);
-                    continue;
+                    if (pr.getSensorId() == prID)
+                        placementRequest = pr;
                 }
                 Application application = applicationInfo.get(placementRequest.getApplicationId());
-
                 for (String microserviceName : placement.get(prID).keySet()) {
                     int deviceID = placement.get(prID).get(microserviceName);
 
-                    // Get client devices that need this service discovery info
-                    List<Integer> clientDevices = getClientServiceNodeIds(application,
-                            microserviceName,
-                            placementRequest.getPlacedServices(),
-                            placement.get(prID));
-
+                    //service discovery info propagation
+                    List<Integer> clientDevices = getClientServiceNodeIds(application, microserviceName, placementRequest.getPlacedServices(), placement.get(prID));
                     for (int clientDevice : clientDevices) {
-                        // Create standard service discovery entry (Pair)
-                        Pair<String, Integer> sdEntry = new Pair<>(microserviceName, deviceID);
-
-                        // Create PR-aware entry with context
-                        MyHeuristic.PRContextAwareEntry entry = new MyHeuristic.PRContextAwareEntry(
-                                microserviceName,
-                                deviceID,
-                                placementRequest.getSensorId(),
-                                placementRequest.getPrIndex()
-                        );
-                        if (serviceDiscoveryInfo.containsKey(clientDevice)) {
-                            serviceDiscoveryInfo.get(clientDevice).add(entry);
-                        } else {
-                            List<MyHeuristic.PRContextAwareEntry> entries = new ArrayList<>();
-                            entries.add(entry);
-                            serviceDiscoveryInfo.put(clientDevice, entries);
+                        if (serviceDiscoveryInfo.containsKey(clientDevice))
+                            serviceDiscoveryInfo.get(clientDevice).add(new Pair<>(microserviceName, deviceID));
+                        else {
+                            List<Pair<String, Integer>> s = new ArrayList<>();
+                            s.add(new Pair<>(microserviceName, deviceID));
+                            serviceDiscoveryInfo.put(clientDevice, s);
                         }
                     }
                 }
@@ -188,25 +157,7 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
             }
         }
 
-        Map<PlacementRequest, Integer> targets = new HashMap();
-        // todo Simon says that ALL the parent edge servers of the users that made PRs must receive deployments. Otherwise error.
-        for (PlacementRequest pr : placementRequests) {
-            int parentOfGateway = Objects.requireNonNull(getDevice(pr.getRequester())).getParentId();
-            boolean targeted = false;
-            for (int target : perDevice.keySet()) {
-                if (parentOfGateway == target) {
-                    targeted = true;
-                    targets.put(pr, parentOfGateway);
-                    break;
-                }
-            }
-            if (!targeted) {
-                Logger.error("Deployment Error", "Deployment Request is not being sent to "
-                        + parentOfGateway + ", the parent of gateway device " + Objects.requireNonNull(getDevice(pr.getRequester())).getName());
-            }
-        }
-
-        return new MyPlacementLogicOutput(perDevice, serviceDiscoveryInfo, prStatus, targets);
+        return new PlacementLogicOutput(perDevice, serviceDiscoveryInfo, prStatus);
     }
 
     public List<Integer> getClientServiceNodeIds(Application application, String
@@ -219,9 +170,10 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
             else if (placementPerPr.get(clientService) != null)
                 nodeIDs.add(placementPerPr.get(clientService));
         }
-        return nodeIDs;
-    }
 
+        return nodeIDs;
+
+    }
 
     public List<String> getClientServices(Application application, String microservice) {
         List<String> clientServices = new LinkedList<>();
@@ -230,20 +182,33 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
             if (edge.getDestination().equals(microservice) && edge.getDirection() == Tuple.UP)
                 clientServices.add(edge.getSource());
         }
+
+
         return clientServices;
     }
-
 
     @Override
     public void postProcessing() {
 
     }
 
+    public void setCurrentCpuLoad(Map<Integer, Double> currentCpuLoad) {
+        this.currentCpuLoad = currentCpuLoad;
+    }
+
+    public Map<Integer, List<String>> getCurrentModuleMap() {
+        return currentModuleMap;
+    }
+
+    public void setCurrentModuleMap(Map<Integer, List<String>> currentModuleMap) {
+        this.currentModuleMap = currentModuleMap;
+    }
+
     public void mapModules() {
-        Map<PlacementRequest, Integer> currentTargets = new HashMap<>();
+        Map<PlacementRequest, Integer> deviceToPlace = new HashMap<>();
         //initiate with the  parent of the client device for this
         for (PlacementRequest placementRequest : placementRequests) {
-            currentTargets.put(placementRequest, getDevice(placementRequest.getRequester()).getParentId());
+            deviceToPlace.put(placementRequest, getDevice(placementRequest.getRequester()).getParentId());
 
             // already placed modules
             mappedMicroservices.put(placementRequest.getSensorId(), new HashMap<>(placementRequest.getPlacedServices()));
@@ -255,13 +220,9 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
                     FogDevice device = getDeviceByName(deviceName);
                     int deviceId = device.getId();
 
-                    if (getModule(microservice, app).getMips() + getCurrentCpuLoad().get(deviceId) <= resourceAvailability.get(deviceId).get(ControllerComponent.CPU)
-                    && getModule(microservice, app).getRam() + getCurrentRamLoad().get(deviceId) <= resourceAvailability.get(deviceId).get(ControllerComponent.RAM)
-                    && getModule(microservice, app).getSize() + getCurrentStorageLoad().get(deviceId) <= resourceAvailability.get(deviceId).get(ControllerComponent.STORAGE)) {
+                    if (getModule(microservice, app).getMips() + getCurrentCpuLoad().get(deviceId) <= resourceAvailability.get(deviceId).get(ControllerComponent.CPU)) {
                         Logger.debug("ModulePlacementEdgeward", "Placement of operator " + microservice + " on device " + device.getName() + " successful.");
                         getCurrentCpuLoad().put(deviceId, getModule(microservice, app).getMips() + getCurrentCpuLoad().get(deviceId));
-                        getCurrentRamLoad().put(deviceId, getModule(microservice, app).getRam() + getCurrentRamLoad().get(deviceId));
-                        getCurrentStorageLoad().put(deviceId, getModule(microservice, app).getSize() + getCurrentStorageLoad().get(deviceId));
                         System.out.println("Placement of operator " + microservice + " on device " + device.getName() + " successful.");
 
                         moduleToApp.put(microservice, app.getAppId());
@@ -290,7 +251,6 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
             }
         }
 
-
         Map<PlacementRequest, List<String>> toPlace = new HashMap<>();
 //        Map<PlacementRequest, Integer> clusterNode = new HashMap<>();
 
@@ -313,7 +273,7 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
             }
             for (PlacementRequest placementRequest : placementRequests) {
                 Application app = applicationInfo.get(placementRequest.getApplicationId());
-                int deviceId = currentTargets.get(placementRequest); // NOTE: Initially contains parent ID of gateway device (MOBILE USER). Changes depending on how we "forward" the PR (if previous target device lacked resources).
+                int deviceId = deviceToPlace.get(placementRequest); // NOTE: Initially contains parent ID of gateway device (MOBILE USER). Changes depending on how we "forward" the PR (if previous target device lacked resources).
                 // if not cluster
                 if (deviceId != -1) {
                     FogDevice device = getDevice(deviceId);
@@ -321,13 +281,9 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
                     if (toPlace.containsKey(placementRequest)) {
                         for (String microservice : toPlace.get(placementRequest)) {
                             // try to place
-                            if (getModule(microservice, app).getMips() + getCurrentCpuLoad().get(deviceId) <= resourceAvailability.get(deviceId).get(ControllerComponent.CPU)
-                            && getModule(microservice, app).getRam() + getCurrentRamLoad().get(deviceId) <= resourceAvailability.get(deviceId).get(ControllerComponent.RAM)
-                            && getModule(microservice, app).getSize() + getCurrentStorageLoad().get(deviceId) <= resourceAvailability.get(deviceId).get(ControllerComponent.STORAGE)) {
+                            if (getModule(microservice, app).getMips() + getCurrentCpuLoad().get(deviceId) <= resourceAvailability.get(deviceId).get(ControllerComponent.CPU)) {
                                 Logger.debug("ModulePlacementEdgeward", "Placement of operator " + microservice + " on device " + device.getName() + " successful.");
                                 getCurrentCpuLoad().put(deviceId, getModule(microservice, app).getMips() + getCurrentCpuLoad().get(deviceId));
-                                getCurrentRamLoad().put(deviceId, getModule(microservice, app).getRam() + getCurrentRamLoad().get(deviceId));
-                                getCurrentStorageLoad().put(deviceId, getModule(microservice, app).getSize() + getCurrentStorageLoad().get(deviceId));
                                 System.out.println("Placement of operator " + microservice + " on device " + device.getName() + " successful.");
 
                                 moduleToApp.put(microservice, app.getAppId());
@@ -357,7 +313,7 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
                             toPlace.get(placementRequest).remove(m);
                         }
                         if (!toPlace.get(placementRequest).isEmpty()) {
-                            currentTargets.put(placementRequest, device.getParentId());
+                            deviceToPlace.put(placementRequest, device.getParentId());
                         }
                         if (toPlace.get(placementRequest).isEmpty())
                             toPlace.remove(placementRequest);
@@ -380,34 +336,6 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
 
     public Map<Integer, Double> getCurrentCpuLoad() {
         return currentCpuLoad;
-    }
-
-    public Map<Integer, Double> getCurrentRamLoad() {
-        return currentRamLoad;
-    }
-
-    public Map<Integer, Double> getCurrentStorageLoad() {
-        return currentStorageLoad;
-    }
-
-    public void setCurrentCpuLoad(Map<Integer, Double> currentCpuLoad) {
-        this.currentCpuLoad = currentCpuLoad;
-    }
-
-    public void setCurrentRamLoad(Map<Integer, Double> currentRamLoad) {
-        this.currentRamLoad = currentRamLoad;
-    }
-
-    public void setCurrentStorageLoad(Map<Integer, Double> currentStorageLoad) {
-        this.currentStorageLoad = currentStorageLoad;
-    }
-
-    public Map<Integer, List<String>> getCurrentModuleMap() {
-        return currentModuleMap;
-    }
-
-    public void setCurrentModuleMap(Map<Integer, List<String>> currentModuleMap) {
-        this.currentModuleMap = currentModuleMap;
     }
 
     private AppModule getModule(String moduleName, Application app) {
@@ -450,6 +378,9 @@ public class MyOnlinePOCPlacementLogic implements MicroservicePlacementLogic {
             if (toBePlaced)
                 modulesToPlace.add(moduleName);
         }
+
         return modulesToPlace;
     }
+
+
 }

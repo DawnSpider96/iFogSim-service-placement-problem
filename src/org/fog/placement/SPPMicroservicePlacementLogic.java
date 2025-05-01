@@ -4,16 +4,17 @@ import org.apache.commons.math3.util.Pair;
 import org.fog.application.AppEdge;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
-import org.fog.entities.ControllerComponent;
 import org.fog.entities.FogDevice;
-import org.fog.entities.PlacementRequest;
 import org.fog.entities.Tuple;
+import org.fog.entities.ControllerComponent;
+import org.fog.entities.PlacementRequest;
 import org.fog.utils.Logger;
 import org.fog.utils.ModuleLaunchConfig;
 
 import java.util.*;
 
-public class MyOfflinePOCPlacementLogic implements MicroservicePlacementLogic {
+
+public class SPPMicroservicePlacementLogic implements MicroservicePlacementLogic {
     /**
      * Fog network related details
      */
@@ -33,7 +34,7 @@ public class MyOfflinePOCPlacementLogic implements MicroservicePlacementLogic {
     Map<Integer, Map<String, Integer>> mappedMicroservices = new HashMap<>();
     ; //mappedMicroservice
 
-    public MyOfflinePOCPlacementLogic(int fonID) {
+    public SPPMicroservicePlacementLogic(int fonID) {
         setFONId(fonID);
     }
 
@@ -273,7 +274,7 @@ public class MyOfflinePOCPlacementLogic implements MicroservicePlacementLogic {
             }
             for (PlacementRequest placementRequest : placementRequests) {
                 Application app = applicationInfo.get(placementRequest.getApplicationId());
-                int deviceId = deviceToPlace.get(placementRequest); // NOTE: Initially contains parent ID of gateway device (MOBILE USER). Changes depending on how we "forward" the PR (if previous target device lacked resources).
+                int deviceId = deviceToPlace.get(placementRequest); // NOTE: Initially contains parent ID of gateway device. Changes depending on how we "forward" the PR (if previous target device lacked resources).
                 // if not cluster
                 if (deviceId != -1) {
                     FogDevice device = getDevice(deviceId);
@@ -297,7 +298,7 @@ public class MyOfflinePOCPlacementLogic implements MicroservicePlacementLogic {
                                 if (!currentModuleLoadMap.get(deviceId).containsKey(microservice))
                                     currentModuleLoadMap.get(deviceId).put(microservice, getModule(microservice, app).getMips());
                                 else
-                                    currentModuleLoadMap.get(deviceId).put(microservice, getModule(microservice, app).getMips() + currentModuleLoadMap.get(deviceId).get(microservice)); // todo Simon says isn't this already vertical scaling? But is on PR side not FogDevice side
+                                    currentModuleLoadMap.get(deviceId).put(microservice, getModule(microservice, app).getMips() + currentModuleLoadMap.get(deviceId).get(microservice));
 
 
                                 //currentModuleInstance
@@ -313,13 +314,116 @@ public class MyOfflinePOCPlacementLogic implements MicroservicePlacementLogic {
                             toPlace.get(placementRequest).remove(m);
                         }
                         if (!toPlace.get(placementRequest).isEmpty()) {
-                            deviceToPlace.put(placementRequest, device.getParentId());
+//                            if (((MicroserviceFogDevice) device).getIsInCluster()) {
+//                                // -1 indicates it's a cluster placement
+//                                deviceToPlace.put(placementRequest, -1);
+//                                // a device of the cluster to identify the cluster
+//                                clusterNode.put(placementRequest, deviceId);
+//                            } else {
+                                deviceToPlace.put(placementRequest, device.getParentId());
+//                            }
                         }
                         if (toPlace.get(placementRequest).isEmpty())
                             toPlace.remove(placementRequest);
                     }
                 } else {
                     System.out.println("CLUSTER ISSUE: deviceID is -1");
+//                    if (toPlace.containsKey(placementRequest)) {
+////                        int clusterDeviceId = clusterNode.get(placementRequest);
+//                        FogDevice device = getDevice(clusterDeviceId);
+//                        List<Integer> clusterDeviceIds = ((MicroserviceFogDevice) device).getClusterMembers();
+//                        List<Integer> sortedClusterDevicesActive = new ArrayList<>();
+//                        List<Integer> sortedClusterDevicesInactive = new ArrayList<>();
+//                        for (Integer id : clusterDeviceIds) {
+//                            //sort list from min to max
+//                            if (currentModuleMap.get(id).size()>0 && sortedClusterDevicesActive.isEmpty())
+//                                sortedClusterDevicesActive.add(id);
+//                            else if(currentModuleMap.get(id).size()==0 && sortedClusterDevicesInactive.isEmpty())
+//                                sortedClusterDevicesInactive.add(id);
+//                            else if(currentModuleMap.get(id).size()>0){
+//                                boolean isPlaced = false;
+//                                for (int i = 0; i < sortedClusterDevicesActive.size(); i++) {
+//                                    double sorted = resourceAvailability.get(sortedClusterDevicesActive.get(i)).get("cpu") -
+//                                            getCurrentCpuLoad().get(sortedClusterDevicesActive.get(i));
+//                                    double current = resourceAvailability.get(id).get("cpu") -
+//                                            getCurrentCpuLoad().get(id);
+//                                    if (sorted < current) {sortedClusterDevicesActive.add(i, id);
+//                                        isPlaced = true;
+//                                        break;
+//                                    } else {
+//                                        continue;
+//                                    }
+//                                }
+//                                if (!isPlaced)
+//                                    sortedClusterDevicesActive.add(id);
+//                            }
+//                            else{
+//                                boolean isPlaced = false;
+//                                for (int i = 0; i < sortedClusterDevicesInactive.size(); i++) {
+//                                    double sorted = resourceAvailability.get(sortedClusterDevicesInactive.get(i)).get("cpu") -
+//                                            getCurrentCpuLoad().get(sortedClusterDevicesInactive.get(i));
+//                                    double current = resourceAvailability.get(id).get("cpu") -
+//                                            getCurrentCpuLoad().get(id);
+//                                    if (sorted < current) {sortedClusterDevicesInactive.add(i, id);
+//                                        isPlaced = true;
+//                                        break;
+//                                    } else {
+//                                        continue;
+//                                    }
+//                                }
+//                                if (!isPlaced)
+//                                    sortedClusterDevicesInactive.add(id);
+//                            }
+//                        }
+//
+//                        List<Integer> sortedClusterDevices = new ArrayList<>(sortedClusterDevicesActive);
+//                        sortedClusterDevices.addAll(sortedClusterDevicesInactive);
+//                        List<String> placed = new ArrayList<>();
+//                        for (String microservice : toPlace.get(placementRequest)) {
+//                            for (int id : sortedClusterDevices) {
+//                                // try to place
+//                                if (getModule(microservice, app).getMips() + getCurrentCpuLoad().get(id) <= resourceAvailability.get(id).get(ControllerComponent.CPU)) {
+//                                    FogDevice placedDevice = getDevice(id);
+//                                    Logger.debug("ModulePlacementEdgeward", "Placement of operator " + microservice + " on device " + placedDevice.getName() + " successful.");
+//                                    getCurrentCpuLoad().put(id, getModule(microservice, app).getMips() + getCurrentCpuLoad().get(id));
+//                                    System.out.println("Placement of operator " + microservice + " on device " + placedDevice.getName() + " successful.");
+//
+//                                    if (!currentModuleMap.get(id).contains(microservice))
+//                                        currentModuleMap.get(id).add(microservice);
+//
+//                                    mappedMicroservices.get(placementRequest.getPlacementRequestId()).put(microservice, id);
+//
+//                                    moduleToApp.put(microservice, app.getAppId());
+//
+//                                    //currentModuleLoad
+//                                    if (!currentModuleLoadMap.get(id).containsKey(microservice))
+//                                        currentModuleLoadMap.get(id).put(microservice, getModule(microservice, app).getMips());
+//                                    else
+//                                        currentModuleLoadMap.get(id).put(microservice, getModule(microservice, app).getMips() + currentModuleLoadMap.get(id).get(microservice));
+//
+//
+//                                    //currentModuleInstance
+//                                    if (!currentModuleInstanceNum.get(id).containsKey(microservice))
+//                                        currentModuleInstanceNum.get(id).put(microservice, 1);
+//                                    else
+//                                        currentModuleInstanceNum.get(id).put(microservice, currentModuleInstanceNum.get(id).get(microservice) + 1);
+//
+//                                    placed.add(microservice);
+//                                    break;
+//                                }
+//                            }
+//                        }
+//
+//                        for (String m : placed) {
+//                            toPlace.get(placementRequest).remove(m);
+//                        }
+//                        if (!toPlace.get(placementRequest).isEmpty()) {
+//                            //check
+//                            deviceToPlace.put(placementRequest, device.getParentId());
+//                        }
+//                        if (toPlace.get(placementRequest).isEmpty())
+//                            toPlace.remove(placementRequest);
+//                    }
                 }
             }
         }

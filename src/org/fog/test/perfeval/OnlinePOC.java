@@ -3,7 +3,7 @@ package org.fog.test.perfeval;
 import org.cloudbus.cloudsim.sdn.example.policies.VmSchedulerTimeSharedEnergy;
 import org.fog.application.MyApplication;
 import org.fog.mobilitydata.*;
-import org.fog.placement.MyMicroservicesController;
+import org.fog.placement.PlacementSimulationController;
 import org.fog.utils.Logger;
 
 import org.cloudbus.cloudsim.Host;
@@ -102,7 +102,7 @@ public class OnlinePOC {
             appList.add(application);
 
             int placementAlgo = PlacementLogicFactory.BEST_FIT;
-            MyMicroservicesController microservicesController = new MyMicroservicesController(
+            PlacementSimulationController microservicesController = new PlacementSimulationController(
                     "controller",
                     fogDevices,
                     sensors,
@@ -169,13 +169,13 @@ public class OnlinePOC {
      */
     private static void createFogDevices(int userId, Application app) throws NumberFormatException, IOException {
         // Create cloud device at the top of the hierarchy
-        MyFogDevice cloud = createFogDevice("cloud", 44800, 40000, 100, 10000, 0.01, 16 * 103, 16 * 83.25, MyFogDevice.CLOUD);
+        SPPFogDevice cloud = createFogDevice("cloud", 44800, 40000, 100, 10000, 0.01, 16 * 103, 16 * 83.25, SPPFogDevice.CLOUD);
         cloud.setParentId(References.NOT_SET);
         cloud.setLevel(0);
         fogDevices.add(cloud);
 
         for (int i = 0; i < numberOfUser; i++) {
-            MyFogDevice gateway = createFogDevice("gateway_" + i, 2800, 4000, 10000, 10000, 0.0, 107.339, 83.4333, MyFogDevice.FCN);
+            SPPFogDevice gateway = createFogDevice("gateway_" + i, 2800, 4000, 10000, 10000, 0.0, 107.339, 83.4333, SPPFogDevice.FCN);
             gateway.setParentId(cloud.getId());
             gateway.setLevel(1);
             fogDevices.add(gateway);
@@ -204,8 +204,8 @@ public class OnlinePOC {
      * @param idlePower
      * @return
      */
-    private static MyFogDevice createFogDevice(String nodeName, long mips,
-                                               int ram, long upBw, long downBw, double ratePerMips, double busyPower, double idlePower, String deviceType) {
+    private static SPPFogDevice createFogDevice(String nodeName, long mips,
+                                                int ram, long upBw, long downBw, double ratePerMips, double busyPower, double idlePower, String deviceType) {
 
         List<Pe> peList = new ArrayList<Pe>();
 
@@ -245,9 +245,9 @@ public class OnlinePOC {
                 arch, os, vmm, host, time_zone, cost, costPerMem,
                 costPerStorage, costPerBw);
 
-        MyFogDevice fogdevice = null;
+        SPPFogDevice fogdevice = null;
         try {
-            fogdevice = new MyFogDevice(nodeName, characteristics,
+            fogdevice = new SPPFogDevice(nodeName, characteristics,
                     new AppModuleAllocationPolicy(hostList), storageList, 10, upBw, downBw, 10000, 0, ratePerMips, deviceType);
         } catch (Exception e) {
             e.printStackTrace();
@@ -257,10 +257,10 @@ public class OnlinePOC {
     }
 
     private static FogDevice addImmobile(String name, int userId, Application app, int parentId) {
-        MyFogDevice mobile = createFogDevice(name, 200, 2048, 10000, 270, 0, 87.53, 82.44, MyFogDevice.GENERIC_USER);
+        SPPFogDevice mobile = createFogDevice(name, 200, 2048, 10000, 270, 0, 87.53, 82.44, SPPFogDevice.GENERIC_USER);
         mobile.setParentId(parentId);
         
-        Sensor mobileSensor = new MySensor("s-" + name, "SENSOR", userId, app.getAppId(), new DeterministicDistribution(SENSOR_TRANSMISSION_TIME)); // inter-transmission time of EEG sensor follows a deterministic distribution
+        Sensor mobileSensor = new PassiveSensor("s-" + name, "SENSOR", userId, app.getAppId(), new DeterministicDistribution(SENSOR_TRANSMISSION_TIME)); // inter-transmission time of EEG sensor follows a deterministic distribution
         mobileSensor.setApp(app);
         sensors.add(mobileSensor);
         Actuator mobileDisplay = new Actuator("a-" + name, userId, app.getAppId(), "DISPLAY");

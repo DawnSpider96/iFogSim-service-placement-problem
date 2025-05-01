@@ -1,11 +1,10 @@
 package org.fog.entities;
 
 import org.cloudbus.cloudsim.core.CloudSim;
-import org.apache.commons.math3.util.Pair;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.placement.MicroservicePlacementLogic;
-import org.fog.placement.MyHeuristic;
+import org.fog.placement.SPPHeuristic;
 import org.fog.placement.PlacementLogicOutput;
 import org.fog.utils.Logger;
 import org.json.simple.JSONObject;
@@ -274,9 +273,9 @@ class ServiceDiscovery {
 // Simon (020425) says this supports identifying placement decision-specific Service Discovery entries
 class PRAwareServiceDiscovery extends ServiceDiscovery {
     // List of all service discovery entries
-    protected List<MyHeuristic.PRContextAwareEntry> entries;
+    protected List<SPPHeuristic.PRContextAwareEntry> entries;
     // Index for faster lookups by microservice name
-    protected Map<String, List<MyHeuristic.PRContextAwareEntry>> microserviceIndex;
+    protected Map<String, List<SPPHeuristic.PRContextAwareEntry>> microserviceIndex;
 
     public PRAwareServiceDiscovery(Integer deviceId) {
         super(deviceId);
@@ -286,7 +285,7 @@ class PRAwareServiceDiscovery extends ServiceDiscovery {
 
     // Enhanced method with both sensorId and prIndex
     public void addServiceDiscoveryInfo(String microservice, Integer deviceId, Integer sensorId, Integer prIndex) {
-        MyHeuristic.PRContextAwareEntry entry = new MyHeuristic.PRContextAwareEntry(
+        SPPHeuristic.PRContextAwareEntry entry = new SPPHeuristic.PRContextAwareEntry(
             microservice, deviceId, sensorId, prIndex);
             
         // Add to main list
@@ -305,12 +304,12 @@ class PRAwareServiceDiscovery extends ServiceDiscovery {
         
         // First check if we have entries for this microservice
         if (microserviceIndex.containsKey(microservice)) {
-            List<MyHeuristic.PRContextAwareEntry> microserviceEntries = microserviceIndex.get(microservice);
-            Iterator<MyHeuristic.PRContextAwareEntry> iterator = microserviceEntries.iterator();
+            List<SPPHeuristic.PRContextAwareEntry> microserviceEntries = microserviceIndex.get(microservice);
+            Iterator<SPPHeuristic.PRContextAwareEntry> iterator = microserviceEntries.iterator();
             
             // Find and remove the matching entry
             while (iterator.hasNext()) {
-                MyHeuristic.PRContextAwareEntry entry = iterator.next();
+                SPPHeuristic.PRContextAwareEntry entry = iterator.next();
                 if (entry.getDeviceId().equals(deviceId) && 
                     entry.getSensorId().equals(sensorId) && 
                     entry.getPrIndex().equals(prIndex)) {
@@ -346,7 +345,7 @@ class PRAwareServiceDiscovery extends ServiceDiscovery {
 
     public Integer getDeviceIdByContext(String microservice, Integer sensorId, Integer prIndex) {
         if (microserviceIndex.containsKey(microservice)) {
-            for (MyHeuristic.PRContextAwareEntry entry : microserviceIndex.get(microservice)) {
+            for (SPPHeuristic.PRContextAwareEntry entry : microserviceIndex.get(microservice)) {
                 // Check if the context matches
                 if (entry.getSensorId().equals(sensorId) && entry.getPrIndex().equals(prIndex)) {
                     return entry.getDeviceId();
@@ -356,11 +355,11 @@ class PRAwareServiceDiscovery extends ServiceDiscovery {
         return null;
     }
     
-    public List<MyHeuristic.PRContextAwareEntry> getAllEntries() {
+    public List<SPPHeuristic.PRContextAwareEntry> getAllEntries() {
         return new ArrayList<>(entries);
     }
     
-    public List<MyHeuristic.PRContextAwareEntry> getEntriesByMicroservice(String microservice) {
+    public List<SPPHeuristic.PRContextAwareEntry> getEntriesByMicroservice(String microservice) {
         if (microserviceIndex.containsKey(microservice)) {
             return new ArrayList<>(microserviceIndex.get(microservice));
         }

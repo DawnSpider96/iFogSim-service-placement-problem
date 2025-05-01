@@ -20,8 +20,8 @@ import org.cloudbus.cloudsim.sdn.overbooking.BwProvisionerOverbooking;
 import org.cloudbus.cloudsim.sdn.overbooking.PeProvisionerOverbooking;
 import org.fog.entities.FogDevice;
 import org.fog.entities.FogDeviceCharacteristics;
-import org.fog.entities.MyFogDevice;
-import org.fog.placement.MyMicroservicesController;
+import org.fog.entities.SPPFogDevice;
+import org.fog.placement.PlacementSimulationController;
 import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.utils.FogEvents;
 import org.fog.utils.FogLinearPowerModel;
@@ -66,7 +66,7 @@ public class MobilityPOC {
             List<FogDevice> fogDevices = createFogDevices();
             
             // Create a base controller without sensors and applications
-            MyMicroservicesController controller = new MyMicroservicesController(
+            PlacementSimulationController controller = new PlacementSimulationController(
                 "controller",
                 fogDevices, 
                 new ArrayList<>(), // no sensors
@@ -147,25 +147,25 @@ public class MobilityPOC {
         List<FogDevice> devices = new ArrayList<>();
         
         // Create cloud device
-        MyFogDevice cloud = createFogDevice("cloud", 44800, 40000, 100, 10000, 0, 0.01, 16*103, 16*83.25, MyFogDevice.CLOUD);
+        SPPFogDevice cloud = createFogDevice("cloud", 44800, 40000, 100, 10000, 0, 0.01, 16*103, 16*83.25, SPPFogDevice.CLOUD);
         cloud.setParentId(-1);
         devices.add(cloud);
         
         // Create gateway devices (no proxy level as per requirement)
         for (int i = 0; i < NUM_GATEWAYS; i++) {
-            MyFogDevice gateway = createFogDevice("gateway_" + i, 2800, 4000, 10000, 10000, 1, 0.0, 107.339, 83.4333, MyFogDevice.FCN);
+            SPPFogDevice gateway = createFogDevice("gateway_" + i, 2800, 4000, 10000, 10000, 1, 0.0, 107.339, 83.4333, SPPFogDevice.FCN);
             gateway.setParentId(cloud.getId());
             devices.add(gateway);
         }
 
         Map<String, Double> userTypeRatios = new LinkedHashMap<>();
-        userTypeRatios.put(MyFogDevice.GENERIC_USER, 0.5);
-        userTypeRatios.put(MyFogDevice.OPERA_USER, 0.4);
-        userTypeRatios.put(MyFogDevice.AMBULANCE_USER, 0.1);
+        userTypeRatios.put(SPPFogDevice.GENERIC_USER, 0.5);
+        userTypeRatios.put(SPPFogDevice.OPERA_USER, 0.4);
+        userTypeRatios.put(SPPFogDevice.AMBULANCE_USER, 0.1);
 
         // Create user devices connected to each gateway. NO SENSORS/ACTUATORS.
         for (int j = 0; j < NUM_USERS; j++) {
-            MyFogDevice userDevice = createFogDevice(
+            SPPFogDevice userDevice = createFogDevice(
                     "user_" + j,
                     1000,
                     1000,
@@ -203,8 +203,8 @@ public class MobilityPOC {
     /**
      * Creates a fog device with the specified configuration
      */
-    private static MyFogDevice createFogDevice(String name, double mips, int ram, long upBw, long downBw, 
-            int level, double ratePerMips, double busyPower, double idlePower, String deviceType) {
+    private static SPPFogDevice createFogDevice(String name, double mips, int ram, long upBw, long downBw,
+                                                int level, double ratePerMips, double busyPower, double idlePower, String deviceType) {
         
         List<Pe> peList = new ArrayList<Pe>();
         peList.add(new Pe(0, new PeProvisionerOverbooking(mips)));
@@ -240,9 +240,9 @@ public class MobilityPOC {
                 arch, os, vmm, host, time_zone, cost, costPerMem,
                 costPerStorage, costPerBw);
         
-        MyFogDevice fogdevice = null;
+        SPPFogDevice fogdevice = null;
         try {
-            fogdevice = new MyFogDevice(name, characteristics,
+            fogdevice = new SPPFogDevice(name, characteristics,
                     new AppModuleAllocationPolicy(hostList), storageList, 10, upBw, downBw, 10000, 0, ratePerMips, deviceType);
             fogdevice.setLevel(level);
         } catch (Exception e) {

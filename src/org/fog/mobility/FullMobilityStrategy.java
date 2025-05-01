@@ -2,7 +2,7 @@ package org.fog.mobility;
 
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.entities.FogDevice;
-import org.fog.entities.MyFogDevice;
+import org.fog.entities.SPPFogDevice;
 import org.fog.mobilitydata.Location;
 import org.fog.placement.LocationManager;
 import org.fog.utils.Logger;
@@ -178,14 +178,14 @@ public class FullMobilityStrategy implements MobilityStrategy {
         for (FogDevice f : fogDevices) {
             if (f.getId() != fogDevice.getId()) {
 
-                ((MyFogDevice) fogDevice).updateRoutingTable(f.getId(), fogDevice.getParentId());
+                ((SPPFogDevice) fogDevice).updateRoutingTable(f.getId(), fogDevice.getParentId());
 
                 //For othe((MyFogDevice) f).getRoutingTable()r, update route to mobile based on route to parent
-                int nextId = ((MyFogDevice) f).getRoutingTable().get(fogDevice.getParentId());
+                int nextId = ((SPPFogDevice) f).getRoutingTable().get(fogDevice.getParentId());
                 if (f.getId() != nextId)
-                    ((MyFogDevice) f).updateRoutingTable(fogDevice.getId(), nextId);
+                    ((SPPFogDevice) f).updateRoutingTable(fogDevice.getId(), nextId);
                 else
-                    ((MyFogDevice) f).updateRoutingTable(fogDevice.getId(), fogDevice.getId());
+                    ((SPPFogDevice) f).updateRoutingTable(fogDevice.getId(), fogDevice.getId());
             }
         }
     }
@@ -194,13 +194,13 @@ public class FullMobilityStrategy implements MobilityStrategy {
     public void setNewOrchestratorNode(FogDevice fogDevice, FogDevice newParent) {
         int parentId = newParent.getId();
         while (parentId != -1) {
-            if (((MyFogDevice)newParent).getDeviceType().equals(MyFogDevice.FON) ||
-                    ((MyFogDevice)newParent).getDeviceType().equals(MyFogDevice.CLOUD)) {
-                int currentFon = ((MyFogDevice)fogDevice).getFonId();
+            if (((SPPFogDevice)newParent).getDeviceType().equals(SPPFogDevice.FON) ||
+                    ((SPPFogDevice)newParent).getDeviceType().equals(SPPFogDevice.CLOUD)) {
+                int currentFon = ((SPPFogDevice)fogDevice).getFonId();
                 if (currentFon != parentId) {
-                    ((MyFogDevice)getDeviceById(currentFon)).removeMonitoredDevice(fogDevice);
-                    ((MyFogDevice) fogDevice).setFonID(parentId);
-                    ((MyFogDevice)getDeviceById(parentId)).addMonitoredDevice(fogDevice);
+                    ((SPPFogDevice)getDeviceById(currentFon)).removeMonitoredDevice(fogDevice);
+                    ((SPPFogDevice) fogDevice).setFonID(parentId);
+                    ((SPPFogDevice)getDeviceById(parentId)).addMonitoredDevice(fogDevice);
                     System.out.println("Orchestrator Node for device : " + fogDevice.getId() + " updated to " + parentId);
                 }
                 break;

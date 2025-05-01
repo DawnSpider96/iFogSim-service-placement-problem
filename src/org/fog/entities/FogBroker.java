@@ -142,7 +142,7 @@ public class FogBroker extends PowerDatacenterBroker{
 	public void triggerExecution(int cycleNumber) {
 		Map<PlacementRequest, Integer> ts = toSend.get(cycleNumber);
 		for (Map.Entry<PlacementRequest, Integer> entry : ts.entrySet()) {
-			MyPlacementRequest pr = (MyPlacementRequest) entry.getKey();
+			ContextPlacementRequest pr = (ContextPlacementRequest) entry.getKey();
 			Integer deviceId = entry.getValue();
 			if (deviceId == null) {
 				Logger.error("Missing Key Error", "toSend state was not updated properly.");
@@ -156,7 +156,7 @@ public class FogBroker extends PowerDatacenterBroker{
 		}
 	}
 
-	public void transmit(int targetId, Application app, MyPlacementRequest pr){
+	public void transmit(int targetId, Application app, ContextPlacementRequest pr){
 		String firstMicroservice = applicationToFirstMicroserviceMap.get(app);
 //		String firstMicroservice = applicationToSecondMicroservicesMap.get(app);
 		AppEdge _edge = null;
@@ -226,7 +226,7 @@ public class FogBroker extends PowerDatacenterBroker{
 
 	private static AppModule getTargetVM(PlacementRequest pr, String targetService) {
 		int deviceId = pr.getRequester();
-		MyFogDevice device = (MyFogDevice) CloudSim.getEntity(deviceId);
+		SPPFogDevice device = (SPPFogDevice) CloudSim.getEntity(deviceId);
 		if (!activatedVMs.containsKey(deviceId)) activatedVMs.put(deviceId, new HashSet<Integer>());
 
 		// Debug VM IDs
@@ -256,7 +256,7 @@ public class FogBroker extends PowerDatacenterBroker{
 			}
 		}
 		if (firstMicroserviceModule==null) {
-			MyFogDevice d = (MyFogDevice) CloudSim.getEntity(deviceId);
+			SPPFogDevice d = (SPPFogDevice) CloudSim.getEntity(deviceId);
 			Logger.error("FogBroker Control Flow Error", String.format(
 					"Could not find a VM in device %s to transmit tuple to.\n%s",
 					d.getName(),

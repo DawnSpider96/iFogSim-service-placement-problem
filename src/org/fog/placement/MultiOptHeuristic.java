@@ -3,42 +3,58 @@ package org.fog.placement;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
-import org.fog.entities.FogBroker;
 import org.fog.entities.FogDevice;
-import org.fog.entities.MyPlacementRequest;
 import org.fog.entities.PlacementRequest;
-import org.fog.utils.Logger;
-import org.fog.utils.ModuleLaunchConfig;
+import org.fog.entities.ContextPlacementRequest;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
-public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
+public class MultiOptHeuristic extends SPPHeuristic implements MicroservicePlacementLogic {
     @Override
     public String getName() {
-        return "Random";
+        return "MultiOpt";
     }
 
     /**
      * Fog network related details
      */
-    public MyRandomHeuristic(int fonID) {
+    public MultiOptHeuristic(int fonID) {
         super(fonID);
     }
 
-    // Add DeviceStates field to match other implementations
     private List<DeviceState> DeviceStates = new ArrayList<>();
-    private Map<Integer, DeviceState> deviceStateMap = new HashMap<>();
 
-    private int cloudIndex = -1;
-    // Maps DeviceId to index (on latencies and `fogDevices` state)
     @Override
     public void postProcessing() {
     }
 
+    class Result implements Comparable<Result> {
+
+        private int index;
+        private double score;
+
+        public Result(int index, double score) {
+            this.index = index;
+            this.score = score;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        public double getScore() {
+            return score;
+        }
+
+        @Override
+        public int compareTo(Result arg0) {
+            return this.score < arg0.getScore() ? -1 : this.score == arg0.getScore() ? 0 : 1;
+        }
+    }
+
     @Override
     protected Map<PlacementRequest, Integer> mapModules() {
-        Map<PlacementRequest, List<String>> toPlace = new HashMap<>();
+        Map<PlacementRequest, List<String>> toPlace = new LinkedHashMap<>();
 
         int placementCompleteCount = 0;
         if (toPlace.isEmpty()) {
@@ -46,28 +62,20 @@ public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacem
             placementCompleteCount = fillToPlace(placementCompleteCount, toPlace, placementRequests);
         }
 
-        // Initialize DeviceStates similar to other implementations
         DeviceStates = new ArrayList<>();
-        deviceStateMap = new HashMap<>();
         for (FogDevice fogDevice : edgeFogDevices) {
-            DeviceState state = new DeviceState(
-                fogDevice.getId(), 
-                resourceAvailability.get(fogDevice.getId()),
-                fogDevice.getHost().getTotalMips(), 
-                fogDevice.getHost().getRam(), 
-                fogDevice.getHost().getStorage()
-            );
-            DeviceStates.add(state);
-            deviceStateMap.put(fogDevice.getId(), state);
+            DeviceStates.add(new DeviceState(fogDevice.getId(), resourceAvailability.get(fogDevice.getId()),
+                    fogDevice.getHost().getTotalMips(), fogDevice.getHost().getRam(), fogDevice.getHost().getStorage()));
         }
 
-        Map<PlacementRequest, Integer> prStatus = new HashMap<>();
+        Map<PlacementRequest, Integer> prStatus = new LinkedHashMap<>();
         // Process every PR individually
         for (Map.Entry<PlacementRequest, List<String>> entry : toPlace.entrySet()) {
             PlacementRequest placementRequest = entry.getKey();
             Application app = applicationInfo.get(placementRequest.getApplicationId());
             List<String> microservices = entry.getValue();
-            // -1 if success, cloudId if failure
+
+            // status is -1 if success, cloudId if failure
             // Cloud will resend to itself
             // Type int for flexibility: In more complex simulations there may be more FON heads, not just the cloud.
             int status = tryPlacingOnePr(microservices, app, placementRequest);
@@ -83,46 +91,56 @@ public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacem
 
     @Override
     protected int doTryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
-
         // Initialize temporary state
         int[] placed = new int[microservices.size()];
         for (int i = 0 ; i < microservices.size() ; i++) {
             placed[i] = -1;
         }
 
-        // Shallow Copy
-        List<FogDevice> nodes = new ArrayList<>(edgeFogDevices);
+        List<DeviceState> servers = DeviceStates;
 
-        // Simon says if fails to fit, the entire PR should fail
-        for (int j = 0 ; j < microservices.size() ; j++) {
-            int nodeIndex = getRandom().nextInt(nodes.size());
-            int deviceId = nodes.get(nodeIndex).getId();
-            String s = microservices.get(j);
+        for (int i = 0; i < placed.length; i++) {
+            List<Result> results = new ArrayList<>();
+            String s = microservices.get(i);
             AppModule service = getModule(s, app);
 
-            DeviceState deviceState = deviceStateMap.get(deviceId);
-            if (deviceState.canFit(service.getMips(), service.getRam(), service.getSize())) {
-                deviceState.allocate(service.getMips(), service.getRam(), service.getSize());
-                placed[j] = deviceId;
+            for (int j = 0; j < servers.size(); j++) {
+                if (servers.get(j).canFit(service.getMips(), service.getRam(), service.getSize())) {
+                    double rateCPU = (servers.get(j).getCPUUtil() * 100) / (1 - (servers.get(j).getCPUUtil() * 100));
+                    double rateRAM = (servers.get(j).getRAMUtil() * 100) / (1 - (servers.get(j).getRAMUtil() * 100));
+                    double score = 0.5 * rateCPU + 0.5 * rateRAM;
+                    results.add(new Result(j, score));
+                }
             }
 
-            if (placed[j] < 0) {
+            if (!results.isEmpty()) {
+                Collections.sort(results);
+                DeviceState edgeServer = servers.get(results.get(0).getIndex());
+                placed[i] = edgeServer.getId();
+                servers.get(results.get(0).getIndex()).allocate(service.getMips(), service.getRam(), service.getSize());
+            }
+
+            if (placed[i] < 0) {
                 // todo Simon says what do we do when failure?
                 //  (160125) Nothing. Because (aggregated) failure will be determined outside the for loop
-                System.out.println("Failed to place module " + s + " on PR " + placementRequest.getSensorId());
-                System.out.println("Failed placement " + placementRequest.getSensorId());
+                System.out.println("Failed to place module " + s + "on PR " + placementRequest.getSensorId());
+                System.out.println("Failed placement sensorId " + placementRequest.getSensorId() + ", prIndex " + ((ContextPlacementRequest) placementRequest).getPrIndex());
 
-                // Undo every "placement" recorded in placed
-                for (int i = 0 ; i < placed.length ; i++) {
-                    int placedDeviceId = placed[i];
-                    if (placedDeviceId != -1) {
-                        String microservice = microservices.get(i);
+                // Undo every "placement" recorded in placed. Only deviceStates was changed, so we change it back
+                for (int k = 0 ; k < placed.length ; k++) {
+                    int deviceId = placed[k];
+                    String microservice = microservices.get(k);
+                    if (deviceId != -1) {
+                        DeviceState targetDeviceState = null;
+                        for (DeviceState DeviceState : DeviceStates) {
+                            if (DeviceState.getId() == deviceId) {
+                                targetDeviceState = DeviceState;
+                                break;
+                            }
+                        }
+                        assert targetDeviceState != null;
                         AppModule placedService = getModule(microservice, app);
-                        deviceStateMap.get(placedDeviceId).deallocate(
-                            placedService.getMips(), 
-                            placedService.getRam(), 
-                            placedService.getSize()
-                        );
+                        targetDeviceState.deallocate(placedService.getMips(), placedService.getRam(), placedService.getSize());
                     }
                 }
                 break;
@@ -138,7 +156,7 @@ public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacem
             // Create a key for this placement request
             PlacementRequestKey prKey = new PlacementRequestKey(
                 placementRequest.getSensorId(), 
-                ((MyPlacementRequest)placementRequest).getPrIndex()
+                ((ContextPlacementRequest)placementRequest).getPrIndex()
             );
             
             // Ensure the key exists in mappedMicroservices
@@ -156,7 +174,7 @@ public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacem
                         CloudSim.getEntityName(deviceId),
                         deviceId,
                         placementRequest.getSensorId(),
-                        ((MyPlacementRequest) placementRequest).getPrIndex());
+                        ((ContextPlacementRequest) placementRequest).getPrIndex());
 
                 moduleToApp.put(s, app.getAppId());
 
@@ -178,11 +196,11 @@ public class MyRandomHeuristic extends MyHeuristic implements MicroservicePlacem
                     currentModuleInstanceNum.get(deviceId).put(s, currentModuleInstanceNum.get(deviceId).get(s) + 1);
             }
         }
-        else {
-            Logger.error("Random Control Flow Error", "The program should not reach this code. See allPlaced and (placed.get(s) < 0).");
-        }
 
         if (allPlaced) return -1;
         else return getFonID();
     }
 }
+
+
+

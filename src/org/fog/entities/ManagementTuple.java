@@ -3,7 +3,7 @@ package org.fog.entities;
 import org.apache.commons.math3.util.Pair;
 import org.cloudbus.cloudsim.UtilizationModelFull;
 import org.fog.application.Application;
-import org.fog.placement.MyHeuristic;
+import org.fog.placement.SPPHeuristic;
 import org.fog.utils.ModuleLaunchConfig;
 
 import java.util.List;
@@ -26,7 +26,7 @@ public class ManagementTuple extends Tuple {
 
     public int managementTupleType;
     protected PlacementRequest placementRequest;
-    protected MyHeuristic.PRContextAwareEntry serviceDiscoveryInfo;
+    protected SPPHeuristic.PRContextAwareEntry serviceDiscoveryInfo;
     protected Map<Application, List<ModuleLaunchConfig>> deployementSet;
     protected Pair<Integer, Map<String, Double>> resourceData;
     protected Tuple startingTuple;
@@ -67,11 +67,11 @@ public class ManagementTuple extends Tuple {
         return placementRequest;
     }
 
-    public void setServiceDiscoveryInfo(MyHeuristic.PRContextAwareEntry serviceDiscoveryInfo) {
+    public void setServiceDiscoveryInfo(SPPHeuristic.PRContextAwareEntry serviceDiscoveryInfo) {
         this.serviceDiscoveryInfo = serviceDiscoveryInfo;
     }
 
-    public MyHeuristic.PRContextAwareEntry getServiceDiscoveryInfo() {
+    public SPPHeuristic.PRContextAwareEntry getServiceDiscoveryInfo() {
         return serviceDiscoveryInfo;
     }
 

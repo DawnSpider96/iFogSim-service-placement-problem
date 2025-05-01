@@ -1,8 +1,5 @@
 package org.fog.placement;
 
-import org.fog.entities.FogDevice;
-import org.fog.entities.MyFogDevice;
-
 /**
  *
  * @author Christian Cabrera <cabrerac@scss.tcd.ie>
@@ -21,7 +18,7 @@ public class ANT {
     private int currentNode;
 
     // Current edge entity
-    private MyHeuristic.DeviceState fogDevice;
+    private SPPHeuristic.DeviceState fogDevice;
 
     public ANT(int size) {
         this.memories = new ANTMemory[size];
@@ -63,11 +60,11 @@ public class ANT {
         this.superior = false;
     }
 
-    public MyHeuristic.DeviceState getFogDevice() {
+    public SPPHeuristic.DeviceState getFogDevice() {
         return fogDevice;
     }
 
-    public void setFogDevice(MyHeuristic.DeviceState fogDevice) {
+    public void setFogDevice(SPPHeuristic.DeviceState fogDevice) {
         this.fogDevice = fogDevice;
     }
 }

@@ -5,12 +5,12 @@ import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.entities.FogDevice;
 import org.fog.entities.PlacementRequest;
-import org.fog.entities.MyPlacementRequest;
+import org.fog.entities.ContextPlacementRequest;
 import org.fog.utils.Logger;
 
 import java.util.*;
 
-public class MySimulatedAnnealingHeuristic extends MyHeuristic implements MicroservicePlacementLogic {
+public class SimulatedAnnealingHeuristic extends SPPHeuristic implements MicroservicePlacementLogic {
     @Override
     public String getName() {
         return "SA";
@@ -19,7 +19,7 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
     /**
      * Fog network related details
      */
-    public MySimulatedAnnealingHeuristic(int fonID) {
+    public SimulatedAnnealingHeuristic(int fonID) {
         super(fonID);
     }
 
@@ -308,7 +308,7 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
             // Create a key for this placement request
             PlacementRequestKey prKey = new PlacementRequestKey(
                 placementRequest.getSensorId(), 
-                ((MyPlacementRequest)placementRequest).getPrIndex()
+                ((ContextPlacementRequest)placementRequest).getPrIndex()
             );
             
             // Ensure the key exists in mappedMicroservices
@@ -326,7 +326,7 @@ public class MySimulatedAnnealingHeuristic extends MyHeuristic implements Micros
                         CloudSim.getEntityName(deviceId),
                         deviceId,
                         placementRequest.getSensorId(),
-                        ((MyPlacementRequest) placementRequest).getPrIndex());
+                        ((ContextPlacementRequest) placementRequest).getPrIndex());
 
                 deviceStateMap.get(deviceId).allocate(service.getMips(), service.getRam(), service.getSize());
 

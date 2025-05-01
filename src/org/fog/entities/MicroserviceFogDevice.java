@@ -10,7 +10,7 @@ import org.fog.application.AppEdge;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.placement.MicroservicePlacementLogic;
-import org.fog.placement.MyHeuristic;
+import org.fog.placement.SPPHeuristic;
 import org.fog.placement.PlacementLogicOutput;
 import org.fog.utils.*;
 import org.json.simple.JSONObject;
@@ -333,7 +333,7 @@ public class MicroserviceFogDevice extends FogDevice {
         System.out.println("Placement Algorithm Completed. Time : " + (endTime - startTime) / 1e6);
 
         Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice = placementLogicOutput.getPerDevice();
-        Map<Integer, List<MyHeuristic.PRContextAwareEntry>> serviceDiscoveryInfo = placementLogicOutput.getServiceDiscoveryInfoV2();
+        Map<Integer, List<SPPHeuristic.PRContextAwareEntry>> serviceDiscoveryInfo = placementLogicOutput.getServiceDiscoveryInfoV2();
         Map<PlacementRequest, Integer> placementRequestStatus = placementLogicOutput.getPrStatus();
 
         int fogDeviceCount = 0;
@@ -366,7 +366,7 @@ public class MicroserviceFogDevice extends FogDevice {
         }
         System.out.println(placementString.toString());
         for (int clientDevice : serviceDiscoveryInfo.keySet()) {
-            for (MyHeuristic.PRContextAwareEntry serviceData : serviceDiscoveryInfo.get(clientDevice)) {
+            for (SPPHeuristic.PRContextAwareEntry serviceData : serviceDiscoveryInfo.get(clientDevice)) {
                 if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC") {
                     transmitServiceDiscoveryData(clientDevice, serviceData);
                 } else if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC") {
@@ -529,7 +529,7 @@ public class MicroserviceFogDevice extends FogDevice {
         sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, prTuple);
     }
 
-    private void transmitServiceDiscoveryData(int clientDevice, MyHeuristic.PRContextAwareEntry serviceData) {
+    private void transmitServiceDiscoveryData(int clientDevice, SPPHeuristic.PRContextAwareEntry serviceData) {
         ManagementTuple sdTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.SERVICE_DISCOVERY_INFO);
         sdTuple.setServiceDiscoveryInfo(serviceData);
         sdTuple.setDestinationDeviceId(clientDevice);
