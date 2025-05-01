@@ -822,7 +822,7 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             //      - cloud->gateway
             //      - gateway->user (most variance I assume)
             latency += determineLatency(cloudId, edges.get(0));
-            for (int i = 0; i < edges.size() - 1; i++) {
+            for (int i = 0; i < edges.size() - 2; i++) { // Simon says we DONT count the last journey
                 int sourceDevice = edges.get(i);
                 int destDevice = edges.get(i + 1);
                 latency += determineLatency(sourceDevice, destDevice);
@@ -836,13 +836,15 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
         Destination MyFogDevice may be a user. Source MyFogDevice is always edge server.
          */
 
+        if (srcId==destId) return 0.0;
+
         int srcIndex = indices.get(srcId);
         int destIndex = indices.get(destId);
 
         double l = globalLatencies[srcIndex][destIndex];
         if (l >= 0) return l;
 
-        assert MicroservicePlacementConfig.NETWORK_TOPOLOGY == MicroservicePlacementConfig.CENTRALISED;
+        if (MicroservicePlacementConfig.NETWORK_TOPOLOGY != MicroservicePlacementConfig.CENTRALISED) throw new NullPointerException("Wrong topology.");
         MyFogDevice src = (MyFogDevice) getDevice(srcId);
         MyFogDevice dest = (MyFogDevice) getDevice(destId);
 
@@ -851,18 +853,18 @@ public abstract class MyHeuristic implements MicroservicePlacementLogic {
             return globalLatencies[srcIndex][cloudIndex] + globalLatencies[cloudIndex][destIndex];
         }
         else { // dest is user device
-            assert dest.getDeviceType() == MyFogDevice.GENERIC_USER ||
-                    dest.getDeviceType() == MyFogDevice.AMBULANCE_USER ||
-                    dest.getDeviceType() == MyFogDevice.OPERA_USER:
-                    "Destination device must be Mobile User";
-
-            int parentId = dest.getParentId();
-            if (parentId == srcId) return dest.getUplinkLatency();
-
-            int parentIndex = indices.get(parentId);
-            // Uplinklatency in milliseconds
-            // BUT fogDevice constructor converts it to seconds (simulation timestep unit)
-            return globalLatencies[srcIndex][cloudIndex] + globalLatencies[cloudIndex][parentIndex] + dest.getUplinkLatency();
+            throw new NullPointerException("We don't calculate latency with users anymore");
+//            if (!dest.isUserDevice()) {
+//                throw new IllegalArgumentException("Destination device must be a user device");
+//            }
+//
+//            int parentId = dest.getParentId();
+//            if (parentId == srcId) return dest.getUplinkLatency();
+//
+//            int parentIndex = indices.get(parentId);
+//            // Uplinklatency in milliseconds
+//            // BUT fogDevice constructor converts it to seconds (simulation timestep unit)
+//            return globalLatencies[srcIndex][cloudIndex] + globalLatencies[cloudIndex][parentIndex] + dest.getUplinkLatency();
         }
     }
 

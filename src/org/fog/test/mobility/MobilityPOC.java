@@ -162,7 +162,6 @@ public class MobilityPOC {
         userTypeRatios.put(MyFogDevice.GENERIC_USER, 0.5);
         userTypeRatios.put(MyFogDevice.OPERA_USER, 0.4);
         userTypeRatios.put(MyFogDevice.AMBULANCE_USER, 0.1);
-//        userTypeRatios.put(MyFogDevice.OPERA_USER, 0.2);
 
         // Create user devices connected to each gateway. NO SENSORS/ACTUATORS.
         for (int j = 0; j < NUM_USERS; j++) {
@@ -186,7 +185,6 @@ public class MobilityPOC {
     
     /**
      * 50% Generic, 40% Opera, 10% Ambulance
-     * For now 50-50 Ambulance Generic
      */
     private static String determineUserType(int j, Map<String, Double> userTypeRatios) {
         int currentIndex = 0;
