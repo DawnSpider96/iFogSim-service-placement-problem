@@ -187,6 +187,13 @@ public class SPPExperiment {
                         heuristicSeed = ((Number) randomSeedsMap.get("heuristicSeed")).intValue();
                     }
                 }
+                
+                // Read placement process interval if present
+                double placementProcessInterval = 60.0; // Default value matches MicroservicePlacementConfig
+                if (configMap.containsKey("placementProcessInterval")) {
+                    placementProcessInterval = ((Number) configMap.get("placementProcessInterval")).doubleValue();
+                    System.out.println("Using custom placement process interval: " + placementProcessInterval);
+                }
 
                 // Check for new format (numberOfApplications and appLoopLength)
                 if (configMap.containsKey("numberOfApplications") && configMap.containsKey("appLoopLength")) {
@@ -203,7 +210,8 @@ public class SPPExperiment {
                         experimentSeed,
                         locationSeed,
                         mobilityStrategySeed,
-                        heuristicSeed
+                        heuristicSeed,
+                        placementProcessInterval
                     ));
                     
                     System.out.println("Loaded configuration with " + numberOfApplications + 
@@ -369,6 +377,7 @@ public class SPPExperiment {
             
             if (intervalValues != null && !intervalValues.isEmpty()) {
                 System.out.println("Using interval values for Poisson distribution: " + intervalValues);
+                System.out.println("Using placement process interval: " + simulationConfig.getPlacementProcessInterval());
                 
                 microservicesController = new PlacementSimulationController(
                     "controller",
@@ -379,7 +388,8 @@ public class SPPExperiment {
                     placementLogicType,
                     intervalValues,
                     simulationConfig.getExperimentSeed(),
-                    simulationConfig.getHeuristicSeed()
+                    simulationConfig.getHeuristicSeed(),
+                    simulationConfig.getPlacementProcessInterval()
                 );
             } else {throw new NullPointerException("Need interval values in experiment config");}
             
@@ -465,6 +475,11 @@ public class SPPExperiment {
         SPPFogDevice cloud = createFogDevice("cloud", 44800, -1, 40000, 100, 10000, 0.01, 16 * 103, 16 * 83.25, SPPFogDevice.CLOUD);
         cloud.setParentId(References.NOT_SET);
         cloud.setLevel(0);
+        
+        // Set the placement process interval from the simulation config
+        cloud.setPlacementProcessInterval(simulationConfig.getPlacementProcessInterval());
+        System.out.println("Cloud device using placement process interval: " + cloud.getPlacementProcessInterval());
+        
         fogDevices.add(cloud);
         Random random = new Random(simulationConfig.getExperimentSeed());
 

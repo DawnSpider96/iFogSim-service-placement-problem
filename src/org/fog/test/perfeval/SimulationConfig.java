@@ -16,6 +16,9 @@ public class SimulationConfig {
     // Map of user types to their interval values in seconds
     private final Map<String, Integer> intervalValues;
     
+    // Placement process interval in seconds
+    private final double placementProcessInterval;
+    
     // Random seed configuration
     private final int experimentSeed;
     private final int locationSeed;
@@ -27,6 +30,9 @@ public class SimulationConfig {
     private static final int DEFAULT_LOCATION_SEED = 42;
     private static final int DEFAULT_MOBILITY_STRATEGY_SEED = 123;
     private static final int DEFAULT_HEURISTIC_SEED = 456;
+    
+    // Default placement process interval
+    private static final double DEFAULT_PLACEMENT_PROCESS_INTERVAL = 300.0;
 
     /**
      * Primary constructor that takes all configuration parameters
@@ -38,12 +44,27 @@ public class SimulationConfig {
                            Map<String, Integer> intervalValues,
                            int experimentSeed, int locationSeed, int mobilityStrategySeed,
                            int heuristicSeed) {
+        this(numberOfEdge, placementLogic, numberOfApplications, appLoopLength, 
+             usersPerType, intervalValues, experimentSeed, locationSeed, 
+             mobilityStrategySeed, heuristicSeed, DEFAULT_PLACEMENT_PROCESS_INTERVAL);
+    }
+    
+    /**
+     * Full constructor with placement process interval
+     */
+    public SimulationConfig(int numberOfEdge, int placementLogic,
+                           int numberOfApplications, int appLoopLength,
+                           Map<String, Integer> usersPerType,
+                           Map<String, Integer> intervalValues,
+                           int experimentSeed, int locationSeed, int mobilityStrategySeed,
+                           int heuristicSeed, double placementProcessInterval) {
         this.numberOfEdge = numberOfEdge;
         this.placementLogic = placementLogic;
         this.numberOfApplications = numberOfApplications;
         this.appLoopLength = appLoopLength;
         this.usersPerType = usersPerType;
         this.intervalValues = intervalValues != null ? intervalValues : new HashMap<>();
+        this.placementProcessInterval = placementProcessInterval;
         
         this.numberOfUser = usersPerType.values().stream().mapToInt(Integer::intValue).sum();
         this.experimentSeed = experimentSeed;
@@ -83,6 +104,7 @@ public class SimulationConfig {
         this.numberOfApplications = 0; // Not used in legacy mode
         this.appLoopLength = 0; // Not used in legacy mode
         this.usersPerType = usersPerType;
+        this.placementProcessInterval = DEFAULT_PLACEMENT_PROCESS_INTERVAL;
         
         // Set default interval values for backward compatibility
         // Generic user: 1 event every 5 minutes (300 seconds)
@@ -130,15 +152,16 @@ public class SimulationConfig {
     public String toString() {
         if (numberOfApplications > 0) {
             return String.format("numberOfEdge: %d, numberOfApplications: %d, appLoopLength: %d, " +
-                             "numberOfUser: %d, placementLogic: %d, " +
+                             "numberOfUser: %d, placementLogic: %d, placementProcessInterval: %.1f, " +
                              "experimentSeed: %d, locationSeed: %d, mobilityStrategySeed: %d, heuristicSeed: %d",
                 numberOfEdge, numberOfApplications, appLoopLength, 
-                numberOfUser, placementLogic, 
+                numberOfUser, placementLogic, placementProcessInterval,
                 experimentSeed, locationSeed, mobilityStrategySeed, heuristicSeed);
         } else {
             return String.format("numberOfEdge: %d, numberOfUser: %d, placementLogic: %d, " +
-                             "experimentSeed: %d, locationSeed: %d, mobilityStrategySeed: %d, heuristicSeed: %d",
-                numberOfEdge, numberOfUser, placementLogic, 
+                             "placementProcessInterval: %.1f, experimentSeed: %d, locationSeed: %d, " +
+                             "mobilityStrategySeed: %d, heuristicSeed: %d",
+                numberOfEdge, numberOfUser, placementLogic, placementProcessInterval,
                 experimentSeed, locationSeed, mobilityStrategySeed, heuristicSeed);
         }
     }
@@ -173,6 +196,10 @@ public class SimulationConfig {
     
     public int getMobilityStrategySeed() {
         return mobilityStrategySeed;
+    }
+    
+    public double getPlacementProcessInterval() {
+        return placementProcessInterval;
     }
 
     public Map<String, Integer> getUsersPerType() {

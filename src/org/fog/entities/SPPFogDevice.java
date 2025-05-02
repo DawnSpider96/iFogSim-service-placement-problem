@@ -10,6 +10,7 @@ import org.fog.application.Application;
 import org.fog.placement.MicroservicePlacementLogic;
 import org.fog.placement.SPPHeuristic;
 import org.fog.placement.ContextAwarePlacement;
+import org.fog.placement.PlacementSimulationController;
 import org.fog.scheduler.TupleScheduler;
 import org.fog.utils.*;
 import org.json.simple.JSONObject;
@@ -37,6 +38,10 @@ public class SPPFogDevice extends FogDevice {
 
 	public int toClient = 0;
 
+	/**
+	 * Interval (in simulation time units) at which periodic placement requests are processed.
+	 */
+	private double placementProcessInterval = 300.0; // Default value matches MicroservicePlacementConfig
 
 	/**
 	 * closest FON id. If this device is a FON its own id is assigned
@@ -575,7 +580,8 @@ public class SPPFogDevice extends FogDevice {
 		}
 
 		if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC && placementRequests.size() == 0) {
-			send(getId(), MicroservicePlacementConfig.PLACEMENT_PROCESS_INTERVAL, FogEvents.PROCESS_PRS);
+			// Use the local placementProcessInterval field
+			send(getId(), placementProcessInterval, FogEvents.PROCESS_PRS);
 			return;
 		}
 		long startTime = System.nanoTime();
@@ -654,8 +660,10 @@ public class SPPFogDevice extends FogDevice {
 //			}
 //		}
 
-		if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC)
-			send(getId(), MicroservicePlacementConfig.PLACEMENT_PROCESS_INTERVAL, FogEvents.PROCESS_PRS);
+		if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC) {
+			// Use the local placementProcessInterval field
+			send(getId(), placementProcessInterval, FogEvents.PROCESS_PRS);
+		}
 		else if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.SEQUENTIAL && !this.placementRequests.isEmpty())
 			sendNow(getId(), FogEvents.PROCESS_PRS);
 	}
@@ -1155,5 +1163,13 @@ public class SPPFogDevice extends FogDevice {
 		       deviceType.equals(AMBULANCE_USER) || 
 		       deviceType.equals(OPERA_USER) ||
 			   deviceType.equals(IMMOBILE_USER);
+	}
+
+	public double getPlacementProcessInterval() {
+		return placementProcessInterval;
+	}
+
+	public void setPlacementProcessInterval(double placementProcessInterval) {
+		this.placementProcessInterval = placementProcessInterval;
 	}
 }

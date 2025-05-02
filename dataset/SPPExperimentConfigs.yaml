@@ -8,6 +8,7 @@
   placementLogic: "ACO"  # Previously 13
   numberOfApplications: 1300  # New field: total applications to create
   appLoopLength: 1  # Uniform loop length for all applications
+  placementProcessInterval: 60.0  # Customize the interval for placement processing (default is 300.0)
   usersPerType:
     genericUser: 100
     operaUser: 76

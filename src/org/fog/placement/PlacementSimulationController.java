@@ -44,7 +44,7 @@ public class PlacementSimulationController extends SimEntity {
      * This value is static and shared across all instances.
      */
     private double prGenerationInterval = MicroservicePlacementConfig.PLACEMENT_GENERATE_INTERVAL;
-
+    
     // New fields for location management
     private DataLoader dataLoader;
     protected LocationManager locationManager;
@@ -200,10 +200,24 @@ public class PlacementSimulationController extends SimEntity {
                                          List<Actuator> actuators, List<Application> applications,
                                          Object placementLogic, Map<String, Integer> intervalValues,
                                          int experimentSeed, int heuristicSeed) {
+        this(name, fogDevices, sensors, actuators, applications, placementLogic, 
+             intervalValues, experimentSeed, heuristicSeed, MicroservicePlacementConfig.PLACEMENT_PROCESS_INTERVAL);
+    }
+
+    /**
+     * Constructor that takes a map of interval values in seconds and placement process interval
+     */
+    public PlacementSimulationController(String name, List<FogDevice> fogDevices, List<Sensor> sensors,
+                                         List<Actuator> actuators, List<Application> applications,
+                                         Object placementLogic, Map<String, Integer> intervalValues,
+                                         int experimentSeed, int heuristicSeed, double placementProcessInterval) {
         this(name, fogDevices, sensors, actuators, applications, placementLogic, experimentSeed);
         
         // Store the heuristic seed
         this.heuristicSeed = heuristicSeed;
+        
+        // The placement process interval is now stored directly on the fog devices
+        // that need it, so we don't need to store it here anymore
         
         // Initialize the Poisson distribution with interval values
         if (intervalValues != null && !intervalValues.isEmpty()) {
@@ -285,6 +299,10 @@ public class PlacementSimulationController extends SimEntity {
         for (FogDevice device : fogDevices) {
             LoadBalancer loadBalancer = new UselessLoadBalancer(); // Simon (100425) says this is useless, but for backwards compatibility
             SPPFogDevice cdevice = (SPPFogDevice) device;
+            
+            // Note: We're keeping the microservicesControllerId as it might still be needed for other purposes
+            // But we're removing the comment that specifically mentions it's for the placement process interval
+            cdevice.setMicroservicesControllerId(getId());
 
             // responsible for placement decision-making
             if (cdevice.getDeviceType().equals(SPPFogDevice.FON) || cdevice.getDeviceType().equals(SPPFogDevice.CLOUD)) {
