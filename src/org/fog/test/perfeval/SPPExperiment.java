@@ -54,6 +54,8 @@ public class SPPExperiment {
     private static final String outputFile = "./output/CMoon_Mobile_10k_60.csv";
     // The configuration file now uses string-based placement logic identifiers instead of integers
     private static final String CONFIG_FILE = "./dataset/SPPExperimentConfigs.yaml";
+    // Path to location configuration file
+    private static final String LOCATION_CONFIG_FILE = "./dataset/location_config.json";
 
     static List<FogDevice> fogDevices = new ArrayList<FogDevice>();
     static List<Sensor> sensors = new ArrayList<Sensor>();
@@ -282,6 +284,16 @@ public class SPPExperiment {
         sensors.clear();
         actuators.clear();
         
+        // Load location configuration from JSON before creating any Location objects
+        System.out.println("Loading location configuration from " + LOCATION_CONFIG_FILE);
+        boolean configLoaded = LocationConfigLoader.loadAndApplyConfig(LOCATION_CONFIG_FILE);
+        if (!configLoaded) {
+            System.err.println("Warning: Failed to load location configuration, using default values from Config.java");
+        }
+        
+        // Make sure Location class is updated with the latest Config values
+        Location.refreshConfigValues();
+
         // Get the experiment seed from configuration
         int experimentSeed = simulationConfig.getExperimentSeed();
         System.out.println("Using experiment seed: " + experimentSeed);

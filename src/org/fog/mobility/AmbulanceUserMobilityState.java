@@ -21,7 +21,7 @@ public class AmbulanceUserMobilityState extends DeviceMobilityState {
     public AmbulanceUserMobilityState(Location location, PathingStrategy strategy, double speed) {
         // TODO Make sure start at hospital.
         //  Next time if we have multiple hospitals, each ambulance's hospital can be passed in as argument.
-        super(Location.HOSPITAL1, strategy, speed);
+        super(Location.getPointOfInterest("HOSPITAL1"), strategy, speed);
         this.status = AmbulanceUserStatus.WAITING_FOR_EMERGENCY;
     }
 
@@ -40,7 +40,7 @@ public class AmbulanceUserMobilityState extends DeviceMobilityState {
             // no-op
         }
         else if (status == AmbulanceUserStatus.TRAVELLING_TO_PATIENT) {
-            Location operaHouse = Config.OPERA_HOUSE;
+            Location operaHouse = Location.getPointOfInterest("OPERA_HOUSE");
             // Situation is that opera house exploded and casualties are being dragged outside.
             // Hence, they are scattered within 50m radius of the exact opera house coordinates.
             Location randomPointNearOperaHouse = Location.getRandomLocationWithinRadius(operaHouse.getLatitude(), operaHouse.getLongitude(), 50);
@@ -55,7 +55,7 @@ public class AmbulanceUserMobilityState extends DeviceMobilityState {
             patientIndex++;
         }
         else if (status == AmbulanceUserStatus.TRAVELLING_TO_HOSPITAL) {
-            Location hospital = Config.HOSPITAL1;
+            Location hospital = Location.getPointOfInterest("HOSPITAL1");
             this.currentAttractor = new Attractor( // Ambulance will park at hospital for up to 5 minutes.
                     hospital,
                     "Hospital",

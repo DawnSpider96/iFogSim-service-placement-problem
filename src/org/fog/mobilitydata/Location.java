@@ -2,6 +2,8 @@ package org.fog.mobilitydata;
 
 import org.fog.utils.Config;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 public class Location {
@@ -12,19 +14,19 @@ public class Location {
 	public double longitude;
 	public int block;
 
-	private static double[][] BOUNDARY = Config.BOUNDARY;
-	private static double minLat = Config.minLat;
-	private static double maxLat = Config.maxLat;
-	private static double minLon = Config.minLon;
-	private static double maxLon = Config.maxLon;
+	private static double[][] BOUNDARY = Config.getBOUNDARY();
+	private static double minLat = Config.getMinLat();
+	private static double maxLat = Config.getMaxLat();
+	private static double minLon = Config.getMinLon();
+	private static double maxLon = Config.getMaxLon();
+	
+	// Cache of points of interest for improved performance
+	private static Map<String, Location> pointsOfInterestCache = new HashMap<>();
 	
 	// Default random seed for location generation
 	private static long defaultRandomSeed = System.currentTimeMillis();
 	private static Random defaultRandom = new Random(defaultRandomSeed);
 
-	// Landmarks
-	public static final Location HOSPITAL1 = Config.HOSPITAL1;
-	
 	/**
 	 * Sets the default random seed for all random location generation methods
 	 * that don't explicitly specify a seed.
@@ -44,6 +46,58 @@ public class Location {
 	 */
 	public static long getDefaultRandomSeed() {
 		return defaultRandomSeed;
+	}
+	
+	/**
+	 * Gets a point of interest by name from the Config
+	 * Uses a local cache to avoid repeated calls to Config
+	 * 
+	 * @param name the name of the point of interest
+	 * @return the Location, or null if not found
+	 */
+	public static Location getPointOfInterest(String name) {
+		if (!pointsOfInterestCache.containsKey(name)) {
+			Location loc = Config.getPointOfInterest(name);
+			if (loc != null) {
+				pointsOfInterestCache.put(name, loc);
+			}
+		}
+		return pointsOfInterestCache.get(name);
+	}
+	
+	/**
+	 * Convenience method to get the HOSPITAL1 location
+	 * 
+	 * @return the HOSPITAL1 location
+	 */
+	public static Location getHospital() {
+		return getPointOfInterest("HOSPITAL1");
+	}
+	
+	/**
+	 * Convenience method to get the OPERA_HOUSE location
+	 * 
+	 * @return the OPERA_HOUSE location
+	 */
+	public static Location getOperaHouse() {
+		return getPointOfInterest("OPERA_HOUSE");
+	}
+	
+	/**
+	 * Updates all static location configuration fields from Config.
+	 * Call this method any time Config values are changed to ensure
+	 * Location class uses the latest values.
+	 */
+	public static void refreshConfigValues() {
+		BOUNDARY = Config.getBOUNDARY();
+		minLat = Config.getMinLat();
+		maxLat = Config.getMaxLat();
+		minLon = Config.getMinLon();
+		maxLon = Config.getMaxLon();
+		
+		// Clear and reload points of interest cache
+		pointsOfInterestCache.clear();
+		pointsOfInterestCache.putAll(Config.getAllPointsOfInterest());
 	}
 	
 	public Location(double latitude, double longitude, int block) {

@@ -5,10 +5,11 @@ import org.fog.mobilitydata.Location;
 import org.fog.utils.Config;
 
 public class randomLocationInArea {
-    private static double minLat = Config.minLat;
-    private static double maxLat = Config.maxLat;
-    private static double minLon = Config.minLon;
-    private static double maxLon = Config.maxLon;
+    private static double minLat = Config.getMinLat();
+    private static double maxLat = Config.getMaxLat();
+    private static double minLon = Config.getMinLon();
+    private static double maxLon = Config.getMaxLon();
+
 
     public static void main(String[] args) {
         int numPoints = 100;
