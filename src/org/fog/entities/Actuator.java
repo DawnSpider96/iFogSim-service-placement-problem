@@ -10,6 +10,8 @@ import org.fog.utils.GeoLocation;
 import org.fog.utils.Logger;
 import org.fog.utils.TimeKeeper;
 
+import java.util.stream.Collectors;
+
 public class Actuator extends SimEntity{
 
 	private int gatewayDeviceId;
@@ -53,7 +55,17 @@ public class Actuator extends SimEntity{
 
 	private void processTupleArrival(SimEvent ev) {
 		Tuple tuple = (Tuple)ev.getData();
-		Logger.debug(getName(), "Received tuple " + tuple.getCloudletId() + " on " + tuple.getDestModuleName());
+//		Logger.debug(getName(), "Tuple complete. " + tuple.getCloudletId() + " on " + tuple.getDestModuleName());
+		Logger.debug(getName(), String.format(
+				"Tuple %d finished on %s! SensorId %d, prIndex %d. Device journey: %s",
+				tuple.getCloudletId(),
+				tuple.getDestModuleName(),
+				tuple.getSensorId(),
+				tuple.getPrIndex(),
+				tuple.getTraversed().values().stream()
+						.map(CloudSim::getEntityName)
+						.collect(Collectors.joining(" -> "))
+		));
 		String srcModule = tuple.getSrcModuleName();
 		String destModule = tuple.getDestModuleName();
 		Application app = getApp();

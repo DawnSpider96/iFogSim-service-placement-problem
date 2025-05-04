@@ -1,5 +1,6 @@
 package org.fog.mobility;
 
+import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.mobilitydata.Location;
 import org.fog.utils.Config;
 import org.fog.utils.FogEvents;
@@ -19,9 +20,11 @@ public class AmbulanceUserMobilityState extends DeviceMobilityState {
     int patientIndex = 0;
     
     public AmbulanceUserMobilityState(Location location, PathingStrategy strategy, double speed) {
-        // TODO Make sure start at hospital.
-        //  Next time if we have multiple hospitals, each ambulance's hospital can be passed in as argument.
-        super(Location.getPointOfInterest("HOSPITAL1"), strategy, speed);
+//        super(Location.getPointOfInterest("HOSPITAL1"), strategy, speed);
+
+        // Start at location read from csv instead of hospital.
+        // (model how ambulances are already parked around the city)
+        super(location, strategy, speed);
         this.status = AmbulanceUserStatus.WAITING_FOR_EMERGENCY;
     }
 
@@ -45,14 +48,14 @@ public class AmbulanceUserMobilityState extends DeviceMobilityState {
             // Hence, they are scattered within 50m radius of the exact opera house coordinates.
             Location randomPointNearOperaHouse = Location.getRandomLocationWithinRadius(operaHouse.getLatitude(), operaHouse.getLongitude(), 50);
             this.currentAttractor = new Attractor( // Ambulance spends up to 1 minute picking up patient.
-                    randomPointNearOperaHouse,
-                    "Random Patient " + patientIndex,
-                    30,
-                    60,
-                    pts
+                randomPointNearOperaHouse,
+                "Random Patient " + ++patientIndex, // After incrementing this is the i-th patient
+                30,
+                60,
+                pts
             );
-            // After incrementing this is the i-th patient
-            patientIndex++;
+
+//            patientIndex++;
         }
         else if (status == AmbulanceUserStatus.TRAVELLING_TO_HOSPITAL) {
             Location hospital = Location.getPointOfInterest("HOSPITAL1");
@@ -101,11 +104,11 @@ public class AmbulanceUserMobilityState extends DeviceMobilityState {
     }
 
     @Override
-    public boolean handleEvent(int eventType, Object eventData) {
+    public double handleEvent(int eventType, Object eventData) {
         if (eventType == FogEvents.OPERA_ACCIDENT_EVENT) {
             if (this.strategy instanceof LazyBugPathingStrategy) {
                 Logger.debug("Ambulance will not move", "Check that mobility is disabled.");
-                return false;
+                return -1.0;
             }
             // Can respond from any waiting state
             if (this.status == AmbulanceUserStatus.WAITING_FOR_EMERGENCY) {
@@ -115,12 +118,26 @@ public class AmbulanceUserMobilityState extends DeviceMobilityState {
                 updateAttractionPoint(null);
                 makePath();
                 
-                Logger.debug("Ambulance Mobility", "Ambulance responding to opera house emergency");
-                return true;
+                Logger.debug("Ambulance Mobility", "Ambulance responding to opera house emergency");                
+                if (!path.isEmpty()) {
+                    WayPoint firstWaypoint = path.getNextWayPoint();
+                    double arrivalTime = firstWaypoint.getArrivalTime();
+                    double delay = arrivalTime - CloudSim.clock();
+                    
+                    if (delay < 0) {
+                        throw new NullPointerException("CRITICAL ERROR: Negative delay calculated in handleEvent.");
+                    }
+                    
+                    System.out.println("Ambulance will start moving in " + delay + " time units");
+                    return delay;
+                } else {
+                    Logger.error("Path Creation Error", "Created empty path for ambulance emergency response");
+                    return -1.0;
+                }
             }
             else throw new NullPointerException("Invalid status for handleEvent");
         }
-        return false;
+        return -1.0;
     }
 
     @Override

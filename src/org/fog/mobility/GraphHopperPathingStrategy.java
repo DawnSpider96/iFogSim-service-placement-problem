@@ -7,6 +7,8 @@ import com.graphhopper.util.CustomModel;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.mobilitydata.Location;
 import org.cloudbus.cloudsim.Consts;
+import org.fog.utils.Config;
+import java.io.File;
 import java.util.*;
 
 import com.graphhopper.util.Parameters;
@@ -15,9 +17,20 @@ import com.graphhopper.util.PointList;
 public class GraphHopperPathingStrategy extends AbstractPathingStrategy {
     private GraphHopper hopper;
 
+    // Base path for resource files
+    private static final String BASE_PATH = "/home/dawn/repos/iFogSim-placement";
+    
+    // Map of area-specific OSM files
+    private static final Map<String, String> AREA_OSM_FILES = new HashMap<>();
+    static {
+        AREA_OSM_FILES.put("MELBOURNE", BASE_PATH + "/melbourne.osm.pbf");
+        AREA_OSM_FILES.put("DUBLIN", BASE_PATH + "/dublin.osm.pbf");
+        // Add more areas as needed
+    }
+
     // Configuration parameters
-    private String osmFileLocation = "/home/dawn/repos/iFogSim-placement/melbourne.osm.pbf";
-    private String graphFolderFiles = "/home/dawn/repos/iFogSim-placement/output/graphhopper";
+    private String osmFileLocation = AREA_OSM_FILES.get("MELBOURNE"); // Default
+    private String graphFolderFiles = BASE_PATH + "/output/graphhopper_melbourne"; // Default
     private String movementType = "car";  // Default vehicle profile name
     private String navigationalType = "custom";  // Default weighting. Used to be "fastest"
     private String blockedAreas = null;
@@ -30,6 +43,7 @@ public class GraphHopperPathingStrategy extends AbstractPathingStrategy {
 
     public GraphHopperPathingStrategy() {
         super(); // Initialize with default seed
+        updateAreaSettings();
     }
 
     public GraphHopperPathingStrategy(String osmFile, String graphFolder, String movement) {
@@ -41,6 +55,7 @@ public class GraphHopperPathingStrategy extends AbstractPathingStrategy {
     
     public GraphHopperPathingStrategy(long seed) {
         super(seed);
+        updateAreaSettings();
     }
     
     public GraphHopperPathingStrategy(String osmFile, String graphFolder, String movement, long seed) {
@@ -49,15 +64,72 @@ public class GraphHopperPathingStrategy extends AbstractPathingStrategy {
         this.graphFolderFiles = graphFolder;
         this.movementType = movement;
     }
+    
+    /**
+     * Updates OSM file and graph folder based on the current geographic area in Config
+     */
+    private void updateAreaSettings() {
+        String area = Config.getGeographicArea();
+        if (area == null) {
+            System.err.println("WARNING: Geographic area is null, using MELBOURNE as default");
+            area = "MELBOURNE";
+        }
+        
+        // Set OSM file based on area
+        if (AREA_OSM_FILES.containsKey(area)) {
+            osmFileLocation = AREA_OSM_FILES.get(area);
+        } else {
+            System.err.println("WARNING: No OSM file defined for area: " + area + ", using MELBOURNE");
+            osmFileLocation = AREA_OSM_FILES.get("MELBOURNE");
+        }
+        
+        // Set graph folder based on area
+        graphFolderFiles = BASE_PATH + "/output/graphhopper_" + area.toLowerCase();
+        
+        System.out.println("GraphHopper settings updated for area: " + area);
+        System.out.println("OSM file: " + osmFileLocation);
+        System.out.println("Graph folder: " + graphFolderFiles);
+        
+        // Force reinitialization
+        reset();
+    }
+    
+    /**
+     * Resets the GraphHopper instance, forcing reinitialization on next use.
+     * Call this method between simulations or when changing geographic areas.
+     */
+    public void reset() {
+        if (hopper != null) {
+            try {
+                hopper.close();
+            } catch (Exception e) {
+                System.err.println("Error closing GraphHopper: " + e.getMessage());
+            }
+            hopper = null;
+        }
+        System.out.println("GraphHopper instance reset");
+    }
 
     private void init() {
         if (hopper != null) return;
+        
+        // Create graph folder if it doesn't exist
+        File graphFolder = new File(graphFolderFiles);
+        if (!graphFolder.exists()) {
+            if (graphFolder.mkdirs()) {
+                System.out.println("Created graph folder: " + graphFolderFiles);
+            } else {
+                System.err.println("Failed to create graph folder: " + graphFolderFiles);
+            }
+        }
 
         CustomModel fastestModel = new CustomModel();
         // Distance influence 0.1 is "fastest", distance influence 100.0 is "shortest"
         fastestModel.setDistanceInfluence(0.1);
 
         System.out.println("CustomModel used: " + fastestModel);
+        System.out.println("Initializing GraphHopper with OSM file: " + osmFileLocation);
+        System.out.println("Using graph folder: " + graphFolderFiles);
 
         hopper = new GraphHopper();
         hopper.setGraphHopperLocation(graphFolderFiles);
@@ -95,6 +167,12 @@ public class GraphHopperPathingStrategy extends AbstractPathingStrategy {
     // Speed in m/s
     @Override
     public WayPointPath makePath(Attractor attractionPoint, double speed, Location currentLocation) {
+        // Check if we need to update for a new geographic area
+        String currentArea = Config.getGeographicArea();
+        if (!graphFolderFiles.contains(currentArea.toLowerCase())) {
+            updateAreaSettings();
+        }
+        
         if (hopper == null) init();
         WayPointPath path;
         Location destination = attractionPoint.getAttractionPoint();
@@ -132,10 +210,9 @@ public class GraphHopperPathingStrategy extends AbstractPathingStrategy {
             }
 
             ResponsePath route = rsp.getBest();
-            Random random = new Random(seed);
             if (allowAlternativeRoutes && rsp.getAll().size() > 1
-                    && random.nextDouble() <= probabilityForAlternativeRoute) {
-                int altIdx = random.nextInt(rsp.getAll().size() - 1) + 1;
+                    && rand.nextDouble() <= probabilityForAlternativeRoute) {
+                int altIdx = rand.nextInt(rsp.getAll().size() - 1) + 1;
                 route = rsp.getAll().get(altIdx);
             }
 

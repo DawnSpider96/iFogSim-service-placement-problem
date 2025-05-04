@@ -55,7 +55,7 @@ public abstract class DeviceMobilityState {
      *
      * @param location        initial location
      * @param strategy        mobility strategy to use
-     * @param speed           travel speed
+     * @param speed           travel speedcontrcon
      */
     public DeviceMobilityState(Location location, PathingStrategy strategy, double speed) {
         this.currentLocation = location;
@@ -215,10 +215,10 @@ public abstract class DeviceMobilityState {
      * Handles external events that may affect mobility
      * @param eventType The type of event from FogEvents
      * @param eventData Any data associated with the event
-     * @return true if the event was handled, false otherwise
+     * @return delay value for next movement if handled, -1.0 otherwise
      */
-    public boolean handleEvent(int eventType, Object eventData) {
+    public double handleEvent(int eventType, Object eventData) {
         // Default implementation ignores events
-        return false;
+        return -1.0;
     }
 } 

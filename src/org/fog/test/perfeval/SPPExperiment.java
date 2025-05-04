@@ -51,11 +51,11 @@ import java.util.stream.IntStream;
  */
 public class SPPExperiment {
 //    private static final String outputFile = "./output/resourceDist_Comfortable_R_Beta.csv";
-    private static final String outputFile = "./output/CMoon_Mobile_10k_60.csv";
+    private static final String outputFile = "./output/CMoon_Mobile_10k_60_Simon.csv";
     // The configuration file now uses string-based placement logic identifiers instead of integers
     private static final String CONFIG_FILE = "./dataset/SPPExperimentConfigs.yaml";
     // Path to location configuration file
-    private static final String LOCATION_CONFIG_FILE = "./dataset/location_config.json";
+    private static final String LOCATION_CONFIG_FILE = "./dataset/location_config_simon.json";
 
     static List<FogDevice> fogDevices = new ArrayList<FogDevice>();
     static List<Sensor> sensors = new ArrayList<Sensor>();
@@ -66,9 +66,97 @@ public class SPPExperiment {
     private static final String RESOURCES_LOCATION_PATH = "./dataset/edgeResources-melbCBD_Experiments.csv";
     static double SENSOR_TRANSMISSION_TIME = 10;
 
-    public static void main(String[] args) {
-        List<SimulationConfig> configs = loadConfigurationsFromYaml();
+    // Add these constants after the existing constants
+    // Flag to enable dynamic location generation
+    private static boolean USE_DYNAMIC_LOCATIONS = false;
+    // Paths for dynamically generated files (will be populated at runtime)
+    private static String DYNAMIC_RESOURCES_LOCATION_PATH = "";
+    private static String DYNAMIC_USERS_LOCATION_PATH = "";
+    private static String DYNAMIC_LOCATION_CONFIG_FILE = "";
+    // Default output directory for generated files
+    private static String OUTPUT_DIRECTORY = "./dataset/simon/";
+
+    /**
+     * Enables dynamic location generation from grid and random distributions.
+     * Call this method before running the simulation to use dynamically generated coordinates.
+     * 
+     * @param useAutoGenerate Whether to generate files automatically
+     */
+    public static void setUseDynamicLocations(boolean useAutoGenerate) {
+        USE_DYNAMIC_LOCATIONS = useAutoGenerate;
+    }
+
+    /**
+     * Sets the output directory for dynamically generated files.
+     * Call this method before running the simulation if you want to change the default location.
+     * The directory will be created if it doesn't exist.
+     * 
+     * @param directoryPath Path to the directory where files should be generated
+     */
+    public static void setOutputDirectory(String directoryPath) {
+        if (directoryPath != null && !directoryPath.isEmpty()) {
+            // Ensure the path ends with a separator
+            if (!directoryPath.endsWith("/") && !directoryPath.endsWith("\\")) {
+                directoryPath += "/";
+            }
+            OUTPUT_DIRECTORY = directoryPath;
+            System.out.println("Set output directory for generated files to: " + OUTPUT_DIRECTORY);
+        }
+    }
+
+    /**
+     * Generates CSV files and configuration for locations.
+     * 
+     * @param numberOfEdge Number of edge servers to generate
+     * @param numberOfUsers Number of users to generate
+     * @param seed Random seed for reproducibility
+     * @throws IOException If file generation fails
+     */
+    private static void generateLocationFiles(int numberOfEdge, int numberOfUsers, long seed) throws IOException {
+        // First initialize the CoordinateConverter from the existing config file
+        boolean initialized = CoordinateConverter.initializeFromConfig(LOCATION_CONFIG_FILE);
+        if (!initialized) {
+            System.out.println("Warning: Could not initialize from config file. Using default coordinate values.");
+        }
         
+        // Define output directory for generated files
+        String outputDir = OUTPUT_DIRECTORY;
+        
+        // Create the directory if it doesn't exist
+        java.io.File dir = new java.io.File(outputDir);
+        if (!dir.exists()) {
+            if (dir.mkdirs()) {
+                System.out.println("Created directory: " + outputDir);
+            } else {
+                System.err.println("Failed to create directory: " + outputDir);
+                // Fall back to temporary files if directory creation fails
+                outputDir = "";
+            }
+        }
+        
+        // Generate location configuration file
+        DYNAMIC_LOCATION_CONFIG_FILE = CoordinateConverter.generateLocationConfig(
+            outputDir + "location_config_" + seed + ".json");
+        
+        // Generate resource locations in a grid pattern
+        DYNAMIC_RESOURCES_LOCATION_PATH = CoordinateConverter.generateResourceLocationsCSV(
+            numberOfEdge, outputDir + "resources_" + seed + ".csv", seed);
+        
+        // Generate user locations with random distribution
+        DYNAMIC_USERS_LOCATION_PATH = CoordinateConverter.generateUserLocationsCSV(
+            numberOfUsers, outputDir + "users_" + seed + ".csv", seed);
+        
+        System.out.println("Generated dynamic location files in " + outputDir + " with seed: " + seed);
+    }
+
+    public static void main(String[] args) {
+        SPPExperiment.setUseDynamicLocations(true);
+
+//         Set custom output directory for generated files (optional)
+        SPPExperiment.setOutputDirectory("./dataset/simon");
+
+        List<SimulationConfig> configs = loadConfigurationsFromYaml();
+
         for (SimulationConfig config : configs) {
             run(config);
         }
@@ -165,7 +253,7 @@ public class SPPExperiment {
                     for (Map.Entry<String, Object> entry : intervalMap.entrySet()) {
                         intervalValues.put(entry.getKey(), ((Number) entry.getValue()).intValue());
                     }
-                    System.out.println("Loaded interval values for Poisson distribution: " + intervalValues);
+//                    System.out.println("Loaded interval values for Poisson distribution: " + intervalValues);
                 }
 
                 // Read random seed values if present
@@ -194,7 +282,7 @@ public class SPPExperiment {
                 double placementProcessInterval = 60.0; // Default value matches MicroservicePlacementConfig
                 if (configMap.containsKey("placementProcessInterval")) {
                     placementProcessInterval = ((Number) configMap.get("placementProcessInterval")).doubleValue();
-                    System.out.println("Using custom placement process interval: " + placementProcessInterval);
+//                    System.out.println("Using custom placement process interval: " + placementProcessInterval);
                 }
 
                 // Check for new format (numberOfApplications and appLoopLength)
@@ -216,8 +304,8 @@ public class SPPExperiment {
                         placementProcessInterval
                     ));
                     
-                    System.out.println("Loaded configuration with " + numberOfApplications + 
-                                     " applications and loop length " + appLoopLength);
+//                    System.out.println("Loaded configuration with " + numberOfApplications +
+//                                     " applications and loop length " + appLoopLength);
                 } 
                 // Legacy format with appLoopLengthPerType
                 else if (configMap.containsKey("appLoopLengthPerType")) {
@@ -284,9 +372,27 @@ public class SPPExperiment {
         sensors.clear();
         actuators.clear();
         
+        // Dynamic file generation if enabled
+        if (USE_DYNAMIC_LOCATIONS) {
+            try {
+                generateLocationFiles(
+                    simulationConfig.numberOfEdge,
+                    simulationConfig.numberOfUser,
+                    simulationConfig.getLocationSeed()
+                );
+                
+                // Override location config file path
+                System.out.println("Using dynamically generated location files");
+            } catch (IOException e) {
+                System.err.println("Failed to generate location files: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        
         // Load location configuration from JSON before creating any Location objects
-        System.out.println("Loading location configuration from " + LOCATION_CONFIG_FILE);
-        boolean configLoaded = LocationConfigLoader.loadAndApplyConfig(LOCATION_CONFIG_FILE);
+        String locationConfigFile = USE_DYNAMIC_LOCATIONS ? DYNAMIC_LOCATION_CONFIG_FILE : LOCATION_CONFIG_FILE;
+        System.out.println("Loading location configuration from " + locationConfigFile);
+        boolean configLoaded = LocationConfigLoader.loadAndApplyConfig(locationConfigFile);
         if (!configLoaded) {
             System.err.println("Warning: Failed to load location configuration, using default values from Config.java");
         }
@@ -411,9 +517,14 @@ public class SPPExperiment {
             try {
                 System.out.println("Initializing location data from CSV files...");
                 microservicesController.enableMobility();
+                
+                // Use dynamic paths if enabled
+                String resourcesPath = USE_DYNAMIC_LOCATIONS ? DYNAMIC_RESOURCES_LOCATION_PATH : RESOURCES_LOCATION_PATH;
+                String usersPath = USE_DYNAMIC_LOCATIONS ? DYNAMIC_USERS_LOCATION_PATH : USERS_LOCATION_PATH;
+                
                 microservicesController.initializeLocationData(
-                    RESOURCES_LOCATION_PATH,
-                    USERS_LOCATION_PATH,
+                    resourcesPath,
+                    usersPath,
                     numberOfEdge + 1, // cloud
                     numberOfUser,
                     experimentSeed

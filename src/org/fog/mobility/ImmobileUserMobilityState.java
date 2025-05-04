@@ -55,9 +55,9 @@ public class ImmobileUserMobilityState extends DeviceMobilityState {
     }
     
     @Override
-    public boolean handleEvent(int eventType, Object eventData) {
+    public double handleEvent(int eventType, Object eventData) {
         // Immobile users don't respond to events by moving
-        return false;
+        return -1.0;
     }
     
     @Override

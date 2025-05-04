@@ -1,5 +1,7 @@
 package org.fog.mobility;
 
+import java.util.Random;
+
 /**
  * Abstract base class for pathing strategies that implements the seed-related methods.
  * Provides common functionality for all pathing strategies.
@@ -8,6 +10,8 @@ public abstract class AbstractPathingStrategy implements PathingStrategy {
     
     /** The random seed used by this pathing strategy. */
     protected long seed;
+    
+    protected Random rand;
     
     /**
      * Creates a new pathing strategy with the current system time as seed.
@@ -23,6 +27,7 @@ public abstract class AbstractPathingStrategy implements PathingStrategy {
      */
     public AbstractPathingStrategy(long seed) {
         this.seed = seed;
+        this.rand = new Random(seed);
     }
     
     /**
@@ -33,6 +38,7 @@ public abstract class AbstractPathingStrategy implements PathingStrategy {
     @Override
     public void setSeed(long seed) {
         this.seed = seed;
+        this.rand = new Random(seed);
     }
     
     /**

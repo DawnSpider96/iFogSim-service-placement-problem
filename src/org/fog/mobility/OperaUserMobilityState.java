@@ -1,6 +1,5 @@
 package org.fog.mobility;
 
-import org.cloudbus.cloudsim.Consts;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.mobilitydata.Location;
 import org.fog.utils.Config;
@@ -20,7 +19,7 @@ public class OperaUserMobilityState extends DeviceMobilityState {
     public enum OperaUserStatus {
         TRAVELING_TO_OPERA,
         AT_OPERA,
-        EVACUATING
+        IMMOBILE
     }
 
     private double eventTime;
@@ -59,12 +58,12 @@ public class OperaUserMobilityState extends DeviceMobilityState {
             this.currentAttractor = new Attractor(
                     operaHouse,
                     "Opera House",
-                    30,
-                    3600,  // 1 hour
+                    Config.MAX_SIMULATION_TIME,
+                    Config.MAX_SIMULATION_TIME,  // Inactive until opera accident
                     pts
             );
-        } else if (status == OperaUserStatus.EVACUATING) {
-            // When evacuating, go to a random location 100-300m away from the opera house
+        } else if (status == OperaUserStatus.IMMOBILE) {
+            // Get carried out to a random location 100-300m away from the opera house
             double randomDistance = 100 + random.nextDouble() * 200;  // 100-300m
             Location operaHouse = Location.getPointOfInterest("OPERA_HOUSE");
             Location evacLocation = Location.getRandomLocationWithinRadius(
@@ -77,8 +76,8 @@ public class OperaUserMobilityState extends DeviceMobilityState {
             this.currentAttractor = new Attractor(
                     evacLocation,
                     "Evacuation Point",
-                    10,
-                    600,  // 10 minutes
+                    Config.MAX_SIMULATION_TIME,
+                    Config.MAX_SIMULATION_TIME,  // NOT moving anymore
                     pts
             );
         }
@@ -101,7 +100,7 @@ public class OperaUserMobilityState extends DeviceMobilityState {
      */
     @Override
     public void startMoving() {
-        if (this.status == OperaUserStatus.EVACUATING) {
+        if (this.status == OperaUserStatus.IMMOBILE) {
             // Just continue evacuating
             Logger.debug("Opera User", "User continuing evacuation movement");
         } else {
@@ -113,17 +112,33 @@ public class OperaUserMobilityState extends DeviceMobilityState {
      * Handles events like the opera house explosion
      */
     @Override
-    public boolean handleEvent(int eventType, Object eventData) {
+    public double handleEvent(int eventType, Object eventData) {
         if (eventType == FogEvents.OPERA_ACCIDENT_EVENT) {
             // Only evacuate if at the opera
             if (this.status == OperaUserStatus.AT_OPERA) {
-                this.status = OperaUserStatus.EVACUATING;
+                this.status = OperaUserStatus.IMMOBILE;
                 updateAttractionPoint(null);
                 makePath();
-                Logger.debug("Opera User", "User evacuating from opera house after explosion");
-                return true;
+                Logger.debug("Opera User", "User dragged out of opera house after explosion");
+                
+                // Calculate delay for the first waypoint
+                if (!path.isEmpty()) {
+                    WayPoint firstWaypoint = path.getNextWayPoint();
+                    double arrivalTime = firstWaypoint.getArrivalTime();
+                    double delay = arrivalTime - CloudSim.clock();
+                    
+                    if (delay < 0) {
+                        throw new NullPointerException("CRITICAL ERROR: Negative delay calculated in handleEvent.");
+                    }
+                    
+                    System.out.println("Opera user will be evacuated in " + delay + " time units");
+                    return delay;
+                } else {
+                    Logger.error("Path Creation Error", "Created empty path for opera user evacuation");
+                    return -1.0;
+                }
             }
         }
-        return false;
+        return -1.0;
     }
 } 

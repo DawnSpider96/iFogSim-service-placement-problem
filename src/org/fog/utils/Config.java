@@ -21,15 +21,18 @@ public class Config {
 	public static double FOG_DEVICE_COST_PER_BW = 0.0;
 //	public static double MAX_VALUE = 1000000.0;
 
+	// Geographic area name
+	private static String geographicArea = "MELBOURNE";
+	
 	// Points of interest map
 	private static Map<String, Location> pointsOfInterest = new HashMap<>();
 	
 	// Initialize default points of interest
-	static {
-		// Add default points
-		pointsOfInterest.put("HOSPITAL1", new Location(-37.81192, 144.95807, -1)); // Top left-ish
-		pointsOfInterest.put("OPERA_HOUSE", new Location(-37.81501, 144.97388, -1)); // Around bottom right
-	}
+//	static {
+//		 Add default points
+//		pointsOfInterest.put("HOSPITAL1", new Location(-37.81192, 144.95807, -1)); // Top left-ish
+//		pointsOfInterest.put("OPERA_HOUSE", new Location(-37.81501, 144.97388, -1)); // Around bottom right
+//	}
 
 	// Location-related fields
 	private static double[][] BOUNDARY = {
@@ -139,5 +142,23 @@ public class Config {
 	
 	public static void setMaxLon(double value) {
 		maxLon = value;
+	}
+	
+	/**
+	 * Gets the geographic area name
+	 * 
+	 * @return the geographic area name
+	 */
+	public static String getGeographicArea() {
+		return geographicArea;
+	}
+	
+	/**
+	 * Sets the geographic area name
+	 * 
+	 * @param area the geographic area name
+	 */
+	public static void setGeographicArea(String area) {
+		geographicArea = area;
 	}
 }

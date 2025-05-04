@@ -58,6 +58,9 @@ public class LocationConfigLoader {
                 applyPointsOfInterest((JSONObject) config.get("pointsOfInterest"));
             }
             
+            // Infer and set geographic area
+            inferGeographicArea(config);
+            
             // Verify that all fields are properly set
             verifyConfigConsistency();
             
@@ -83,6 +86,9 @@ public class LocationConfigLoader {
         originalValues.put("minLon", Config.getMinLon());
         originalValues.put("maxLon", Config.getMaxLon());
         
+        // Store geographic area
+        originalValues.put("geographicArea", Config.getGeographicArea());
+        
         // Store points of interest
         originalValues.put("pointsOfInterest", Config.getAllPointsOfInterest());
         
@@ -104,6 +110,9 @@ public class LocationConfigLoader {
         reportChange("maxLat", (Double)originalValues.get("maxLat"), Config.getMaxLat());
         reportChange("minLon", (Double)originalValues.get("minLon"), Config.getMinLon());
         reportChange("maxLon", (Double)originalValues.get("maxLon"), Config.getMaxLon());
+        
+        // Report changes to geographic area
+        reportChange("geographicArea", (String)originalValues.get("geographicArea"), Config.getGeographicArea());
         
         // Report changes to boundary
         reportBoundaryChanges();
@@ -211,6 +220,38 @@ public class LocationConfigLoader {
         
         // Update all points of interest at once
         Config.setAllPointsOfInterest(points);
+    }
+    
+    /**
+     * Infers the geographic area based on coordinates or explicitly defined area in JSON
+     */
+    private static void inferGeographicArea(JSONObject config) {
+        // First check if area is explicitly defined in the JSON
+        if (config.containsKey("area")) {
+            String area = (String) config.get("area");
+            Config.setGeographicArea(area.toUpperCase());
+            System.out.println("Setting geographic area from config: " + area);
+            return;
+        }
+        
+        // If not explicitly defined, try to infer from coordinates
+        double minLat = ((Number) config.get("minLat")).doubleValue();
+        double minLon = ((Number) config.get("minLon")).doubleValue();
+        
+        // Dublin, Ireland coordinates (approximate)
+        if (minLat > 53.0 && minLat < 54.0 && minLon > -7.0 && minLon < -6.0) {
+            Config.setGeographicArea("DUBLIN");
+            System.out.println("Inferred geographic area: DUBLIN");
+        }
+        // Melbourne, Australia coordinates (approximate)
+        else if (minLat < -37.0 && minLat > -38.0 && minLon > 144.0 && minLon < 145.0) {
+            Config.setGeographicArea("MELBOURNE");
+            System.out.println("Inferred geographic area: MELBOURNE");
+        }
+        // If coordinates don't match known areas, keep the default
+        else {
+            System.out.println("Could not infer geographic area from coordinates. Using: " + Config.getGeographicArea());
+        }
     }
     
     /**

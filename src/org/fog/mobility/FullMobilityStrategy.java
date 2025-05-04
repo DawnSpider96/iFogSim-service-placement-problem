@@ -47,14 +47,17 @@ public class FullMobilityStrategy implements MobilityStrategy {
 //            return -1.0;
         }
         double currentTime = CloudSim.clock();
-        Logger.debug("Values should be roughly equal", "CloudSim timestamp: " + currentTime +
-                    ", timestamp: " + nextWaypoint.getArrivalTime());
+//        Logger.debug("Values should be roughly equal", "CloudSim timestamp: " + currentTime +
+//                    ", timestamp: " + nextWaypoint.getArrivalTime());
+        if (currentTime - nextWaypoint.getArrivalTime() > 0.00001) {
+            throw new NullPointerException("Not equal time values");
+        }
         Location loc = nextWaypoint.getLocation();
         dms.setCurrentLocation(loc);
         // TODO Simon (100425) says maybe remove the journey state if it gets too heavy,
         //  it's primarily for debugging.
         dms.getJourney().put(currentTime, loc);
-        System.out.println("Device " + deviceId + " moved to location: " + nextWaypoint.getLocation());
+//        System.out.println("Device " + deviceId + " moved to location: " + nextWaypoint.getLocation());
         
         FogDevice device = getDeviceById(deviceId);
         FogDevice prevParent = getDeviceById(parentReferences.get(deviceId));

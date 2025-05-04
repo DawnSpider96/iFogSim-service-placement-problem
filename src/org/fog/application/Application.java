@@ -225,6 +225,7 @@ public class Application {
 							tuple.setSourceDeviceId(sourceDeviceId);
 							tuple.setSourceModuleId(sourceModuleId);
 							//tuple.setActuatorId(actuatorId);
+							tuple.setTraversedMicroservices(inputTuple.getTraversed());
 							
 							tuples.add(tuple);
 						//}

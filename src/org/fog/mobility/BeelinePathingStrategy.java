@@ -26,11 +26,8 @@ public class BeelinePathingStrategy extends AbstractPathingStrategy {
     public WayPointPath makePath(Attractor attractionPoint, double speed, Location currentLocation) {
         WayPointPath path = new WayPointPath();
 
-        Random rand = new Random(seed);
-        // Random value between 5 and 10 seconds
         double time = rand.nextDouble() * 5 + 5;
 
-        // KM
         double distance = speed * time * Consts.METERS_TO_KM;
         Location loc = currentLocation.movedTowards(attractionPoint.getAttractionPoint(), distance);
 

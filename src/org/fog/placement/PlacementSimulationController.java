@@ -514,7 +514,7 @@ public class PlacementSimulationController extends SimEntity {
         if (delay > 0) {
             send(getId(), delay, FogEvents.SCHEDULER_NEXT_MOVEMENT_UPDATE, deviceId);
         }
-        else Logger.error("Delay WARNING", "This user is NOT scheduled to move again. Check that user will call makePath in future.");
+        else Logger.error("Delay WARNING", "This " + mobilityState + " user is NOT scheduled to move again. Check that user will call makePath in future.");
     }
     
     /**
@@ -1228,9 +1228,12 @@ public class PlacementSimulationController extends SimEntity {
             }
             
             try {
-                if (state.handleEvent(FogEvents.OPERA_ACCIDENT_EVENT, eventData)) {
+                double delay = state.handleEvent(FogEvents.OPERA_ACCIDENT_EVENT, eventData);
+                if (delay > 0) {
+                    // Schedule the next movement with the returned delay
+                    send(getId(), delay, FogEvents.SCHEDULER_NEXT_MOVEMENT_UPDATE, deviceId);
                     respondedCount++;
-                    System.out.println("Device " + deviceName + " responded to accident event");
+                    System.out.println("Device " + deviceName + " responded to accident event and will move in " + delay + " time units");
                 }
             } catch (Exception e) {
                 Logger.error("Exception in handleAccidentEvent", 
