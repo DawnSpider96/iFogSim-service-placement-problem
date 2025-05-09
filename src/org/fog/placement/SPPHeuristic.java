@@ -24,9 +24,9 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
     protected List<PlacementRequest> placementRequests; // requests to be processed
     protected Map<PlacementRequestKey, PlacementRequest> placementRequestMap; // Map for efficient lookup
     protected Map<Integer, Map<String, Double>> resourceAvailability;
-    protected Map<String, Application> applicationInfo = new HashMap<>(); // map app name to Application
-    protected Map<String, String> moduleToApp = new HashMap<>();
-    protected Map<PlacementRequest, Integer> closestNodes = new HashMap<>();
+    protected Map<String, Application> applicationInfo = new LinkedHashMap<>(); // map app name to Application
+    protected Map<String, String> moduleToApp = new LinkedHashMap<>();
+    protected Map<PlacementRequest, Integer> closestNodes = new LinkedHashMap<>();
 
     int fonID;
 
@@ -45,7 +45,7 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
     protected Map<Integer, Map<String, Integer>> currentModuleInstanceNum = new LinkedHashMap<>();
 
     // For quick lookup in getModule method
-    private final Map<String, Map<String, AppModule>> moduleCache = new HashMap<>();
+    private final Map<String, Map<String, AppModule>> moduleCache = new LinkedHashMap<>();
 
     // Composite key class for placement requests
     // sensorId (sensor that created PR), prIndex (index of PR made by this sensor)
@@ -469,12 +469,13 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
         // Collect Total PRs metric. Failed PRs metric collected below.
         SPPMonitor.getInstance().recordTotalPRs(placementRequests.size(), CloudSim.clock());
 
-        for (PlacementRequest placementRequest : placementRequests) {
-            if (prStatus.get(placementRequest) == -1) {
+        for (PlacementRequest pr : placementRequests) {
+            if (prStatus.get(pr) == -1) {
+                ContextPlacementRequest placementRequest = (ContextPlacementRequest) pr;
                 // Create a key for this placement request
                 PlacementRequestKey prKey = new PlacementRequestKey(
                         placementRequest.getSensorId(),
-                        ((ContextPlacementRequest) placementRequest).getPrIndex()
+                        placementRequest.getPrIndex()
                 );
 
                 // Skip if this placement request has no entries in mappedMicroservices
@@ -506,9 +507,9 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
             else {
                 // Otherwise, do collection of failed PR metrics
                 Logger.error("PR failed because ", failureReason
-                        + ", sensorId " + placementRequest.getSensorId()
-                        + ", prIndex " + ((ContextPlacementRequest) placementRequest).getPrIndex());
-                SPPMonitor.getInstance().recordFailedPR(placementRequest, failureReason);
+                        + ", sensorId " + pr.getSensorId()
+                        + ", prIndex " + ((ContextPlacementRequest) pr).getPrIndex());
+                SPPMonitor.getInstance().recordFailedPR(pr, failureReason);
             }
         }
         SPPMonitor.getInstance().getLatencies().put(CloudSim.clock(), latencies);
@@ -804,7 +805,7 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
 
 
     // INCLUDES FINAL JOURNEY back to user
-    private double determineLatencyOfDecision(PlacementRequest pr) {
+    private double determineLatencyOfDecision(ContextPlacementRequest pr) {
         // Simon (170225) says we are currently NOT considering execution time
         // Hence only placement targets are considered
         // placedMicroservices are ordered
@@ -821,6 +822,7 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
             //      - firstEdge->cloud (return for routing to gateway)
             //      - cloud->gateway
             //      - gateway->user (most variance I assume)
+            latency += pr.getRequestLatency();
             latency += determineLatency(cloudId, edges.get(0));
             for (int i = 0; i < edges.size() - 2; i++) { // Simon says we DONT count the last journey
                 int sourceDevice = edges.get(i);
@@ -868,114 +870,233 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
         }
     }
 
-    // Class to track resource state during placement decisions
-    public static class DeviceState implements Comparable<DeviceState>{
-        private final Integer deviceId;
-        private final Map<String, Double> remainingResources;
-        private final Map<String, Double> totalResources;
+//    // Class to track resource state during placement decisions
+//    public static class DeviceState implements Comparable<DeviceState>{
+//        private final Integer deviceId;
+//        private final Map<String, Double> remainingResources;
+//        private final Map<String, Double> totalResources;
+//
+//        public DeviceState(Integer deviceId, Map<String, Double> initialResources, double mips, double ram, double storage) {
+//            this.deviceId = deviceId;
+//            this.remainingResources = new LinkedHashMap<>(initialResources);
+//            this.totalResources = new LinkedHashMap<>();
+//            this.totalResources.put("cpu", mips);
+//            this.totalResources.put("ram", ram);
+//            this.totalResources.put("storage", storage);
+//        }
+//
+//        public DeviceState(DeviceState other) {
+//            this.deviceId = other.deviceId;
+//            this.remainingResources = new LinkedHashMap<>(other.remainingResources);
+//            this.totalResources = new LinkedHashMap<>(other.totalResources);
+//        }
+//
+//
+//        public boolean canFit(double cpuReq, double ramReq, double storageReq) {
+//            return remainingResources.get("cpu") >= cpuReq &&
+//                    remainingResources.get("ram") >= ramReq &&
+//                    remainingResources.get("storage") >= storageReq;
+//        }
+//
+//        public void allocate(double cpuReq, double ramReq, double storageReq) {
+//            remainingResources.put("cpu", remainingResources.get("cpu") - cpuReq);
+//            remainingResources.put("ram", remainingResources.get("ram") - ramReq);
+//            remainingResources.put("storage", remainingResources.get("storage") - storageReq);
+//        }
+//
+//        public void deallocate(double cpuReq, double ramReq, double storageReq) {
+//            remainingResources.put("cpu", remainingResources.get("cpu") + cpuReq);
+//            remainingResources.put("ram", remainingResources.get("ram") + ramReq);
+//            remainingResources.put("storage", remainingResources.get("storage") + storageReq);
+//        }
+//
+//        public Integer getId() {
+//            return deviceId;
+//        }
+//
+//        public double getCPU() {
+//            return this.remainingResources.get("cpu");
+//        }
+//
+//        public double getRAM() {
+//            return this.remainingResources.get("ram");
+//        }
+//
+//        public double getStorage() {
+//            return this.remainingResources.get("storage");
+//        }
+//
+//        public double getCPUUtil() {
+//            double totalCPU = this.totalResources.get("cpu");
+//            double availableCPU = this.remainingResources.get("cpu");
+//            return (totalCPU - availableCPU) / totalCPU;
+//        }
+//
+//        public double getRAMUtil() {
+//            double totalRAM = this.totalResources.get("ram");
+//            double availableRAM = this.remainingResources.get("ram");
+//            return (totalRAM - availableRAM) / totalRAM;
+//        }
+//
+//        // For standard deviation
+//        public double getCPUUsage() {
+//            double totalCPU = this.totalResources.get("cpu");
+//            double availableCPU = this.remainingResources.get("cpu");
+//            return (totalCPU - availableCPU);
+//        }
+//
+//        public double getRAMUsage() {
+//            double totalRAM = this.totalResources.get("ram");
+//            double availableRAM = this.remainingResources.get("ram");
+//            return (totalRAM - availableRAM);
+//        }
+//
+//        // For efficiency, in the pooling optimisation in SimulatedAnnealing heuristic
+//        // Alternative is copy constructor, this should take less time
+//        public void resetTo(DeviceState other) {
+//            if (!Objects.equals(deviceId, other.getId())) throw new NullPointerException("DeviceStates don't match id in reset call");
+//
+//            this.remainingResources.clear();
+//            this.remainingResources.putAll(other.remainingResources);
+//
+//            this.totalResources.clear();
+//            this.totalResources.putAll(other.totalResources);
+//        }
+//
+//        @Override
+//        public int compareTo(DeviceState other) {
+//            // Sort by CPU Util, then by RAM Util if CPU is equal, from smallest to biggest
+//            int cpuCompare = Double.compare(
+//                    this.getCPUUtil(), // Smallest first
+//                    other.getCPUUtil()
+//            );
+//            if (cpuCompare != 0) return cpuCompare;
+//
+//            int ramCompare = Double.compare(
+//                    this.getRAMUtil(), // Smallest first
+//                    other.getRAMUtil()
+//            );
+//            if (ramCompare != 0) return ramCompare;
+//
+//            // Use device ID as final tiebreaker for stable sorting
+//            return Integer.compare(this.deviceId, other.deviceId);
+//        }
+//    }
 
-        public DeviceState(Integer deviceId, Map<String, Double> initialResources, double mips, double ram, double storage) {
-            this.deviceId = deviceId;
-            this.remainingResources = new HashMap<>(initialResources);
-            this.totalResources = new HashMap<>();
-            this.totalResources.put("cpu", mips);
-            this.totalResources.put("ram", ram);
-            this.totalResources.put("storage", storage);
+    /**
+     * Lightweight representation of a fog‑node’s resources.
+     * Copying is cheap → safe to duplicate in inner optimisation loops.
+     */
+    public static class DeviceState implements Comparable<DeviceState> {
+
+        /* ---------- immutable identity ---------- */
+        private final int id;
+
+        /* ---------- immutable capacity ---------- */
+        private final double totalCpu;      // MIPS
+        private final double totalRam;      // MB
+        private final double totalStorage;  // MB
+
+        /* ---------- mutable remainder ---------- */
+        private double freeCpu;
+        private double freeRam;
+        private double freeStorage;
+
+        /* ---------- constructors ---------- */
+
+        /** real device → state object  */
+        public DeviceState(int id,
+                           double totalCpu,
+                           double totalRam,
+                           double totalStorage,
+                           double initialCpu,
+                           double initialRam,
+                           double initialStorage) {
+            this.id            = id;
+            this.totalCpu      = totalCpu;
+            this.totalRam      = totalRam;
+            this.totalStorage  = totalStorage;
+
+            this.freeCpu       = initialCpu;
+            this.freeRam       = initialRam;
+            this.freeStorage   = initialStorage;
         }
 
-        public DeviceState(DeviceState other) {
-            this.deviceId = other.deviceId;
-            this.remainingResources = new HashMap<>(other.remainingResources);
-            this.totalResources = new HashMap<>(other.totalResources);
+        // For backward compatibility (non-aco algos)
+        public DeviceState(int id,
+                           Map<String, Double> dev,
+                           double initialCpu,
+                           double initialRam,
+                           double initialStorage) {
+            this.id            = id;
+            this.freeCpu      = dev.get(ControllerComponent.CPU);
+            this.freeRam      = dev.get(ControllerComponent.RAM);
+            this.freeStorage  = dev.get(ControllerComponent.STORAGE);
+
+            this.totalCpu       = initialCpu;
+            this.totalRam       = initialRam;
+            this.totalStorage   = initialStorage;
         }
 
+        /** **cheap** copy‑ctor used inside ACO / SA loops */
+        public DeviceState(DeviceState src) {
+            this.id            = src.id;
 
-        public boolean canFit(double cpuReq, double ramReq, double storageReq) {
-            return remainingResources.get("cpu") >= cpuReq &&
-                    remainingResources.get("ram") >= ramReq &&
-                    remainingResources.get("storage") >= storageReq;
+            this.totalCpu      = src.totalCpu;
+            this.totalRam      = src.totalRam;
+            this.totalStorage  = src.totalStorage;
+
+            this.freeCpu       = src.freeCpu;
+            this.freeRam       = src.freeRam;
+            this.freeStorage   = src.freeStorage;
         }
 
-        public void allocate(double cpuReq, double ramReq, double storageReq) {
-            remainingResources.put("cpu", remainingResources.get("cpu") - cpuReq);
-            remainingResources.put("ram", remainingResources.get("ram") - ramReq);
-            remainingResources.put("storage", remainingResources.get("storage") - storageReq);
+        /* ---------- resource helpers ---------- */
+
+        public boolean canFit(double cpu, double ram, double storage) {
+            return freeCpu >= cpu && freeRam >= ram && freeStorage >= storage;
         }
 
-        public void deallocate(double cpuReq, double ramReq, double storageReq) {
-            remainingResources.put("cpu", remainingResources.get("cpu") + cpuReq);
-            remainingResources.put("ram", remainingResources.get("ram") + ramReq);
-            remainingResources.put("storage", remainingResources.get("storage") + storageReq);
+        public void allocate(double cpu, double ram, double storage) {
+            freeCpu     -= cpu;
+            freeRam     -= ram;
+            freeStorage -= storage;
         }
 
-        public Integer getId() {
-            return deviceId;
+        public void deallocate(double cpu, double ram, double storage) {
+            freeCpu     += cpu;
+            freeRam     += ram;
+            freeStorage += storage;
         }
+
+        /* utilisation & diagnostics */
+        public double getCPUUtil() { return 1.0 - freeCpu/totalCpu; }
+        public double getRAMUtil() { return 1.0 - freeRam/totalRam; }
+        public int getId()      { return id; }
 
         public double getCPU() {
-            return this.remainingResources.get("cpu");
+            return freeCpu;
         }
 
         public double getRAM() {
-            return this.remainingResources.get("ram");
+            return freeRam;
         }
 
-        public double getCPUUtil() {
-            double totalCPU = this.totalResources.get("cpu");
-            double availableCPU = this.remainingResources.get("cpu");
-            return (totalCPU - availableCPU) / totalCPU;
+        public double getStorage() {
+            return freeStorage;
         }
 
-        public double getRAMUtil() {
-            double totalRAM = this.totalResources.get("ram");
-            double availableRAM = this.remainingResources.get("ram");
-            return (totalRAM - availableRAM) / totalRAM;
-        }
-
-        // For standard deviation
-        public double getCPUUsage() {
-            double totalCPU = this.totalResources.get("cpu");
-            double availableCPU = this.remainingResources.get("cpu");
-            return (totalCPU - availableCPU);
-        }
-
-        public double getRAMUsage() {
-            double totalRAM = this.totalResources.get("ram");
-            double availableRAM = this.remainingResources.get("ram");
-            return (totalRAM - availableRAM);
-        }
-
-        // For efficiency, in the pooling optimisation in SimulatedAnnealing heuristic
-        // Alternative is copy constructor, this should take less time
-        public void resetTo(DeviceState other) {
-            if (!Objects.equals(deviceId, other.getId())) throw new NullPointerException("DeviceStates don't match id in reset call");
-
-            this.remainingResources.clear();
-            this.remainingResources.putAll(other.remainingResources);
-
-            this.totalResources.clear();
-            this.totalResources.putAll(other.totalResources);
-        }
-
+        /* ---------- Comparable<DeviceState> ---------- */
         @Override
-        public int compareTo(DeviceState other) {
-            // Sort by CPU Util, then by RAM Util if CPU is equal, from smallest to biggest
-            int cpuCompare = Double.compare(
-                    this.getCPUUtil(), // Smallest first
-                    other.getCPUUtil()
-            );
-            if (cpuCompare != 0) return cpuCompare;
-
-            int ramCompare = Double.compare(
-                    this.getRAMUtil(), // Smallest first
-                    other.getRAMUtil()
-            );
-            if (ramCompare != 0) return ramCompare;
-            
-            // Use device ID as final tiebreaker for stable sorting
-            return Integer.compare(this.deviceId, other.deviceId);
+        public int compareTo(DeviceState o) {
+            int byCpu = Double.compare(getCPUUtil(), o.getCPUUtil());
+            if (byCpu != 0) return byCpu;
+            int byRam = Double.compare(getRAMUtil(), o.getRAMUtil());
+            if (byRam != 0) return byRam;
+            return Integer.compare(id, o.id);
         }
     }
+
 
     class RelativeLatencyDeviceState implements Comparable<RelativeLatencyDeviceState> {
 

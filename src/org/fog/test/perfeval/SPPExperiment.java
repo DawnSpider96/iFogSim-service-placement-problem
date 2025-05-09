@@ -19,15 +19,22 @@ import org.fog.placement.PlacementSimulationController;
 import org.fog.placement.PlacementLogicFactory;
 import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.utils.*;
+import org.fog.utils.MetricUtils.PerformanceMetrics;
 import org.fog.utils.distribution.DeterministicDistribution;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Platform to run the OnlinePOC simulation under variable parameters:
@@ -50,9 +57,9 @@ import java.util.stream.IntStream;
  * DYNAMIC_CLUSTERING -> true (for clustered) and false (for not clustered) * (also compatible with static clustering)
  */
 public class SPPExperiment {
-//    private static final String outputFile = "./output/resourceDist_Comfortable_R_Beta.csv";
-    private static final String outputFile = "./output/CMoon_Mobile_10k_60_Simon.csv";
-    // The configuration file now uses string-based placement logic identifiers instead of integers
+//    private static final String outputFile = "./output/PerfEval/ACO_X_X_200.csv";
+//    private static final String CONFIG_FILE = "./dataset/PerformanceEvalConfigsEdges.yaml";
+    private static final String outputFile = "./output/MiH_4.csv";
     private static final String CONFIG_FILE = "./dataset/SPPExperimentConfigs.yaml";
     // Path to location configuration file
     private static final String LOCATION_CONFIG_FILE = "./dataset/location_config_simon.json";
@@ -151,14 +158,106 @@ public class SPPExperiment {
 
     public static void main(String[] args) {
         SPPExperiment.setUseDynamicLocations(true);
-
-//         Set custom output directory for generated files (optional)
         SPPExperiment.setOutputDirectory("./dataset/simon");
-
+        
         List<SimulationConfig> configs = loadConfigurationsFromYaml();
-
+        List<PerformanceMetrics> performanceMetrics = new ArrayList<>();
+        
+        // Clear power metrics at START of experiment
+        MetricUtils.clearPowerMetrics();
+        
         for (SimulationConfig config : configs) {
+            // Create metrics object for this simulation
+            PerformanceMetrics metrics = new PerformanceMetrics(config);
+            
+            // Force garbage collection before starting to get baseline memory
+            System.gc();
+            System.runFinalization();
+            try {
+                Thread.sleep(1000); // Allow GC to complete
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            
+            // Measure baseline memory
+            long baselineMemoryBytes = getCurrentMemoryUsage();
+            metrics.setBaselineMemoryBytes(baselineMemoryBytes);
+            System.out.println("Baseline memory before simulation: " + (baselineMemoryBytes/1024/1024) + " MB");
+            
+            // Setup memory monitoring
+            AtomicLong peakMemoryBytes = new AtomicLong(0);
+            long pid = ProcessHandle.current().pid();
+            
+            Thread memoryMonitor = new Thread(() -> {
+                try {
+                    boolean running = true;
+                    while (running) {
+                        try {
+                            Path statusPath = Paths.get("/proc", Long.toString(pid), "status");
+                            List<String> lines = Files.readAllLines(statusPath);
+                            for (String line : lines) {
+                                if (line.startsWith("VmRSS:")) {
+                                    String[] parts = line.trim().split("\\s+");
+                                    long memoryKb = Long.parseLong(parts[1]);
+                                    long memoryBytes = memoryKb * 1024;
+                                    peakMemoryBytes.updateAndGet(prev -> Math.max(prev, memoryBytes));
+                                    break;
+                                }
+                            }
+                            Thread.sleep(200);
+                        } catch (InterruptedException e) {
+                            running = false;
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            running = false;
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            });
+            
+            // Start monitoring and timing
+            memoryMonitor.start();
+            long startTime = System.currentTimeMillis();
+            
+            // Run the simulation
             run(config);
+            
+            // Record metrics
+            long endTime = System.currentTimeMillis();
+            metrics.setExecutionTimeMs(endTime - startTime);
+            memoryMonitor.interrupt();
+            
+            try {
+                memoryMonitor.join(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            
+            metrics.setPeakMemoryBytes(peakMemoryBytes.get());
+            
+            // Force garbage collection and measure post-GC memory
+            System.gc();
+            System.runFinalization();
+            try {
+                Thread.sleep(1000); // Allow GC to complete
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            
+            // Measure post-GC memory
+            long postGCMemoryBytes = getCurrentMemoryUsage();
+            metrics.setPostGCMemoryBytes(postGCMemoryBytes);
+            
+            // Add metrics to the list
+            performanceMetrics.add(metrics);
+            
+            System.out.println("Simulation completed in " + metrics.getExecutionTimeMs() + 
+                              " ms with peak memory usage of " + (metrics.getPeakMemoryBytes()/1024/1024) + " MB");
+            System.out.println("Memory after GC: " + (postGCMemoryBytes/1024/1024) + " MB");
+            System.out.println("Memory growth during simulation: " + (metrics.getMemoryGrowthBytes()/1024/1024) + " MB");
+            System.out.println("Memory retained after GC: " + (metrics.getMemoryRetentionBytes()/1024/1024) + " MB");
         }
         
         // Print final entity ID information
@@ -192,7 +291,7 @@ public class SPPExperiment {
                     })
                     .collect(Collectors.toList());
 
-            // Write all metrics to a single CSV file (both aggregate and user type classified)
+            // Write all metrics to a single CSV file (now including performance metrics)
             MetricUtils.writeAllMetricsToCSV(
                 resourceData, 
                 latencyData, 
@@ -202,7 +301,8 @@ public class SPPExperiment {
                 list1, 
                 list2, 
                 configs, 
-                outputFile
+                outputFile,
+                performanceMetrics  // Add this parameter
             );
             
             System.out.println("All metrics have been written to a single CSV file: " + outputFile);
@@ -210,6 +310,27 @@ public class SPPExperiment {
             System.err.println("An error occurred while writing to the CSV file.");
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Helper method to get current memory usage
+     */
+    private static long getCurrentMemoryUsage() {
+        try {
+            long pid = ProcessHandle.current().pid();
+            Path statusPath = Paths.get("/proc", Long.toString(pid), "status");
+            List<String> lines = Files.readAllLines(statusPath);
+            for (String line : lines) {
+                if (line.startsWith("VmRSS:")) {
+                    String[] parts = line.trim().split("\\s+");
+                    long memoryKb = Long.parseLong(parts[1]);
+                    return memoryKb * 1024;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return -1; // Error case
     }
 
     /**
@@ -570,6 +691,17 @@ public class SPPExperiment {
 //            CloudSim.stopSimulation();
             // TODO Possible mega cleanup/metric collection function
             SPPMonitor.getInstance().incrementSimulationRoundNumber();
+            
+            // Collect power metrics
+            Map<String, Double> powerMetrics = collectPowerMetrics();
+            MetricUtils.setCloudEnergyConsumption(powerMetrics.get("cloudEnergyConsumption"));
+            MetricUtils.setAvgEdgeEnergyConsumption(powerMetrics.get("avgEdgeEnergyConsumption"));
+            MetricUtils.setStdDevEdgeEnergyConsumption(powerMetrics.get("stdDevEdgeEnergyConsumption"));
+
+            System.out.println("Cloud Energy Consumption: " + powerMetrics.get("cloudEnergyConsumption") + " Watt-seconds");
+            System.out.println("Average Edge Energy Consumption: " + powerMetrics.get("avgEdgeEnergyConsumption") + " Watt-seconds");
+            System.out.println("Edge Energy Consumption StdDev: " + powerMetrics.get("stdDevEdgeEnergyConsumption") + " Watt-seconds");
+            
             System.out.println("Simon app finished!");
             
             // Reset controller's sequence counters after simulation finishes
@@ -802,14 +934,14 @@ public class SPPExperiment {
         application.addAppEdge("SENSOR", clientModuleName, 14, 50, "SENSOR", Tuple.UP, AppEdge.SENSOR);
 
         String firstServiceName = appId + "_Service1";
-        application.addAppEdge(clientModuleName, firstServiceName, 10000, 500,
+        application.addAppEdge(clientModuleName, firstServiceName, 10, 5, // TODO change back to 10000 and 500
                 appId + "_RAW_DATA", Tuple.UP, AppEdge.MODULE);
         for (int i = 1; i < numServices; i++) {
             String sourceModule = appId + "_Service" + i;
             String destModule = appId + "_Service" + (i+1);
             String tupleType = appId + "_FILTERED_DATA" + i;
 
-            application.addAppEdge(sourceModule, destModule, 10000, 500, tupleType, Tuple.UP, AppEdge.MODULE);
+            application.addAppEdge(sourceModule, destModule, 10, 5, tupleType, Tuple.UP, AppEdge.MODULE); // TODO change back to 10000 and 500
         }
 
         String lastServiceName = appId + "_Service" + numServices;
@@ -860,6 +992,54 @@ public class SPPExperiment {
         application.setLoops(loops);
 
         return application;
+    }
+
+    /**
+     * Collects power consumption metrics from all fog devices
+     * @return Map containing power metrics: cloud energy consumption, average edge energy consumption, etc.
+     */
+    private static Map<String, Double> collectPowerMetrics() {
+        Map<String, Double> powerMetrics = new HashMap<>();
+        
+        double cloudEnergyConsumption = 0.0;
+        List<Double> edgeEnergyConsumptions = new ArrayList<>();
+        
+        for (FogDevice device : fogDevices) {
+            SPPFogDevice sppDevice = (SPPFogDevice) device;
+            double energyConsumption = device.getEnergyConsumption();
+            
+            if (sppDevice.getDeviceType().equals(SPPFogDevice.CLOUD)) {
+                cloudEnergyConsumption = energyConsumption;
+            } else if (sppDevice.getDeviceType().equals(SPPFogDevice.FCN)) {
+                edgeEnergyConsumptions.add(energyConsumption);
+            }
+        }
+        
+        // Calculate average and standard deviation for edge servers
+        double avgEdgeEnergy = 0.0;
+        double stdDevEdgeEnergy = 0.0;
+        
+        if (!edgeEnergyConsumptions.isEmpty()) {
+            double sum = 0;
+            for (Double value : edgeEnergyConsumptions) {
+                sum += value;
+            }
+            avgEdgeEnergy = sum / edgeEnergyConsumptions.size();
+            
+            double variance = 0;
+            for (Double value : edgeEnergyConsumptions) {
+                variance += Math.pow(value - avgEdgeEnergy, 2);
+            }
+            variance /= edgeEnergyConsumptions.size();
+            
+            stdDevEdgeEnergy = Math.sqrt(variance);
+        }
+        
+        powerMetrics.put("cloudEnergyConsumption", cloudEnergyConsumption);
+        powerMetrics.put("avgEdgeEnergyConsumption", avgEdgeEnergy);
+        powerMetrics.put("stdDevEdgeEnergyConsumption", stdDevEdgeEnergy);
+        
+        return powerMetrics;
     }
 }
 

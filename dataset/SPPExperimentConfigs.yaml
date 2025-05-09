@@ -3,314 +3,313 @@
 # NOTE: genericUser, ambulanceUser or operaUser. Currently, we have no more.
 # Make sure the keys under "userPerType" are the same as "appLoopLengthPerType" please.
 
-# Configuration set with appLoopLength = 1 and numberOfApplications = 1300
-#- numberOfEdge: 100
-#  placementLogic: "ACO"  # Previously 13
-#  numberOfApplications: 1300  # New field: total applications to create
-#  appLoopLength: 1  # Uniform loop length for all applications
-#  placementProcessInterval: 60.0  # Customize the interval for placement processing (default is 300.0)
-#  usersPerType:
-#    genericUser: 100
-#    operaUser: 76
-#    ambulanceUser: 20
-#  # Interval values in seconds for PR generation per user type
-#  # These will be converted to lambda values (lambda = 1/interval)
-#  intervalValues:
-#    genericUser: 300  # One event every 300 seconds
-#    ambulanceUser: 180  # One event every 180 seconds
-#    operaUser: 600  # One event every 600 seconds
-#    immobileUser: 900  # One event every 900 seconds
-#  randomSeeds:
-#    experimentSeed: 33
-#    locationSeed: 42
-#    mobilityStrategySeed: 123
-#    heuristicSeed: 456
-#  areaName: "dublin"
-#
-#- numberOfEdge: 100
-#  placementLogic: "BEST_FIT"  # Previously 7
-#  numberOfApplications: 1300
-#  appLoopLength: 1
-#  placementProcessInterval: 60.0
-#  usersPerType:
-#    genericUser: 100
-#    operaUser: 76
-#    ambulanceUser: 20
-#  # Interval values in seconds for PR generation per user type
-#  intervalValues:
-#    genericUser: 300
-#    ambulanceUser: 180
-#    operaUser: 600
-#    immobileUser: 900
-#  randomSeeds:
-#    experimentSeed: 33
-#    locationSeed: 42
-#    mobilityStrategySeed: 123
-#    heuristicSeed: 456
-#  areaName: "dublin"
-#
-#- numberOfEdge: 100
-#  placementLogic: "CLOSEST_FIT"  # Previously 8
-#  numberOfApplications: 1300
-#  appLoopLength: 1
-#  placementProcessInterval: 60.0
-#  usersPerType:
-#    genericUser: 100
-#    operaUser: 76
-#    ambulanceUser: 20
-#  # Interval values in seconds for PR generation per user type
-#  intervalValues:
-#    genericUser: 300
-#    ambulanceUser: 180
-#    operaUser: 600
-#    immobileUser: 900
-#  randomSeeds:
-#    experimentSeed: 33
-#    locationSeed: 42
-#    mobilityStrategySeed: 123
-#    heuristicSeed: 456
-#  areaName: "dublin"
-#
-#- numberOfEdge: 100
-#  placementLogic: "ILP"  # Previously 14
-#  numberOfApplications: 1300
-#  appLoopLength: 1
-#  placementProcessInterval: 60.0
-#  usersPerType:
-#    genericUser: 100
-#    operaUser: 76
-#    ambulanceUser: 20
-#  # Interval values in seconds for PR generation per user type
-#  intervalValues:
-#    genericUser: 300
-#    ambulanceUser: 180
-#    operaUser: 600
-#    immobileUser: 900
-#  randomSeeds:
-#    experimentSeed: 33
-#    locationSeed: 42
-#    mobilityStrategySeed: 123
-#    heuristicSeed: 456
-#  areaName: "dublin"
-#
-#- numberOfEdge: 100
-#  placementLogic: "MAX_FIT"  # Previously 9
-#  numberOfApplications: 1300
-#  appLoopLength: 1
-#  placementProcessInterval: 60.0
-#  usersPerType:
-#    genericUser: 100
-#    operaUser: 76
-#    ambulanceUser: 20
-#  # Interval values in seconds for PR generation per user type
-#  intervalValues:
-#    genericUser: 300
-#    ambulanceUser: 180
-#    operaUser: 600
-#    immobileUser: 900
-#  randomSeeds:
-#    experimentSeed: 33
-#    locationSeed: 42
-#    mobilityStrategySeed: 123
-#    heuristicSeed: 456
-#  areaName: "dublin"
-#
-#- numberOfEdge: 100
-#  placementLogic: "MULTI_OPT"  # Previously 11
-#  numberOfApplications: 1300
-#  appLoopLength: 1
-#  placementProcessInterval: 60.0
-#  usersPerType:
-#    genericUser: 100
-#    operaUser: 76
-#    ambulanceUser: 20
-#  # Interval values in seconds for PR generation per user type
-#  intervalValues:
-#    genericUser: 300
-#    ambulanceUser: 180
-#    operaUser: 600
-#    immobileUser: 900
-#  randomSeeds:
-#    experimentSeed: 33
-#    locationSeed: 42
-#    mobilityStrategySeed: 123
-#    heuristicSeed: 456
-#  areaName: "dublin"
-#
-#- numberOfEdge: 100
-#  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
-#  numberOfApplications: 1300
-#  appLoopLength: 1
-#  placementProcessInterval: 60.0
-#  usersPerType:
-#    genericUser: 100
-#    operaUser: 76
-#    ambulanceUser: 20
-#  # Interval values in seconds for PR generation per user type
-#  intervalValues:
-#    genericUser: 300
-#    ambulanceUser: 180
-#    operaUser: 600
-#    immobileUser: 900
-#  randomSeeds:
-#    experimentSeed: 33
-#    locationSeed: 42
-#    mobilityStrategySeed: 123
-#    heuristicSeed: 456
-#  areaName: "dublin"
-#
-#- numberOfEdge: 200
-#  placementLogic: "ACO"  # Previously 13
-#  numberOfApplications: 1300
-#  appLoopLength: 1
-#  placementProcessInterval: 60.0
-#  usersPerType:
-#    genericUser: 100
-#    operaUser: 76
-#    ambulanceUser: 20
-#  intervalValues:
-#    genericUser: 300
-#    ambulanceUser: 180
-#    operaUser: 600
-#    immobileUser: 900
-#  randomSeeds:
-#    experimentSeed: 33
-#    locationSeed: 42
-#    mobilityStrategySeed: 123
-#    heuristicSeed: 456
-#  areaName: "dublin"
-#
-#- numberOfEdge: 200
-#  placementLogic: "BEST_FIT"  # Previously 7
-#  numberOfApplications: 1300
-#  appLoopLength: 1
-#  placementProcessInterval: 60.0
-#  usersPerType:
-#    genericUser: 100
-#    operaUser: 76
-#    ambulanceUser: 20
-#  intervalValues:
-#    genericUser: 300
-#    ambulanceUser: 180
-#    operaUser: 600
-#    immobileUser: 900
-#  randomSeeds:
-#    experimentSeed: 33
-#    locationSeed: 42
-#    mobilityStrategySeed: 123
-#    heuristicSeed: 456
-#  areaName: "dublin"
-#
-#- numberOfEdge: 200
-#  placementLogic: "CLOSEST_FIT"  # Previously 8
-#  numberOfApplications: 1300
-#  appLoopLength: 1
-#  placementProcessInterval: 60.0
-#  usersPerType:
-#    genericUser: 100
-#    operaUser: 76
-#    ambulanceUser: 20
-#  intervalValues:
-#    genericUser: 300
-#    ambulanceUser: 180
-#    operaUser: 600
-#    immobileUser: 900
-#  randomSeeds:
-#    experimentSeed: 33
-#    locationSeed: 42
-#    mobilityStrategySeed: 123
-#    heuristicSeed: 456
-#  areaName: "dublin"
-#
-#- numberOfEdge: 200
-#  placementLogic: "ILP"  # Previously 14
-#  numberOfApplications: 1300
-#  appLoopLength: 1
-#  placementProcessInterval: 60.0
-#  usersPerType:
-#    genericUser: 100
-#    operaUser: 76
-#    ambulanceUser: 20
-#  intervalValues:
-#    genericUser: 300
-#    ambulanceUser: 180
-#    operaUser: 600
-#    immobileUser: 900
-#  randomSeeds:
-#    experimentSeed: 33
-#    locationSeed: 42
-#    mobilityStrategySeed: 123
-#    heuristicSeed: 456
-#  areaName: "dublin"
-#
-#- numberOfEdge: 200
-#  placementLogic: "MAX_FIT"  # Previously 9
-#  numberOfApplications: 1300
-#  appLoopLength: 1
-#  placementProcessInterval: 60.0
-#  usersPerType:
-#    genericUser: 100
-#    operaUser: 76
-#    ambulanceUser: 20
-#  intervalValues:
-#    genericUser: 300
-#    ambulanceUser: 180
-#    operaUser: 600
-#    immobileUser: 900
-#  randomSeeds:
-#    experimentSeed: 33
-#    locationSeed: 42
-#    mobilityStrategySeed: 123
-#    heuristicSeed: 456
-#  areaName: "dublin"
-#
-#- numberOfEdge: 200
-#  placementLogic: "MULTI_OPT"  # Previously 11
-#  numberOfApplications: 1300
-#  appLoopLength: 1
-#  placementProcessInterval: 60.0
-#  usersPerType:
-#    genericUser: 100
-#    operaUser: 76
-#    ambulanceUser: 20
-#  intervalValues:
-#    genericUser: 300
-#    ambulanceUser: 180
-#    operaUser: 600
-#    immobileUser: 900
-#  randomSeeds:
-#    experimentSeed: 33
-#    locationSeed: 42
-#    mobilityStrategySeed: 123
-#    heuristicSeed: 456
-#  areaName: "dublin"
-#
-#- numberOfEdge: 200
-#  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
-#  numberOfApplications: 1300
-#  appLoopLength: 1
-#  placementProcessInterval: 60.0
-#  usersPerType:
-#    genericUser: 100
-#    operaUser: 76
-#    ambulanceUser: 20
-#  intervalValues:
-#    genericUser: 300
-#    ambulanceUser: 180
-#    operaUser: 600
-#    immobileUser: 900
-#  randomSeeds:
-#    experimentSeed: 33
-#    locationSeed: 42
-#    mobilityStrategySeed: 123
-#    heuristicSeed: 456
-#  areaName: "dublin"
+- numberOfEdge: 100
+  placementLogic: "ACO"  # Previously 13
+  numberOfApplications: 1300  # New field: total applications to create
+  appLoopLength: 1  # Uniform loop length for all applications
+  placementProcessInterval: 4.0  # Customize the interval for placement processing (default is 300.0)
+  usersPerType:
+    genericUser: 100
+    operaUser: 76
+    ambulanceUser: 20
+  # Interval values in seconds for PR generation per user type
+  # These will be converted to lambda values (lambda = 1/interval)
+  intervalValues:
+    genericUser: 300  # One event every 300 seconds
+    ambulanceUser: 180  # One event every 180 seconds
+    operaUser: 600  # One event every 600 seconds
+    immobileUser: 900  # One event every 900 seconds
+  randomSeeds:
+    experimentSeed: 33
+    locationSeed: 42
+    mobilityStrategySeed: 123
+    heuristicSeed: 456
+  areaName: "dublin"
+
+- numberOfEdge: 100
+  placementLogic: "BEST_FIT"  # Previously 7
+  numberOfApplications: 1300
+  appLoopLength: 1
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 76
+    ambulanceUser: 20
+  # Interval values in seconds for PR generation per user type
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 33
+    locationSeed: 42
+    mobilityStrategySeed: 123
+    heuristicSeed: 456
+  areaName: "dublin"
+
+- numberOfEdge: 100
+  placementLogic: "CLOSEST_FIT"  # Previously 8
+  numberOfApplications: 1300
+  appLoopLength: 1
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 76
+    ambulanceUser: 20
+  # Interval values in seconds for PR generation per user type
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 33
+    locationSeed: 42
+    mobilityStrategySeed: 123
+    heuristicSeed: 456
+  areaName: "dublin"
+
+- numberOfEdge: 100
+  placementLogic: "ILP"  # Previously 14
+  numberOfApplications: 1300
+  appLoopLength: 1
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 76
+    ambulanceUser: 20
+  # Interval values in seconds for PR generation per user type
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 33
+    locationSeed: 42
+    mobilityStrategySeed: 123
+    heuristicSeed: 456
+  areaName: "dublin"
+
+- numberOfEdge: 100
+  placementLogic: "MAX_FIT"  # Previously 9
+  numberOfApplications: 1300
+  appLoopLength: 1
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 76
+    ambulanceUser: 20
+  # Interval values in seconds for PR generation per user type
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 33
+    locationSeed: 42
+    mobilityStrategySeed: 123
+    heuristicSeed: 456
+  areaName: "dublin"
+
+- numberOfEdge: 100
+  placementLogic: "MULTI_OPT"  # Previously 11
+  numberOfApplications: 1300
+  appLoopLength: 1
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 76
+    ambulanceUser: 20
+  # Interval values in seconds for PR generation per user type
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 33
+    locationSeed: 42
+    mobilityStrategySeed: 123
+    heuristicSeed: 456
+  areaName: "dublin"
+
+- numberOfEdge: 100
+  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
+  numberOfApplications: 1300
+  appLoopLength: 1
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 76
+    ambulanceUser: 20
+  # Interval values in seconds for PR generation per user type
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 33
+    locationSeed: 42
+    mobilityStrategySeed: 123
+    heuristicSeed: 456
+  areaName: "dublin"
+
+- numberOfEdge: 200
+  placementLogic: "ACO"  # Previously 13
+  numberOfApplications: 1300
+  appLoopLength: 1
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 76
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 33
+    locationSeed: 42
+    mobilityStrategySeed: 123
+    heuristicSeed: 456
+  areaName: "dublin"
+
+- numberOfEdge: 200
+  placementLogic: "BEST_FIT"  # Previously 7
+  numberOfApplications: 1300
+  appLoopLength: 1
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 76
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 33
+    locationSeed: 42
+    mobilityStrategySeed: 123
+    heuristicSeed: 456
+  areaName: "dublin"
+
+- numberOfEdge: 200
+  placementLogic: "CLOSEST_FIT"  # Previously 8
+  numberOfApplications: 1300
+  appLoopLength: 1
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 76
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 33
+    locationSeed: 42
+    mobilityStrategySeed: 123
+    heuristicSeed: 456
+  areaName: "dublin"
+
+- numberOfEdge: 200
+  placementLogic: "ILP"  # Previously 14
+  numberOfApplications: 1300
+  appLoopLength: 1
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 76
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 33
+    locationSeed: 42
+    mobilityStrategySeed: 123
+    heuristicSeed: 456
+  areaName: "dublin"
+
+- numberOfEdge: 200
+  placementLogic: "MAX_FIT"  # Previously 9
+  numberOfApplications: 1300
+  appLoopLength: 1
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 76
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 33
+    locationSeed: 42
+    mobilityStrategySeed: 123
+    heuristicSeed: 456
+  areaName: "dublin"
+
+- numberOfEdge: 200
+  placementLogic: "MULTI_OPT"  # Previously 11
+  numberOfApplications: 1300
+  appLoopLength: 1
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 76
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 33
+    locationSeed: 42
+    mobilityStrategySeed: 123
+    heuristicSeed: 456
+  areaName: "dublin"
+
+- numberOfEdge: 200
+  placementLogic: "SIMULATED_ANNEALING"  # Previously 12
+  numberOfApplications: 1300
+  appLoopLength: 1
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 76
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 33
+    locationSeed: 42
+    mobilityStrategySeed: 123
+    heuristicSeed: 456
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "ACO"  # Previously 13
   numberOfApplications: 1300
   appLoopLength: 1
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -331,7 +330,7 @@
   placementLogic: "BEST_FIT"  # Previously 7
   numberOfApplications: 1300
   appLoopLength: 1
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -352,7 +351,7 @@
   placementLogic: "CLOSEST_FIT"  # Previously 8
   numberOfApplications: 1300
   appLoopLength: 1
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -373,7 +372,7 @@
   placementLogic: "ILP"  # Previously 14
   numberOfApplications: 1300
   appLoopLength: 1
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -394,7 +393,7 @@
   placementLogic: "MAX_FIT"  # Previously 9
   numberOfApplications: 1300
   appLoopLength: 1
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -415,7 +414,7 @@
   placementLogic: "MULTI_OPT"  # Previously 11
   numberOfApplications: 1300
   appLoopLength: 1
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -436,7 +435,7 @@
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
   numberOfApplications: 1300
   appLoopLength: 1
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -459,7 +458,7 @@
   placementLogic: "ACO"  # Previously 13
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -480,7 +479,7 @@
   placementLogic: "BEST_FIT"  # Previously 7
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -501,7 +500,7 @@
   placementLogic: "CLOSEST_FIT"  # Previously 8
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -522,7 +521,7 @@
   placementLogic: "ILP"  # Previously 14
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -543,7 +542,7 @@
   placementLogic: "MAX_FIT"  # Previously 9
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -564,7 +563,7 @@
   placementLogic: "MULTI_OPT"  # Previously 11
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -585,7 +584,7 @@
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -606,7 +605,7 @@
   placementLogic: "ACO"  # Previously 13
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -627,7 +626,7 @@
   placementLogic: "BEST_FIT"  # Previously 7
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -648,7 +647,7 @@
   placementLogic: "CLOSEST_FIT"  # Previously 8
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -669,7 +668,7 @@
   placementLogic: "ILP"  # Previously 14
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -690,7 +689,7 @@
   placementLogic: "MAX_FIT"  # Previously 9
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -711,7 +710,7 @@
   placementLogic: "MULTI_OPT"  # Previously 11
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -732,7 +731,7 @@
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -753,7 +752,7 @@
   placementLogic: "ACO"  # Previously 13
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -774,7 +773,7 @@
   placementLogic: "BEST_FIT"  # Previously 7
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -795,7 +794,7 @@
   placementLogic: "CLOSEST_FIT"  # Previously 8
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -816,7 +815,7 @@
   placementLogic: "ILP"  # Previously 14
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -837,7 +836,7 @@
   placementLogic: "MAX_FIT"  # Previously 9
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -858,7 +857,7 @@
   placementLogic: "MULTI_OPT"  # Previously 11
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -879,7 +878,7 @@
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
   numberOfApplications: 1300
   appLoopLength: 3
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -902,7 +901,7 @@
   placementLogic: "ACO"  # Previously 13
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -923,7 +922,7 @@
   placementLogic: "BEST_FIT"  # Previously 7
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -944,7 +943,7 @@
   placementLogic: "CLOSEST_FIT"  # Previously 8
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -965,7 +964,7 @@
   placementLogic: "ILP"  # Previously 14
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -986,7 +985,7 @@
   placementLogic: "MAX_FIT"  # Previously 9
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -1007,7 +1006,7 @@
   placementLogic: "MULTI_OPT"  # Previously 11
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -1028,7 +1027,7 @@
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -1049,7 +1048,7 @@
   placementLogic: "ACO"  # Previously 13
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -1070,7 +1069,7 @@
   placementLogic: "BEST_FIT"  # Previously 7
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -1091,7 +1090,7 @@
   placementLogic: "CLOSEST_FIT"  # Previously 8
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -1112,7 +1111,7 @@
   placementLogic: "ILP"  # Previously 14
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -1133,7 +1132,7 @@
   placementLogic: "MAX_FIT"  # Previously 9
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -1154,7 +1153,7 @@
   placementLogic: "MULTI_OPT"  # Previously 11
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -1175,7 +1174,7 @@
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -1196,7 +1195,7 @@
   placementLogic: "ACO"  # Previously 13
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -1217,7 +1216,7 @@
   placementLogic: "BEST_FIT"  # Previously 7
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -1238,7 +1237,7 @@
   placementLogic: "CLOSEST_FIT"  # Previously 8
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -1259,7 +1258,7 @@
   placementLogic: "ILP"  # Previously 14
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -1280,7 +1279,7 @@
   placementLogic: "MAX_FIT"  # Previously 9
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -1301,7 +1300,7 @@
   placementLogic: "MULTI_OPT"  # Previously 11
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76
@@ -1322,7 +1321,7 @@
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
   numberOfApplications: 1300
   appLoopLength: 5
-  placementProcessInterval: 60.0
+  placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
     operaUser: 76

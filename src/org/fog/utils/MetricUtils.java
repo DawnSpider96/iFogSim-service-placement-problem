@@ -18,6 +18,11 @@ public class MetricUtils {
     // Resources
     private static final String[] resources = new String[]{"cpu", "ram"};
 
+    // Power metrics storage across simulations
+    private static List<Double> cloudEnergyConsumptions = new ArrayList<>();
+    private static List<Double> avgEdgeEnergyConsumptions = new ArrayList<>(); 
+    private static List<Double> stdDevEdgeEnergyConsumptions = new ArrayList<>();
+
     private static final HashMap<Integer, String> heuristics = new HashMap<Integer, String>(){{
         put(PlacementLogicFactory.BEST_FIT, "BestFit");
         put(PlacementLogicFactory.CLOSEST_FIT, "ClosestFit");
@@ -28,6 +33,75 @@ public class MetricUtils {
         put(PlacementLogicFactory.ACO, "ACO");
         put(PlacementLogicFactory.ILP, "ILP");
     }};
+
+    /**
+     * Clears all stored power metrics, typically called before starting a new set of simulations
+     */
+    public static void clearPowerMetrics() {
+        cloudEnergyConsumptions.clear();
+        avgEdgeEnergyConsumptions.clear();
+        stdDevEdgeEnergyConsumptions.clear();
+    }
+
+    /**
+     * Stores cloud energy consumption for the current simulation
+     * @param energyConsumption Energy consumption in watt-seconds
+     */
+    public static void setCloudEnergyConsumption(double energyConsumption) {
+        cloudEnergyConsumptions.add(energyConsumption);
+    }
+
+    /**
+     * Stores average edge energy consumption for the current simulation
+     * @param energyConsumption Average energy consumption in watt-seconds
+     */
+    public static void setAvgEdgeEnergyConsumption(double energyConsumption) {
+        avgEdgeEnergyConsumptions.add(energyConsumption);
+    }
+
+    /**
+     * Stores standard deviation of edge energy consumption for the current simulation
+     * @param energyConsumption Standard deviation of energy consumption in watt-seconds
+     */
+    public static void setStdDevEdgeEnergyConsumption(double energyConsumption) {
+        stdDevEdgeEnergyConsumptions.add(energyConsumption);
+    }
+
+    /**
+     * Gets the cloud energy consumption for a specific simulation
+     * @param simulationIndex Index of the simulation
+     * @return Cloud energy consumption in watt-seconds, or 0.0 if not available
+     */
+    public static double getCloudEnergyConsumption(int simulationIndex) {
+        if (simulationIndex >= 0 && simulationIndex < cloudEnergyConsumptions.size()) {
+            return cloudEnergyConsumptions.get(simulationIndex);
+        }
+        return 0.0;
+    }
+
+    /**
+     * Gets the average edge energy consumption for a specific simulation
+     * @param simulationIndex Index of the simulation
+     * @return Average edge energy consumption in watt-seconds, or 0.0 if not available
+     */
+    public static double getAvgEdgeEnergyConsumption(int simulationIndex) {
+        if (simulationIndex >= 0 && simulationIndex < avgEdgeEnergyConsumptions.size()) {
+            return avgEdgeEnergyConsumptions.get(simulationIndex);
+        }
+        return 0.0;
+    }
+
+    /**
+     * Gets the standard deviation of edge energy consumption for a specific simulation
+     * @param simulationIndex Index of the simulation
+     * @return Standard deviation of edge energy consumption in watt-seconds, or 0.0 if not available
+     */
+    public static double getStdDevEdgeEnergyConsumption(int simulationIndex) {
+        if (simulationIndex >= 0 && simulationIndex < stdDevEdgeEnergyConsumptions.size()) {
+            return stdDevEdgeEnergyConsumptions.get(simulationIndex);
+        }
+        return 0.0;
+    }
 
     /**
      * Returns the standard deviation of the resources utilisation for a given
@@ -499,7 +573,8 @@ public class MetricUtils {
      * @param allFailedPRs Raw failed PR data by simulation index
      * @param allTotalPRs Raw total PR data by simulation index
      * @param simConfigs Simulation configurations
-     * @param filePath Path to the output file
+     * @param fileName Path to the output file
+     * @param performanceMetrics List of performance metrics for each simulation
      * @throws IOException If there's an error writing to the file
      */
     public static void writeAllMetricsToCSV(
@@ -511,7 +586,8 @@ public class MetricUtils {
             List<Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>>> allFailedPRs,
             List<Map<Double, Integer>> allTotalPRs,
             List<SimulationConfig> simConfigs,
-            String filePath) throws IOException {
+            String fileName,
+            List<PerformanceMetrics> performanceMetrics) throws IOException {
         
         if (resourceData.size() != simConfigs.size() || latencyData.size() != simConfigs.size()) {
             throw new IllegalArgumentException(String.format(
@@ -531,9 +607,9 @@ public class MetricUtils {
                 .map(MetricUtils::getFailureStats)
                 .collect(Collectors.toList());
 
-        try (FileWriter fileWriter = new FileWriter(filePath)) {
-            // Move UserType column to be next to users column
-            fileWriter.append("Simulation,edges,users,UserType,services,Placement Logic,Avg Resource,Resource stddev,Avg Latency,Latency stddev,Failure ratio\n");
+        try (FileWriter fileWriter = new FileWriter(fileName)) {
+            // Add power metrics to the header
+            fileWriter.append("Simulation,edges,users,UserType,services,Placement Logic,Avg Resource,Resource stddev,Avg Latency,Latency stddev,Failure ratio,ExecutionTime_ms,PeakMemory_MB,BaselineMemory_MB,PostGCMemory_MB,MemoryGrowth_MB,MemoryRetention_MB,CloudEnergy_Ws,AvgEdgeEnergy_Ws,StdDevEdgeEnergy_Ws\n");
 
             // First, write aggregate metrics for each simulation
             for (int i = 0; i < simConfigs.size(); i++) {
@@ -547,9 +623,20 @@ public class MetricUtils {
                                      ? String.valueOf(sc.getAppLoopLength()) 
                                      : "Legacy";
                 
+                // Get memory metrics
+                long peakMemoryMB = performanceMetrics.get(i).getPeakMemoryBytes() / (1024 * 1024);
+                long baselineMemoryMB = performanceMetrics.get(i).getBaselineMemoryBytes() / (1024 * 1024);
+                long postGCMemoryMB = performanceMetrics.get(i).getPostGCMemoryBytes() / (1024 * 1024);
+                long memoryGrowthMB = performanceMetrics.get(i).getMemoryGrowthBytes() / (1024 * 1024);
+                long memoryRetentionMB = performanceMetrics.get(i).getMemoryRetentionBytes() / (1024 * 1024);
+                
+                double cloudEnergy = getCloudEnergyConsumption(i);
+                double avgEdgeEnergy = getAvgEdgeEnergyConsumption(i);
+                double stdDevEdgeEnergy = getStdDevEdgeEnergyConsumption(i);
+                
                 // For aggregate rows, show the total number of users
                 fileWriter.append(String.format(
-                        "%d,%d,%d,%s,%s,%s,%f,%f,%f,%f,%f\n",
+                        "%d,%d,%d,%s,%s,%s,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%f,%f,%f\n",
                         i,
                         sc.getNumberOfEdge(),
                         sc.getNumberOfUser(),
@@ -560,7 +647,16 @@ public class MetricUtils {
                         resStats[1],  // stddev resource utilization
                         latStats[0],  // mean latency
                         latStats[1],  // stddev latency
-                        failStats     // failure ratio
+                        failStats,    // failure ratio
+                        performanceMetrics.get(i).executionTimeMs,
+                        peakMemoryMB,
+                        baselineMemoryMB,
+                        postGCMemoryMB,
+                        memoryGrowthMB,
+                        memoryRetentionMB,
+                        cloudEnergy,
+                        avgEdgeEnergy,
+                        stdDevEdgeEnergy
                 ));
             }
             
@@ -589,6 +685,18 @@ public class MetricUtils {
                                      ? String.valueOf(sc.getAppLoopLength()) 
                                      : "Legacy";
                 
+                // Get memory metrics
+                long peakMemoryMB = performanceMetrics.get(i).getPeakMemoryBytes() / (1024 * 1024);
+                long baselineMemoryMB = performanceMetrics.get(i).getBaselineMemoryBytes() / (1024 * 1024);
+                long postGCMemoryMB = performanceMetrics.get(i).getPostGCMemoryBytes() / (1024 * 1024);
+                long memoryGrowthMB = performanceMetrics.get(i).getMemoryGrowthBytes() / (1024 * 1024);
+                long memoryRetentionMB = performanceMetrics.get(i).getMemoryRetentionBytes() / (1024 * 1024);
+                
+                // Get power metrics from the static lists
+                double cloudEnergy = getCloudEnergyConsumption(i);
+                double avgEdgeEnergy = getAvgEdgeEnergyConsumption(i);
+                double stdDevEdgeEnergy = getStdDevEdgeEnergyConsumption(i);
+                
                 for (String userType : resourceDataByType.keySet()) {
                     List<Double> resourceValues = resourceDataByType.getOrDefault(userType, Collections.emptyList());
                     List<Double> latencyValues1 = latencyDataByType.getOrDefault(userType, Collections.emptyList());
@@ -608,7 +716,7 @@ public class MetricUtils {
                     int usersOfThisType = sc.getUsersPerType().getOrDefault(userType, 0);
                     
                     fileWriter.append(String.format(
-                            "%d,%d,%d,%s,%s,%s,%f,%f,%f,%f,%f\n",
+                            "%d,%d,%d,%s,%s,%s,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%f,%f,%f\n",
                             i,
                             sc.getNumberOfEdge(),
                             usersOfThisType, // Use the user count for this specific type
@@ -619,10 +727,110 @@ public class MetricUtils {
                             resStats[1],  // stddev resource utilization
                             latStats[0],  // mean latency
                             latStats[1],  // stddev latency
-                            failStats     // peak failure ratio
+                            failStats,    // peak failure ratio
+                            performanceMetrics.get(i).executionTimeMs,
+                            peakMemoryMB,
+                            baselineMemoryMB,
+                            postGCMemoryMB,
+                            memoryGrowthMB,
+                            memoryRetentionMB,
+                            cloudEnergy,
+                            avgEdgeEnergy,
+                            stdDevEdgeEnergy
                     ));
                 }
             }
+        }
+    }
+
+    public static class PerformanceMetrics {
+        SimulationConfig config;
+        long executionTimeMs;
+        long peakMemoryBytes;
+        long baselineMemoryBytes; // Memory before simulation starts
+        long postGCMemoryBytes;   // Memory after simulation and forced GC
+        
+        // New power-related fields
+        double cloudEnergyConsumption;     // Total energy consumption by cloud in watt-seconds
+        double avgEdgeEnergyConsumption;   // Average energy consumption by edge servers in watt-seconds
+        double stdDevEdgeEnergyConsumption; // Standard deviation of edge energy consumption
+        
+        public PerformanceMetrics(SimulationConfig config) {
+            this.config = config;
+        }
+
+        public void setExecutionTimeMs(long executionTimeMs) {
+            this.executionTimeMs = executionTimeMs;
+        }
+
+        public void setPeakMemoryBytes(long peakMemoryBytes) {
+            this.peakMemoryBytes = peakMemoryBytes;
+        }
+        
+        public void setBaselineMemoryBytes(long baselineMemoryBytes) {
+            this.baselineMemoryBytes = baselineMemoryBytes;
+        }
+        
+        public void setPostGCMemoryBytes(long postGCMemoryBytes) {
+            this.postGCMemoryBytes = postGCMemoryBytes;
+        }
+        
+        // New setters for power metrics
+        public void setCloudEnergyConsumption(double cloudEnergyConsumption) {
+            this.cloudEnergyConsumption = cloudEnergyConsumption;
+        }
+        
+        public void setAvgEdgeEnergyConsumption(double avgEdgeEnergyConsumption) {
+            this.avgEdgeEnergyConsumption = avgEdgeEnergyConsumption;
+        }
+        
+        public void setStdDevEdgeEnergyConsumption(double stdDevEdgeEnergyConsumption) {
+            this.stdDevEdgeEnergyConsumption = stdDevEdgeEnergyConsumption;
+        }
+
+        public long getExecutionTimeMs() {
+            return executionTimeMs;
+        }
+
+        public long getPeakMemoryBytes() {
+            return peakMemoryBytes;
+        }
+        
+        public long getBaselineMemoryBytes() {
+            return baselineMemoryBytes;
+        }
+        
+        public long getPostGCMemoryBytes() {
+            return postGCMemoryBytes;
+        }
+        
+        // New getters for power metrics
+        public double getCloudEnergyConsumption() {
+            return cloudEnergyConsumption;
+        }
+        
+        public double getAvgEdgeEnergyConsumption() {
+            return avgEdgeEnergyConsumption;
+        }
+        
+        public double getStdDevEdgeEnergyConsumption() {
+            return stdDevEdgeEnergyConsumption;
+        }
+        
+        /**
+         * Calculates memory growth during simulation
+         * (difference between peak and baseline)
+         */
+        public long getMemoryGrowthBytes() {
+            return peakMemoryBytes - baselineMemoryBytes;
+        }
+        
+        /**
+         * Calculates memory retention after GC
+         * (difference between post-GC and baseline)
+         */
+        public long getMemoryRetentionBytes() {
+            return postGCMemoryBytes - baselineMemoryBytes;
         }
     }
 }

@@ -1,11 +1,10 @@
 package org.fog.placement;
 
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.power.PowerHost;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
-import org.fog.entities.FogDevice;
-import org.fog.entities.PlacementRequest;
-import org.fog.entities.ContextPlacementRequest;
+import org.fog.entities.*;
 import org.fog.utils.Logger;
 import org.fog.utils.MicroservicePlacementConfig;
 
@@ -30,9 +29,10 @@ public class SPPACO extends SPPHeuristic implements MicroservicePlacementLogic {
         super(fonID);
     }
 
-    private double tau0 = 1.0;
-    private int antsNumber = 10;
-
+//    private double tau0 = 1.0; TODO change back
+    private double tau0 = 4.0;
+//    private int antsNumber = 10; TODO 1000 for performance evaluation
+    private int antsNumber = 200;
     private List<DeviceState> DeviceStates = new ArrayList<>();
 
     @Override
@@ -54,8 +54,17 @@ public class SPPACO extends SPPHeuristic implements MicroservicePlacementLogic {
         // capturing the state of resourceAvailability (and fogDevices) at this point in time
         DeviceStates = new ArrayList<>();
         for (FogDevice fogDevice : edgeFogDevices) {
-            DeviceStates.add(new DeviceState(fogDevice.getId(), resourceAvailability.get(fogDevice.getId()),
-                    fogDevice.getHost().getTotalMips(), fogDevice.getHost().getRam(), fogDevice.getHost().getStorage()));
+            Map<String, Double> dev = resourceAvailability.get(fogDevice.getId());
+            PowerHost host = fogDevice.getHost();
+            DeviceStates.add(
+                    new DeviceState(
+                        fogDevice.getId(),
+                        host.getTotalMips(),
+                        host.getRam(),
+                        host.getStorage(),
+                        dev.get(ControllerComponent.CPU),
+                        dev.get(ControllerComponent.RAM),
+                        dev.get(ControllerComponent.STORAGE)));
         }
 
         Map<PlacementRequest, Integer> prStatus = new LinkedHashMap<>();
@@ -86,7 +95,7 @@ public class SPPACO extends SPPHeuristic implements MicroservicePlacementLogic {
         int[] placement = acoHelper.acoSchedule();
 
         // Initialize temporary state
-//        Map<String, Integer> placed = new HashMap<>();
+//        Map<String, Integer> placed = new LinkedHashMap<>();
 //        for (String microservice : microservices) {
 //            placed.put(microservice, -1);
 //        }
@@ -152,7 +161,7 @@ public class SPPACO extends SPPHeuristic implements MicroservicePlacementLogic {
             Logger.debug("Placement Failed", "But temporary state not affected");
 
         }
-//        placements.computeIfAbsent(entry.getKey(), k -> new HashMap<>());
+//        placements.computeIfAbsent(entry.getKey(), k -> new LinkedHashMap<>());
 //        placements.get(entry.getKey()).put(service, deviceState.deviceId);
 //        getCurrentCpuLoad().put(deviceState.deviceId,
 //                getCurrentCpuLoad().get(deviceState.deviceId) + service.getMips());
@@ -178,7 +187,7 @@ public class SPPACO extends SPPHeuristic implements MicroservicePlacementLogic {
         private ANT[] ants;
 
         // Total number of iterations to be performed
-        private int iterations = 5;
+        private int iterations = 10;
 
         // If alfa is 0, then the closest nodes are more likely
         // to be selected this corresponds to a classical
@@ -192,21 +201,21 @@ public class SPPACO extends SPPHeuristic implements MicroservicePlacementLogic {
         // work this method will lead to a rapid stagnation situation
         // with the corresponding generation of tours which, in general,
         // are strongly suboptimal
-         private double beta = 0.0001;
+        private double beta = 0.3;
+//         private double beta = 0.0001; // TODO change back
 //        private double beta;
 
         // Global evaporation rate
-         private double ro = 0.005;
-//        private double ro;
+//         private double ro = 0.005; // TODO change back
+         private double ro = 0.05;
 
         // Initial pheromone level
         // private double tau0 = 1.0;
         private double tau0;
 
         // This is the amount of pheromone deposit used for each branch
-        // TODO Ask Dr Cabrera what this value should be
-        //  Determined experiementally?
-        private double deltaTau = 0.001;
+//        private double deltaTau = 0.001; // TODO change back
+        private double deltaTau = 0.4;
 
         // Stores the pheromone levels
         private double[][] pheromone;
@@ -224,9 +233,6 @@ public class SPPACO extends SPPHeuristic implements MicroservicePlacementLogic {
 
         MyACOHelper(List<String> microservices, List<DeviceState> edgeServers, Application app, double[][] latencies, Map<Integer, Integer> serversIds, int antsNumber, double tau0, int requestReceiver) {
             this.microservices = microservices;
-
-            // TODO NOTE these are not actual copies of the fogDevices
-            //  Find out what the copies are used for and whether copying is truly necessary
             this.edgeServers = edgeServers;
 
             this.app = app;
@@ -445,7 +451,6 @@ public class SPPACO extends SPPHeuristic implements MicroservicePlacementLogic {
             double latency = 0.0;
             switch(MicroservicePlacementConfig.NETWORK_TOPOLOGY) {
                 case MicroservicePlacementConfig.CENTRALISED:
-                    // TODO Simon says hardcoded value for now
                     int edge1Index = serversIds.get(edge1);
                     int edge2Index = serversIds.get(edge2);
                     if (edge1Index == edge2Index)

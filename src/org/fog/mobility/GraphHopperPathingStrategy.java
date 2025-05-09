@@ -57,6 +57,12 @@ public class GraphHopperPathingStrategy extends AbstractPathingStrategy {
         super(seed);
         updateAreaSettings();
     }
+
+    public GraphHopperPathingStrategy(long seed, String movement) {
+        super(seed);
+        this.movementType = movement;
+        updateAreaSettings();
+    }
     
     public GraphHopperPathingStrategy(String osmFile, String graphFolder, String movement, long seed) {
         super(seed);

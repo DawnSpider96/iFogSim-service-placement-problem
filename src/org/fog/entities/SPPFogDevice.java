@@ -506,6 +506,9 @@ public class SPPFogDevice extends FogDevice {
 						obj.put("tuple", tuple);
 						sendNow(getId(), FogEvents.MODULE_UNINSTALL, obj);
 
+						// We're now sending resource updates via ManagementTuple with network delay, 
+						// so we don't need to notify the cloud immediately with NODE_EXECUTION_FINISHED events
+						/*
 						JSONObject objj = new JSONObject();
 						objj.put("module", vm);
 						objj.put("id", getId());
@@ -519,6 +522,15 @@ public class SPPFogDevice extends FogDevice {
 							sendNow(microservicesControllerId, FogEvents.USER_RESOURCE_UPDATE, objj);
 						}
 						else Logger.error("Control Flow error", "Invalid fog device type! Must be user or edge server.");
+						*/
+						
+						if (isUserDevice() && microservicesControllerId != -1) {
+							JSONObject objj = new JSONObject();
+							objj.put("module", vm);
+							objj.put("id", getId());
+							objj.put("isDecrease", false);
+							sendNow(microservicesControllerId, FogEvents.USER_RESOURCE_UPDATE, objj);
+						}
 					}
 				}
 			}
@@ -528,10 +540,13 @@ public class SPPFogDevice extends FogDevice {
 	}
 
 	public void finishNodeExecution(SimEvent ev) {
+		// Simon says this method is now deprecated as we're sending resource updates via ManagementTuple instead
+		// The cloud controller will update resources when it receives the ManagementTuple with resource information
+		
 		JSONObject objj = (JSONObject) ev.getData();
-		// todo Simon (010425) says, If the finishNodeExecution method updates resources,
-		//  ensure it sends INCREMENTAL values instead of TOTAL values
 		controllerComponent.finishNodeExecution(objj);
+		
+		Logger.debug("Resource Update Process", "Received direct NODE_EXECUTION_FINISHED event. This is deprecated - resources should be updated via ManagementTuple.");
 	}
 
 	/**
@@ -829,9 +844,24 @@ public class SPPFogDevice extends FogDevice {
 			resourceDeltas.put(ControllerComponent.CPU, (double) appModule.getMips());
 			resourceDeltas.put(ControllerComponent.RAM, (double) appModule.getRam());
 			resourceDeltas.put(ControllerComponent.STORAGE, (double) appModule.getSize());
-
-			Pair<Integer, Map<String, Double>> resourceInfo = new Pair<>(getId(), resourceDeltas);
-			sendNow(getId(), FogEvents.UPDATE_RESOURCE_INFO, resourceInfo);
+			
+			Pair<Integer, Map<String, Double>> localResourceInfo = new Pair<>(getId(), resourceDeltas);
+			sendNow(getId(), FogEvents.UPDATE_RESOURCE_INFO, localResourceInfo);
+			
+			if (!deviceType.equals(SPPFogDevice.CLOUD)) {
+				ManagementTuple resourceUpdateTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.RESOURCE_UPDATE);
+				resourceUpdateTuple.setSourceDeviceId(getId());
+				resourceUpdateTuple.setResourceData(localResourceInfo);
+				resourceUpdateTuple.setDestinationDeviceId(getFonId());
+				sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, resourceUpdateTuple);
+				
+				System.out.printf("Sending resource update ManagementTuple from %s to cloud for module %s with CPU=%f, RAM=%f, Storage=%f%n", 
+						getName(), 
+						appModule.getName(), 
+						(double) appModule.getMips(),
+						(double) appModule.getRam(),
+						(double) appModule.getSize());
+			}
 		} else {
 			Logger.error("Module uninstall error", "Module " + appModule.getName() + " not found on " + getName());
 			System.out.println("Module " + appModule.getName() + " not found on " + getName());

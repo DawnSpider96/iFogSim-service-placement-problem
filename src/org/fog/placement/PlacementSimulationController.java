@@ -589,12 +589,14 @@ public class PlacementSimulationController extends SimEntity {
         Map<Integer, Location> userLocations = dataLoader.loadInitialUserLocations(userFilename, numberOfUsers);
         
         Random random = new Random(seed);
-        BeelinePathingStrategy beelinePathingStrategy = new BeelinePathingStrategy(seed);
+//        BeelinePathingStrategy genericPathingStrategy = new BeelinePathingStrategy(seed);
+        AbstractPathingStrategy genericPathingStrategy = mobilityEnabled ?
+                new GraphHopperPathingStrategy(seed, "foot") : new BeelinePathingStrategy(seed);
         // Option "type". Only return GraphHopperPathingStrategy if mobility enabled.
         //  Because Ambulance user will always call makepath in response to the accident event.
-        AbstractPathingStrategy graphHopperPathingStrategyOption = mobilityEnabled ?
+        AbstractPathingStrategy ambulancePathingStrategy = mobilityEnabled ?
             new GraphHopperPathingStrategy(seed) : new LazyBugPathingStrategy(seed);
-        JitterBugPathingStrategy jitterBugPathingStrategy = new JitterBugPathingStrategy(seed);
+        JitterBugPathingStrategy operaPathingStrategy = new JitterBugPathingStrategy(seed);
 
         List<SPPFogDevice> resourceDevices = new ArrayList<>();
         List<SPPFogDevice> userDevices = new ArrayList<>();
@@ -646,7 +648,7 @@ public class PlacementSimulationController extends SimEntity {
                 if (fogDevice.getDeviceType().equals(SPPFogDevice.GENERIC_USER)) {
                     DeviceMobilityState mobilityState = new GenericUserMobilityState(
                             userLocations.get(csvIndex),
-                            beelinePathingStrategy,
+                            genericPathingStrategy,
                             1 + random.nextDouble() * 1.5 // m/s
                     );
                     registerDeviceMobilityState(fogDevice.getId(), mobilityState);
@@ -654,7 +656,7 @@ public class PlacementSimulationController extends SimEntity {
                 else if (fogDevice.getDeviceType().equals(SPPFogDevice.AMBULANCE_USER)) {
                     DeviceMobilityState mobilityState = new AmbulanceUserMobilityState(
                             userLocations.get(csvIndex), // We don't use this, instead spawn user at hospital.
-                            graphHopperPathingStrategyOption,
+                            ambulancePathingStrategy,
                             random.nextDouble() * 20 + 10 // 10 to 30 m/s
                     );
                     registerDeviceMobilityState(fogDevice.getId(), mobilityState);
@@ -662,7 +664,7 @@ public class PlacementSimulationController extends SimEntity {
                 else if (fogDevice.getDeviceType().equals(SPPFogDevice.OPERA_USER)) {
                     DeviceMobilityState mobilityState = new OperaUserMobilityState(
                         userLocations.get(csvIndex), 
-                        jitterBugPathingStrategy,
+                        operaPathingStrategy,
                         0.5 + random.nextDouble() * 1.5, // m/s
                         3600.0 // 1 hour
                     );
@@ -831,7 +833,7 @@ public class PlacementSimulationController extends SimEntity {
         sensorToSequenceNumber.clear();
     }
 
-    public ContextPlacementRequest createPlacementRequest(Sensor sensor, Map<String, Integer> placedMicroservices) {
+    public ContextPlacementRequest createPlacementRequest(Sensor sensor, Map<String, Integer> placedMicroservices, double requestLatency) {
         int sequenceNumber = getNextSequenceNumber(sensor.getId());
         String userType = ((PassiveSensor) sensor).getUserType();
 
@@ -842,7 +844,8 @@ public class PlacementSimulationController extends SimEntity {
                 sequenceNumber,     // prId - now using a unique sequence per sensor
                 sensor.getGatewayDeviceId(), // parent user device
                 userType,           // userType from sensor
-                placedMicroservices
+                placedMicroservices,
+                requestLatency
         );
     }
 
@@ -1339,7 +1342,8 @@ public class PlacementSimulationController extends SimEntity {
             sequenceNumber,
             deviceId,
             userType,
-            placedMicroservicesMap
+            placedMicroservicesMap,
+            ((SPPFogDevice) CloudSim.getEntity(deviceId)).getUplinkLatency()
         );
     }
 
@@ -1399,39 +1403,40 @@ public class PlacementSimulationController extends SimEntity {
      * @param sensor The sensor to create the PR for
      * @return The newly created placement request
      */
-    public ContextPlacementRequest createNewPlacementRequestWithRandomApp(PassiveSensor sensor) {
-        try {
-            // Use our device-level method instead
-            return createNewPlacementRequestForDevice(sensor.getGatewayDeviceId());
-        } catch (NullPointerException e) {
-            // If there's an issue with the device-level method, fall back to just updating this sensor
-            Application randomApp = getRandomApplication();
-            
-            // Update the sensor's application association
-            sensor.setAppId(randomApp.getAppId());
-            sensor.setApp(randomApp);
-            
-            Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();
-            String clientModuleName = FogBroker.getApplicationToFirstMicroserviceMap().get(randomApp);
-            placedMicroservicesMap.put(
-                clientModuleName,
-                sensor.getGatewayDeviceId()
-            );
-            
-            // Create the PR with the next sequence number
-            int sequenceNumber = getNextSequenceNumber(sensor.getId());
-            String userType = sensor.getUserType();
-            
-            return new ContextPlacementRequest(
-                randomApp.getAppId(),
-                sensor.getId(),
-                sequenceNumber,
-                sensor.getGatewayDeviceId(),
-                userType,
-                placedMicroservicesMap
-            );
-        }
-    }
+//    public ContextPlacementRequest createNewPlacementRequestWithRandomApp(PassiveSensor sensor) {
+//        try {
+//            // Use our device-level method instead
+//            return createNewPlacementRequestForDevice(sensor.getGatewayDeviceId());
+//        } catch (NullPointerException e) {
+//            // If there's an issue with the device-level method, fall back to just updating this sensor
+//            Application randomApp = getRandomApplication();
+//
+//            // Update the sensor's application association
+//            sensor.setAppId(randomApp.getAppId());
+//            sensor.setApp(randomApp);
+//
+//            Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();
+//            String clientModuleName = FogBroker.getApplicationToFirstMicroserviceMap().get(randomApp);
+//            placedMicroservicesMap.put(
+//                clientModuleName,
+//                sensor.getGatewayDeviceId()
+//            );
+//
+//            // Create the PR with the next sequence number
+//            int sequenceNumber = getNextSequenceNumber(sensor.getId());
+//            String userType = sensor.getUserType();
+//
+//            return new ContextPlacementRequest(
+//                randomApp.getAppId(),
+//                sensor.getId(),
+//                sequenceNumber,
+//                sensor.getGatewayDeviceId(),
+//                userType,
+//                placedMicroservicesMap,
+//                requestLatency
+//            );
+//        }
+//    }
 
     /**
      * Gets the list of user devices registered with this controller

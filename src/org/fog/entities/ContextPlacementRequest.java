@@ -9,17 +9,20 @@ public class ContextPlacementRequest extends PlacementRequest{
 
     private int prIndex; //
     private String userType; // Added userType field to classify placement requests
+    private double requestLatency;
 
-    public ContextPlacementRequest(String applicationId, int sensorId, int prIndex, int requester, String userType, Map<String,Integer> placedMicroservicesMap){
+    public ContextPlacementRequest(String applicationId, int sensorId, int prIndex, int requester, String userType, Map<String,Integer> placedMicroservicesMap, double requestLatency){
         super(applicationId, sensorId, requester, placedMicroservicesMap);
         this.prIndex = prIndex;
         this.userType = userType;
+        this.requestLatency = requestLatency;
     }
 
-    public ContextPlacementRequest(String applicationId, int sensorId, int prIndex, int requester, String userType){
+    public ContextPlacementRequest(String applicationId, int sensorId, int prIndex, int requester, String userType, double requestLatency){
         super(applicationId, sensorId, requester);
         this.prIndex = prIndex;
         this.userType = userType;
+        this.requestLatency = requestLatency;
     }
 
     public int getPrIndex() {
@@ -29,4 +32,6 @@ public class ContextPlacementRequest extends PlacementRequest{
     public String getUserType() {
         return userType;
     }
+
+    public double getRequestLatency() { return requestLatency; }
 }

@@ -9,7 +9,7 @@ public class Config {
 
 	// Determines how often energy consumption is updated
 	public static final double RESOURCE_MGMT_INTERVAL = 1000;
-	public static int MAX_SIMULATION_TIME = 18000; // 5 hours, previously 2000
+	public static int MAX_SIMULATION_TIME = 7200; // 5 hours, previously 2000
 	public static int CONTROLLER_RESOURCE_MANAGE_INTERVAL = 1000;
 	public static String FOG_DEVICE_ARCH = "x86";
 	public static String FOG_DEVICE_OS = "Linux";
@@ -47,10 +47,10 @@ public class Config {
 	private static double maxLon = 144.978820;
 
 	public static final double baseServerLatency = 31 * Consts.MILLISECOND;
-	public static final double baseWifiLatency = 10 * Consts.MILLISECOND;
+	public static final double baseWifiLatency = 30 * Consts.MILLISECOND;
 
 	// TODO Maybe make this bigger. My area of interest only has length 2km
-	public static final double latencyPerKilometer = 500 * Consts.MICROSECOND;
+	public static final double latencyPerKilometer = 10 * Consts.MICROSECOND;
 
 	// Create cluster among devices of same level with common parent irrespective of location. Only one of the two clustering modes should be used for clustering
 	public static boolean ENABLE_STATIC_CLUSTERING = false;

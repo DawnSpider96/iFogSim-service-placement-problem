@@ -91,7 +91,7 @@ public class DataLoader {
     public Map<Integer, Location> loadUserLocations(String fileName, int numberOfUsers) throws IOException {
         Map<Integer, Location> userLocations = new HashMap<>();
         
-        if (numberOfUsers > 196) {
+        if (numberOfUsers > 200) {
             throw new NullPointerException("Number of users cannot be greater than 196");
         }
         

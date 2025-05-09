@@ -141,7 +141,7 @@ public class OnlinePOC {
                 // Use MyMicroservicesController to create PROTOTYPE placement request
                 //  They will not be processed, but used as template for periodic generation.
                 PlacementRequest prototypePR = microservicesController.createPlacementRequest(
-                        sensor, placedMicroservicesMap);
+                        sensor, placedMicroservicesMap, -1.0);
                 placementRequests.add(prototypePR);
             }
 

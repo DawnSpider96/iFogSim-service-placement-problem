@@ -1,0 +1,2000 @@
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 200
+    locationSeed: 400
+    mobilityStrategySeed: 600
+    heuristicSeed: 800
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 207
+    locationSeed: 412
+    mobilityStrategySeed: 618
+    heuristicSeed: 824
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 214
+    locationSeed: 424
+    mobilityStrategySeed: 636
+    heuristicSeed: 848
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 221
+    locationSeed: 436
+    mobilityStrategySeed: 654
+    heuristicSeed: 872
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 228
+    locationSeed: 448
+    mobilityStrategySeed: 672
+    heuristicSeed: 896
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 235
+    locationSeed: 460
+    mobilityStrategySeed: 690
+    heuristicSeed: 920
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 242
+    locationSeed: 472
+    mobilityStrategySeed: 708
+    heuristicSeed: 944
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 249
+    locationSeed: 484
+    mobilityStrategySeed: 726
+    heuristicSeed: 968
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 256
+    locationSeed: 496
+    mobilityStrategySeed: 744
+    heuristicSeed: 992
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 263
+    locationSeed: 508
+    mobilityStrategySeed: 762
+    heuristicSeed: 1016
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 270
+    locationSeed: 520
+    mobilityStrategySeed: 780
+    heuristicSeed: 1040
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 277
+    locationSeed: 532
+    mobilityStrategySeed: 798
+    heuristicSeed: 1064
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 284
+    locationSeed: 544
+    mobilityStrategySeed: 816
+    heuristicSeed: 1088
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 291
+    locationSeed: 556
+    mobilityStrategySeed: 834
+    heuristicSeed: 1112
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 298
+    locationSeed: 568
+    mobilityStrategySeed: 852
+    heuristicSeed: 1136
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 305
+    locationSeed: 580
+    mobilityStrategySeed: 870
+    heuristicSeed: 1160
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 312
+    locationSeed: 592
+    mobilityStrategySeed: 888
+    heuristicSeed: 1184
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 319
+    locationSeed: 604
+    mobilityStrategySeed: 906
+    heuristicSeed: 1208
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 326
+    locationSeed: 616
+    mobilityStrategySeed: 924
+    heuristicSeed: 1232
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 333
+    locationSeed: 628
+    mobilityStrategySeed: 942
+    heuristicSeed: 1256
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 340
+    locationSeed: 640
+    mobilityStrategySeed: 960
+    heuristicSeed: 1280
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 347
+    locationSeed: 652
+    mobilityStrategySeed: 978
+    heuristicSeed: 1304
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 354
+    locationSeed: 664
+    mobilityStrategySeed: 996
+    heuristicSeed: 1328
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 361
+    locationSeed: 676
+    mobilityStrategySeed: 1014
+    heuristicSeed: 1352
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 368
+    locationSeed: 688
+    mobilityStrategySeed: 1032
+    heuristicSeed: 1376
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 375
+    locationSeed: 700
+    mobilityStrategySeed: 1050
+    heuristicSeed: 1400
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 382
+    locationSeed: 712
+    mobilityStrategySeed: 1068
+    heuristicSeed: 1424
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 389
+    locationSeed: 724
+    mobilityStrategySeed: 1086
+    heuristicSeed: 1448
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 396
+    locationSeed: 736
+    mobilityStrategySeed: 1104
+    heuristicSeed: 1472
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 403
+    locationSeed: 748
+    mobilityStrategySeed: 1122
+    heuristicSeed: 1496
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 410
+    locationSeed: 760
+    mobilityStrategySeed: 1140
+    heuristicSeed: 1520
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 417
+    locationSeed: 772
+    mobilityStrategySeed: 1158
+    heuristicSeed: 1544
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 424
+    locationSeed: 784
+    mobilityStrategySeed: 1176
+    heuristicSeed: 1568
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 431
+    locationSeed: 796
+    mobilityStrategySeed: 1194
+    heuristicSeed: 1592
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 438
+    locationSeed: 808
+    mobilityStrategySeed: 1212
+    heuristicSeed: 1616
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 445
+    locationSeed: 820
+    mobilityStrategySeed: 1230
+    heuristicSeed: 1640
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 452
+    locationSeed: 832
+    mobilityStrategySeed: 1248
+    heuristicSeed: 1664
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 459
+    locationSeed: 844
+    mobilityStrategySeed: 1266
+    heuristicSeed: 1688
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 466
+    locationSeed: 856
+    mobilityStrategySeed: 1284
+    heuristicSeed: 1712
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 473
+    locationSeed: 868
+    mobilityStrategySeed: 1302
+    heuristicSeed: 1736
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 480
+    locationSeed: 880
+    mobilityStrategySeed: 1320
+    heuristicSeed: 1760
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 487
+    locationSeed: 892
+    mobilityStrategySeed: 1338
+    heuristicSeed: 1784
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 494
+    locationSeed: 904
+    mobilityStrategySeed: 1356
+    heuristicSeed: 1808
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 501
+    locationSeed: 916
+    mobilityStrategySeed: 1374
+    heuristicSeed: 1832
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 508
+    locationSeed: 928
+    mobilityStrategySeed: 1392
+    heuristicSeed: 1856
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 515
+    locationSeed: 940
+    mobilityStrategySeed: 1410
+    heuristicSeed: 1880
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 522
+    locationSeed: 952
+    mobilityStrategySeed: 1428
+    heuristicSeed: 1904
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 529
+    locationSeed: 964
+    mobilityStrategySeed: 1446
+    heuristicSeed: 1928
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 536
+    locationSeed: 976
+    mobilityStrategySeed: 1464
+    heuristicSeed: 1952
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 543
+    locationSeed: 988
+    mobilityStrategySeed: 1482
+    heuristicSeed: 1976
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 550
+    locationSeed: 1000
+    mobilityStrategySeed: 1500
+    heuristicSeed: 2000
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 557
+    locationSeed: 1012
+    mobilityStrategySeed: 1518
+    heuristicSeed: 2024
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 564
+    locationSeed: 1024
+    mobilityStrategySeed: 1536
+    heuristicSeed: 2048
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 571
+    locationSeed: 1036
+    mobilityStrategySeed: 1554
+    heuristicSeed: 2072
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 578
+    locationSeed: 1048
+    mobilityStrategySeed: 1572
+    heuristicSeed: 2096
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 585
+    locationSeed: 1060
+    mobilityStrategySeed: 1590
+    heuristicSeed: 2120
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 592
+    locationSeed: 1072
+    mobilityStrategySeed: 1608
+    heuristicSeed: 2144
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 599
+    locationSeed: 1084
+    mobilityStrategySeed: 1626
+    heuristicSeed: 2168
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 606
+    locationSeed: 1096
+    mobilityStrategySeed: 1644
+    heuristicSeed: 2192
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 613
+    locationSeed: 1108
+    mobilityStrategySeed: 1662
+    heuristicSeed: 2216
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 620
+    locationSeed: 1120
+    mobilityStrategySeed: 1680
+    heuristicSeed: 2240
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 627
+    locationSeed: 1132
+    mobilityStrategySeed: 1698
+    heuristicSeed: 2264
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 634
+    locationSeed: 1144
+    mobilityStrategySeed: 1716
+    heuristicSeed: 2288
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 641
+    locationSeed: 1156
+    mobilityStrategySeed: 1734
+    heuristicSeed: 2312
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 648
+    locationSeed: 1168
+    mobilityStrategySeed: 1752
+    heuristicSeed: 2336
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 655
+    locationSeed: 1180
+    mobilityStrategySeed: 1770
+    heuristicSeed: 2360
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 662
+    locationSeed: 1192
+    mobilityStrategySeed: 1788
+    heuristicSeed: 2384
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 669
+    locationSeed: 1204
+    mobilityStrategySeed: 1806
+    heuristicSeed: 2408
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 676
+    locationSeed: 1216
+    mobilityStrategySeed: 1824
+    heuristicSeed: 2432
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 683
+    locationSeed: 1228
+    mobilityStrategySeed: 1842
+    heuristicSeed: 2456
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 690
+    locationSeed: 1240
+    mobilityStrategySeed: 1860
+    heuristicSeed: 2480
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 697
+    locationSeed: 1252
+    mobilityStrategySeed: 1878
+    heuristicSeed: 2504
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 704
+    locationSeed: 1264
+    mobilityStrategySeed: 1896
+    heuristicSeed: 2528
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 711
+    locationSeed: 1276
+    mobilityStrategySeed: 1914
+    heuristicSeed: 2552
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 718
+    locationSeed: 1288
+    mobilityStrategySeed: 1932
+    heuristicSeed: 2576
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 725
+    locationSeed: 1300
+    mobilityStrategySeed: 1950
+    heuristicSeed: 2600
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 732
+    locationSeed: 1312
+    mobilityStrategySeed: 1968
+    heuristicSeed: 2624
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 739
+    locationSeed: 1324
+    mobilityStrategySeed: 1986
+    heuristicSeed: 2648
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 746
+    locationSeed: 1336
+    mobilityStrategySeed: 2004
+    heuristicSeed: 2672
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 753
+    locationSeed: 1348
+    mobilityStrategySeed: 2022
+    heuristicSeed: 2696
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 760
+    locationSeed: 1360
+    mobilityStrategySeed: 2040
+    heuristicSeed: 2720
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 767
+    locationSeed: 1372
+    mobilityStrategySeed: 2058
+    heuristicSeed: 2744
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 774
+    locationSeed: 1384
+    mobilityStrategySeed: 2076
+    heuristicSeed: 2768
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 781
+    locationSeed: 1396
+    mobilityStrategySeed: 2094
+    heuristicSeed: 2792
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 788
+    locationSeed: 1408
+    mobilityStrategySeed: 2112
+    heuristicSeed: 2816
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 795
+    locationSeed: 1420
+    mobilityStrategySeed: 2130
+    heuristicSeed: 2840
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 802
+    locationSeed: 1432
+    mobilityStrategySeed: 2148
+    heuristicSeed: 2864
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 809
+    locationSeed: 1444
+    mobilityStrategySeed: 2166
+    heuristicSeed: 2888
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 816
+    locationSeed: 1456
+    mobilityStrategySeed: 2184
+    heuristicSeed: 2912
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 823
+    locationSeed: 1468
+    mobilityStrategySeed: 2202
+    heuristicSeed: 2936
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 830
+    locationSeed: 1480
+    mobilityStrategySeed: 2220
+    heuristicSeed: 2960
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 837
+    locationSeed: 1492
+    mobilityStrategySeed: 2238
+    heuristicSeed: 2984
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 844
+    locationSeed: 1504
+    mobilityStrategySeed: 2256
+    heuristicSeed: 3008
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 851
+    locationSeed: 1516
+    mobilityStrategySeed: 2274
+    heuristicSeed: 3032
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 858
+    locationSeed: 1528
+    mobilityStrategySeed: 2292
+    heuristicSeed: 3056
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 865
+    locationSeed: 1540
+    mobilityStrategySeed: 2310
+    heuristicSeed: 3080
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 872
+    locationSeed: 1552
+    mobilityStrategySeed: 2328
+    heuristicSeed: 3104
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 879
+    locationSeed: 1564
+    mobilityStrategySeed: 2346
+    heuristicSeed: 3128
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 886
+    locationSeed: 1576
+    mobilityStrategySeed: 2364
+    heuristicSeed: 3152
+  areaName: dublin
+- numberOfEdge: 100
+  placementLogic: MULTI_OPT
+  numberOfApplications: 1300
+  appLoopLength: 5
+  placementProcessInterval: 4.0
+  usersPerType:
+    genericUser: 100
+    operaUser: 80
+    ambulanceUser: 20
+  intervalValues:
+    genericUser: 300
+    ambulanceUser: 180
+    operaUser: 600
+    immobileUser: 900
+  randomSeeds:
+    experimentSeed: 893
+    locationSeed: 1588
+    mobilityStrategySeed: 2382
+    heuristicSeed: 3176
+  areaName: dublin
