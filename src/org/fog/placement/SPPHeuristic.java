@@ -661,7 +661,7 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
             // Simon says we want one target per second microservice in the PR's application
             // If there are no second microservices, targeted is true
             boolean targeted = true;
-            for (String secondMicroservice : FogBroker.getApplicationToSecondMicroservicesMap().get(app)) {
+            for (String secondMicroservice : FogBroker.getApplicationToSecondServicesMap().get(app)) {
                 for (Map.Entry<String, Integer> entry : pr.getPlacedServices().entrySet()) {
                     if (Objects.equals(entry.getKey(), secondMicroservice)) {
                         targets.put(pr, entry.getValue());
@@ -823,7 +823,7 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
             //      - cloud->gateway
             //      - gateway->user (most variance I assume)
             latency += pr.getRequestLatency();
-            latency += determineLatency(cloudId, edges.get(0));
+//            latency += determineLatency(cloudId, edges.get(0));
             for (int i = 0; i < edges.size() - 2; i++) { // Simon says we DONT count the last journey
                 int sourceDevice = edges.get(i);
                 int destDevice = edges.get(i + 1);

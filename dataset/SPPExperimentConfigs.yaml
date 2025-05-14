@@ -10,7 +10,7 @@
   placementProcessInterval: 4.0  # Customize the interval for placement processing (default is 300.0)
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   # Interval values in seconds for PR generation per user type
   # These will be converted to lambda values (lambda = 1/interval)
@@ -33,7 +33,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   # Interval values in seconds for PR generation per user type
   intervalValues:
@@ -55,7 +55,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   # Interval values in seconds for PR generation per user type
   intervalValues:
@@ -77,7 +77,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   # Interval values in seconds for PR generation per user type
   intervalValues:
@@ -99,7 +99,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   # Interval values in seconds for PR generation per user type
   intervalValues:
@@ -121,7 +121,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   # Interval values in seconds for PR generation per user type
   intervalValues:
@@ -143,7 +143,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   # Interval values in seconds for PR generation per user type
   intervalValues:
@@ -165,7 +165,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -186,7 +186,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -207,7 +207,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -228,7 +228,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -249,7 +249,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -270,7 +270,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -291,7 +291,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -312,7 +312,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -333,7 +333,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -354,7 +354,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -375,7 +375,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -396,7 +396,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -417,7 +417,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -438,7 +438,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -461,7 +461,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -482,7 +482,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -503,7 +503,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -524,7 +524,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -545,7 +545,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -566,7 +566,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -587,7 +587,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -608,7 +608,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -629,7 +629,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -650,7 +650,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -671,7 +671,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -692,7 +692,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -713,7 +713,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -734,7 +734,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -755,7 +755,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -776,7 +776,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -797,7 +797,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -818,7 +818,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -839,7 +839,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -860,7 +860,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -881,7 +881,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -904,7 +904,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -925,7 +925,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -946,7 +946,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -967,7 +967,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -988,7 +988,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -1009,7 +1009,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -1030,7 +1030,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -1051,7 +1051,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -1072,7 +1072,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -1093,7 +1093,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -1114,7 +1114,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -1135,7 +1135,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -1156,7 +1156,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -1177,7 +1177,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -1198,7 +1198,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -1219,7 +1219,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -1240,7 +1240,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -1261,7 +1261,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -1282,7 +1282,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -1303,7 +1303,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300
@@ -1324,7 +1324,7 @@
   placementProcessInterval: 4.0
   usersPerType:
     genericUser: 100
-    operaUser: 76
+    operaUser: 80
     ambulanceUser: 20
   intervalValues:
     genericUser: 300

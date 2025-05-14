@@ -1,0 +1,134 @@
+% Repository Tree Structure - Focused on org directory with detailed expansion
+\documentclass{article}
+\usepackage{tikz}
+\usepackage{forest}
+\usepackage{ragged2e}
+
+\begin{document}
+\begin{center}
+\begin{forest}
+  for tree={
+    font=\ttfamily,
+    grow'=0,
+    child anchor=west,
+    parent anchor=south,
+    anchor=west,
+    calign=first,
+    edge path={
+      \noexpand\path [draw, \forestoption{edge}]
+      (!u.south west) +(7.5pt,0) |- node[fill,inner sep=1.25pt] {} (.child anchor)\forestoption{edge label};
+    },
+    before typesetting nodes={
+      if n=1
+        {insert before={[,phantom]}}
+        {}
+    },
+    fit=band,
+    before computing xy={l=15pt},
+    formatting={\raggedright\texttt},
+    text width=14cm,
+  }
+[org \dotfill Main organization package
+  [fog \dotfill Core fog computing components
+    [placement \dotfill Module for placement algorithms and strategies
+      [SPPHeuristic.java \dotfill Service Placement Problem heuristic implementation]
+      [PlacementSimulationController.java \dotfill Controls placement simulation]
+      [MultiOptHeuristic.java \dotfill Multiple optimization heuristic]
+      [SPPACO.java \dotfill Ant Colony Optimization for SPP]
+      [DataLoader.java \dotfill Load data for placement algorithms]
+      [SPPMicroservicePlacementLogic.java \dotfill Service placement logic for microservices]
+      [PlacementLogicFactory.java \dotfill Factory for creating placement logic]
+      [OfflinePOCPlacementLogic.java \dotfill Offline placement optimization]
+      [OnlinePOCPlacementLogic.java \dotfill Online placement optimization]
+      [SimulatedAnnealingHeuristic.java \dotfill Simulated annealing algorithm]
+      [RandomHeuristic.java \dotfill Random placement approach]
+      [MicroservicesController.java \dotfill Manages microservices]
+      [LocationManager.java \dotfill Manages location information]
+      [MobilityController.java \dotfill Controls mobility aspects]
+      [ModulePlacement.java \dotfill Base class for module placement]
+      [ModuleMapping.java \dotfill Maps modules to devices]
+      [ModulePlacementEdgewards.java \dotfill Edge-oriented placement strategy]
+      [ModulePlacementMobileEdgewards.java \dotfill Mobile-aware edge placement]
+    ]
+    [entities \dotfill Core fog computing entities and components
+      [FogBroker.java \dotfill Broker for fog resources]
+      [SPPFogDevice.java \dotfill SPP-enhanced fog device]
+      [Actuator.java \dotfill Actuator component in fog networks]
+      [MicroserviceFogDevice.java \dotfill Fog device for microservices]
+      [PlacementRequest.java \dotfill Request for placement]
+      [FogDevice.java \dotfill Base fog device implementation]
+      [Tuple.java \dotfill Data packet in fog computing]
+      [Sensor.java \dotfill Sensor component in fog networks]
+      [FogDeviceCharacteristics.java \dotfill Characteristics of fog devices]
+      [LoadBalancer.java \dotfill Base load balancer interface]
+      [RRLoadBalancer.java \dotfill Round-robin load balancer]
+    ]
+    [utils \dotfill Utility functions and helper classes
+      [Config.java \dotfill Configuration management]
+      [MetricUtils.java \dotfill Utilities for metrics]
+      [FogEvents.java \dotfill Event definitions for fog simulation]
+      [TimeKeeper.java \dotfill Manages simulation time]
+      [distribution \dotfill Statistical distributions
+        [Distribution.java \dotfill Base distribution interface]
+        [PoissonDistribution.java \dotfill Poisson distribution implementation]
+        [DeterministicDistribution.java \dotfill Deterministic distribution]
+        [NormalDistribution.java \dotfill Normal distribution]
+        [UniformDistribution.java \dotfill Uniform distribution]
+      ]
+      [FogUtils.java \dotfill General fog computing utilities]
+      [NetworkUsageMonitor.java \dotfill Monitors network usage]
+      [GeoLocation.java \dotfill Geographic location utility]
+    ]
+    [mobility \dotfill Mobility models and movement patterns
+      [GraphHopperPathingStrategy.java \dotfill Graph-based path finding]
+      [OperaUserMobilityState.java \dotfill Opera user mobility model]
+      [FullMobilityStrategy.java \dotfill Complete mobility implementation]
+      [BeelinePathingStrategy.java \dotfill Direct line path strategy]
+      [JitterBugPathingStrategy.java \dotfill Random movement with jitter]
+      [AbstractPathingStrategy.java \dotfill Base path finding implementation]
+      [DeviceMobilityState.java \dotfill Device mobility state tracking]
+      [MobilityStrategy.java \dotfill Strategy for mobility handling]
+      [WayPoint.java \dotfill Waypoint for path planning]
+      [WayPointPath.java \dotfill Path consisting of waypoints]
+    ]
+    [application \dotfill Application modeling and management
+      [Application.java \dotfill Base application class]
+      [MyApplication.java \dotfill Example implementation]
+      [selectivity \dotfill Application selectivity models
+        [SelectivityModel.java \dotfill Base selectivity model]
+        [FractionalSelectivity.java \dotfill Fractional selectivity model]
+        [BurstySelectivity.java \dotfill Bursty traffic model]
+      ]
+      [AppEdge.java \dotfill Edge in application graph]
+      [AppLoop.java \dotfill Application loop definition]
+      [AppModule.java \dotfill Application module]
+      [DAG.java \dotfill Directed acyclic graph for applications]
+    ]
+    [mobilitydata \dotfill Data for mobility patterns and scenarios]
+    [test \dotfill Test cases and simulation scenarios]
+    [scheduler \dotfill Task and resource scheduling implementations
+      [TupleScheduler.java \dotfill Scheduler for tuples]
+      [StreamOperatorScheduler.java \dotfill Scheduler for stream operators]
+    ]
+    [policy \dotfill Policies for resource management and decisions]
+    [gui \dotfill Graphical user interface components]
+  ]
+  [cloudbus \dotfill Cloud computing framework components
+    [cloudsim \dotfill CloudSim core simulation framework
+      [Host.java \dotfill Host in cloud environment]
+      [Vm.java \dotfill Virtual machine implementation]
+      [Datacenter.java \dotfill Cloud datacenter implementation]
+      [DatacenterBroker.java \dotfill Broker for datacenters]
+      [Cloudlet.java \dotfill Task in cloud environment]
+      [core \dotfill Core CloudSim components]
+      [power \dotfill Power modeling components]
+      [sdn \dotfill Software-defined networking components]
+      [network \dotfill Network modeling components]
+      [util \dotfill CloudSim utilities]
+      [provisioners \dotfill Resource provisioning components]
+    ]
+  ]
+]
+\end{forest}
+\end{center}
+\end{document} 

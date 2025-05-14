@@ -339,7 +339,6 @@ public class SPPACO extends SPPHeuristic implements MicroservicePlacementLogic {
                 if (edge.canFit(cpuRequirement, ramRequirement, storageRequirement)) {
                     double niu = 0.0;
                     double latency = 0.0;
-                    // DOUBLE CHECK THIS
                     if (cIndex == 0) {
                         latency = getLatency(this.getLatencies(), this.requestReceiver, edge.getId(), this.serversIds);
                         if(latency == 0)

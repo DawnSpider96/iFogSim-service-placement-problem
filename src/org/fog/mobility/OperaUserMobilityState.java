@@ -1,5 +1,6 @@
 package org.fog.mobility;
 
+import org.cloudbus.cloudsim.Consts;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.mobilitydata.Location;
 import org.fog.utils.Config;
@@ -22,7 +23,7 @@ public class OperaUserMobilityState extends DeviceMobilityState {
         IMMOBILE
     }
 
-    private double eventTime;
+    private double concertStartTime;
     private Random random;
 
     /**
@@ -31,13 +32,45 @@ public class OperaUserMobilityState extends DeviceMobilityState {
      * @param location initial location
      * @param strategy pathing strategy
      * @param speed movement speed in m/s
-     * @param eventTime time at which the user should be at the opera (in simulation time)
+     * @param concertStartTime time at which the user should be at the opera (in simulation time)
      */
-    public OperaUserMobilityState(Location location, PathingStrategy strategy, double speed, double eventTime) {
+    public OperaUserMobilityState(Location location, PathingStrategy strategy, double speed, double concertStartTime) {
         super(location, strategy, speed);
         this.status = OperaUserStatus.TRAVELING_TO_OPERA;
-        this.eventTime = eventTime;
+        this.concertStartTime = concertStartTime;
         this.random = new Random(strategy.getSeed());
+
+        adjustSpeedForTimedArrival(location);
+    }
+
+    private void adjustSpeedForTimedArrival(Location initialLocation) {
+        Location operaHouse = Location.getPointOfInterest("OPERA_HOUSE");
+        double distanceToOpera = initialLocation.calculateDistance(operaHouse) * Consts.KM_TO_METERS;
+        double estimatedTravelTime = distanceToOpera / speed;
+        double currentTime = CloudSim.clock();
+
+        // Factor to account for worst-case speed variations in JitterBugPathingStrategy
+        double speedBufferFactor = 1.0 / (1.0 - 0.2); // 0.2 is JitterBugPathingStrategy.MAX_SPEED_VARIATION
+
+        // Add time buffer (15 time units early) and apply speed buffer factor
+        if (currentTime + estimatedTravelTime > concertStartTime - 15) {
+            // Calculate base required speed for timely arrival
+            double requiredSpeed = distanceToOpera / (concertStartTime - currentTime - 15);
+
+            // Apply buffer factor to account for potential slowdowns during path creation
+            requiredSpeed *= speedBufferFactor;
+
+            // Cap at reasonable walking speed (up to 3x normal)
+            if (requiredSpeed > speed && requiredSpeed < speed * 10) {
+                this.speed = requiredSpeed;
+                Logger.debug("Opera Mobility", "Adjusted speed to " + requiredSpeed +
+                        " m/s (with buffer) to arrive before concert");
+            } else if (requiredSpeed >= speed * 3) {
+                throw new NullPointerException("Opera user will not arrive in time for concert");
+            }
+        } else {
+            Logger.debug("Opera Mobility", "User will arrive on time with current speed of " + speed + " m/s");
+        }
     }
 
     /**
@@ -138,6 +171,7 @@ public class OperaUserMobilityState extends DeviceMobilityState {
                     return -1.0;
                 }
             }
+            else throw new NullPointerException("User wasn't at opera");
         }
         return -1.0;
     }

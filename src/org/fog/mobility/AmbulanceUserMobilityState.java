@@ -78,6 +78,7 @@ public class AmbulanceUserMobilityState extends DeviceMobilityState {
         }
         else if (this.status == AmbulanceUserStatus.TRAVELLING_TO_PATIENT) {
             this.status = AmbulanceUserStatus.PAUSED_AT_PATIENT;
+            Logger.debug("Ambulance User", "User reached patient");
         }
         else {
             Logger.error("Entity Status Error", "Invalid for reachedDestination");

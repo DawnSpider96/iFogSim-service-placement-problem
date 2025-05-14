@@ -158,10 +158,10 @@ public class LocationManager {
         // NOTE: The fog node WILL be the parent of the user device.
         // We CANNOT use this function to calculate the latency between any user and any node.
         if (isUserDevice1 || isUserDevice2) {
-            return Config.baseWifiLatency + (distance * Config.latencyPerKilometer);
+            return Config.baseWifiLatency + (distance * Config.wifiLatencyPerKilometer);
         } else {
             // Otherwise use server latency model. Cloud-Node link.
-            return Config.baseServerLatency + (distance * Config.latencyPerKilometer);
+            return Config.baseServerLatency + (distance * Config.serverLatencyPerKilometer);
         }
     }
     

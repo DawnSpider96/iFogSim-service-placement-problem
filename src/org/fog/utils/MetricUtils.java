@@ -23,6 +23,10 @@ public class MetricUtils {
     private static List<Double> avgEdgeEnergyConsumptions = new ArrayList<>(); 
     private static List<Double> stdDevEdgeEnergyConsumptions = new ArrayList<>();
 
+    // Add these fields after the existing power metrics storage
+    private static Map<String, List<Double>> energyConsumptionsByUserType = new HashMap<>();
+    private static Map<String, List<Double>> energyStdDevsByUserType = new HashMap<>();
+
     private static final HashMap<Integer, String> heuristics = new HashMap<Integer, String>(){{
         put(PlacementLogicFactory.BEST_FIT, "BestFit");
         put(PlacementLogicFactory.CLOSEST_FIT, "ClosestFit");
@@ -41,6 +45,8 @@ public class MetricUtils {
         cloudEnergyConsumptions.clear();
         avgEdgeEnergyConsumptions.clear();
         stdDevEdgeEnergyConsumptions.clear();
+        energyConsumptionsByUserType.clear();
+        energyStdDevsByUserType.clear();
     }
 
     /**
@@ -65,6 +71,20 @@ public class MetricUtils {
      */
     public static void setStdDevEdgeEnergyConsumption(double energyConsumption) {
         stdDevEdgeEnergyConsumptions.add(energyConsumption);
+    }
+
+    /**
+     * Stores average energy consumption for a specific user type in the current simulation
+     * @param userType The type of user device (GENERIC_USER, AMBULANCE_USER, etc.)
+     * @param energyConsumption Average energy consumption in watt-seconds
+     */
+    public static void setUserTypeEnergyConsumption(String userType, double energyConsumption, double stdDev) {
+        if (!energyConsumptionsByUserType.containsKey(userType)) {
+            energyConsumptionsByUserType.put(userType, new ArrayList<>());
+            energyStdDevsByUserType.put(userType, new ArrayList<>());
+        }
+        energyConsumptionsByUserType.get(userType).add(energyConsumption);
+        energyStdDevsByUserType.get(userType).add(stdDev);
     }
 
     /**
@@ -99,6 +119,36 @@ public class MetricUtils {
     public static double getStdDevEdgeEnergyConsumption(int simulationIndex) {
         if (simulationIndex >= 0 && simulationIndex < stdDevEdgeEnergyConsumptions.size()) {
             return stdDevEdgeEnergyConsumptions.get(simulationIndex);
+        }
+        return 0.0;
+    }
+
+    /**
+     * Gets the average energy consumption for a specific user type in a specific simulation
+     * @param userType The type of user device
+     * @param simulationIndex Index of the simulation
+     * @return Average energy consumption in watt-seconds, or 0.0 if not available
+     */
+    public static double getUserTypeEnergyConsumption(String userType, int simulationIndex) {
+        if (energyConsumptionsByUserType.containsKey(userType) && 
+            simulationIndex >= 0 && 
+            simulationIndex < energyConsumptionsByUserType.get(userType).size()) {
+            return energyConsumptionsByUserType.get(userType).get(simulationIndex);
+        }
+        return 0.0;
+    }
+
+    /**
+     * Gets the standard deviation of energy consumption for a specific user type in a specific simulation
+     * @param userType The type of user device
+     * @param simulationIndex Index of the simulation
+     * @return Standard deviation of energy consumption in watt-seconds, or 0.0 if not available
+     */
+    public static double getUserTypeEnergyStdDev(String userType, int simulationIndex) {
+        if (energyStdDevsByUserType.containsKey(userType) && 
+            simulationIndex >= 0 && 
+            simulationIndex < energyStdDevsByUserType.get(userType).size()) {
+            return energyStdDevsByUserType.get(userType).get(simulationIndex);
         }
         return 0.0;
     }
@@ -609,7 +659,7 @@ public class MetricUtils {
 
         try (FileWriter fileWriter = new FileWriter(fileName)) {
             // Add power metrics to the header
-            fileWriter.append("Simulation,edges,users,UserType,services,Placement Logic,Avg Resource,Resource stddev,Avg Latency,Latency stddev,Failure ratio,ExecutionTime_ms,PeakMemory_MB,BaselineMemory_MB,PostGCMemory_MB,MemoryGrowth_MB,MemoryRetention_MB,CloudEnergy_Ws,AvgEdgeEnergy_Ws,StdDevEdgeEnergy_Ws\n");
+            fileWriter.append("Simulation,edges,users,UserType,services,Placement Logic,Avg Resource,Resource stddev,Avg Latency,Latency stddev,Failure ratio,ExecutionTime_ms,PeakMemory_MB,BaselineMemory_MB,PostGCMemory_MB,MemoryGrowth_MB,MemoryRetention_MB,CloudEnergy_Ws,DeviceEnergy_Ws,DeviceEnergyStdDev_Ws\n");
 
             // First, write aggregate metrics for each simulation
             for (int i = 0; i < simConfigs.size(); i++) {
@@ -630,6 +680,7 @@ public class MetricUtils {
                 long memoryGrowthMB = performanceMetrics.get(i).getMemoryGrowthBytes() / (1024 * 1024);
                 long memoryRetentionMB = performanceMetrics.get(i).getMemoryRetentionBytes() / (1024 * 1024);
                 
+                // Get power metrics from the static lists
                 double cloudEnergy = getCloudEnergyConsumption(i);
                 double avgEdgeEnergy = getAvgEdgeEnergyConsumption(i);
                 double stdDevEdgeEnergy = getStdDevEdgeEnergyConsumption(i);
@@ -657,6 +708,31 @@ public class MetricUtils {
                         cloudEnergy,
                         avgEdgeEnergy,
                         stdDevEdgeEnergy
+                ));
+                
+                // Add a new row specifically for EDGE_SERVERS
+                fileWriter.append(String.format(
+                        "%d,%d,%d,%s,%s,%s,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%f,%f,%f\n",
+                        i,
+                        sc.getNumberOfEdge(),
+                        0,  // No users for edge servers row
+                        "EDGE_SERVERS", // Specific row for edge servers
+                        serviceCount,
+                        heuristics.get(sc.getPlacementLogic()),
+                        0.0,  // N/A for pure edge servers
+                        0.0,  // N/A for pure edge servers
+                        0.0,  // N/A for pure edge servers
+                        0.0,  // N/A for pure edge servers
+                        0.0,  // N/A for pure edge servers
+                        0,    // N/A for pure edge servers
+                        0,    // N/A for pure edge servers
+                        0,    // N/A for pure edge servers
+                        0,    // N/A for pure edge servers
+                        0,    // N/A for pure edge servers
+                        0,    // N/A for pure edge servers
+                        0.0,  // No cloud energy for edge servers row
+                        avgEdgeEnergy,     // Edge server energy
+                        stdDevEdgeEnergy   // Edge server energy stddev
                 ));
             }
             
@@ -692,11 +768,6 @@ public class MetricUtils {
                 long memoryGrowthMB = performanceMetrics.get(i).getMemoryGrowthBytes() / (1024 * 1024);
                 long memoryRetentionMB = performanceMetrics.get(i).getMemoryRetentionBytes() / (1024 * 1024);
                 
-                // Get power metrics from the static lists
-                double cloudEnergy = getCloudEnergyConsumption(i);
-                double avgEdgeEnergy = getAvgEdgeEnergyConsumption(i);
-                double stdDevEdgeEnergy = getStdDevEdgeEnergyConsumption(i);
-                
                 for (String userType : resourceDataByType.keySet()) {
                     List<Double> resourceValues = resourceDataByType.getOrDefault(userType, Collections.emptyList());
                     List<Double> latencyValues1 = latencyDataByType.getOrDefault(userType, Collections.emptyList());
@@ -715,19 +786,32 @@ public class MetricUtils {
                     // Get the number of users for this specific user type
                     int usersOfThisType = sc.getUsersPerType().getOrDefault(userType, 0);
                     
+                    // Get cloud energy - this is shared across all types
+                    double cloudEnergy = getCloudEnergyConsumption(i);
+                    
+                    // Get user-type specific energy metrics if available
+                    double userTypeEnergy = getUserTypeEnergyConsumption(userType, i);
+                    double userTypeEnergyStdDev = getUserTypeEnergyStdDev(userType, i);
+                    
+                    // Fall back to aggregate edge metrics if type-specific ones aren't available
+                    if (userTypeEnergy == 0.0 && !userType.equals("Aggregate")) {
+                        userTypeEnergy = getAvgEdgeEnergyConsumption(i);
+                        userTypeEnergyStdDev = getStdDevEdgeEnergyConsumption(i);
+                    }
+                    
                     fileWriter.append(String.format(
                             "%d,%d,%d,%s,%s,%s,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%f,%f,%f\n",
                             i,
                             sc.getNumberOfEdge(),
-                            usersOfThisType, // Use the user count for this specific type
+                            usersOfThisType,
                             userType,
                             serviceCount,
                             heuristics.get(sc.getPlacementLogic()),
-                            resStats[0],  // mean resource utilization
-                            resStats[1],  // stddev resource utilization
-                            latStats[0],  // mean latency
-                            latStats[1],  // stddev latency
-                            failStats,    // peak failure ratio
+                            resStats[0],
+                            resStats[1],
+                            latStats[0],
+                            latStats[1],
+                            failStats,
                             performanceMetrics.get(i).executionTimeMs,
                             peakMemoryMB,
                             baselineMemoryMB,
@@ -735,8 +819,8 @@ public class MetricUtils {
                             memoryGrowthMB,
                             memoryRetentionMB,
                             cloudEnergy,
-                            avgEdgeEnergy,
-                            stdDevEdgeEnergy
+                            userTypeEnergy,          // User device energy (now clearly named in header)
+                            userTypeEnergyStdDev     // User device energy stddev (now clearly named in header)
                     ));
                 }
             }

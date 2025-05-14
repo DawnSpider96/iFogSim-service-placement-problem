@@ -32,9 +32,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /**
  * Platform to run the OnlinePOC simulation under variable parameters:
@@ -59,8 +57,8 @@ import java.util.stream.Stream;
 public class SPPExperiment {
 //    private static final String outputFile = "./output/PerfEval/ACO_X_X_200.csv";
 //    private static final String CONFIG_FILE = "./dataset/PerformanceEvalConfigsEdges.yaml";
-    private static final String outputFile = "./output/MiH_4.csv";
-    private static final String CONFIG_FILE = "./dataset/SPPExperimentConfigs.yaml";
+    private static final String outputFile = "./output/MiH_MultiOpt_4_100.csv";
+    private static final String CONFIG_FILE = "./dataset/multiOptInvestigation_1000.yaml";
     // Path to location configuration file
     private static final String LOCATION_CONFIG_FILE = "./dataset/location_config_simon.json";
 
@@ -566,11 +564,11 @@ public class SPPExperiment {
                     FogBroker.getApplicationInfo().put(application.getAppId(), application);
 
                     String clientModuleName = appId + "_clientModule";
-                    FogBroker.getApplicationToFirstMicroserviceMap().put(application, clientModuleName);
+                    FogBroker.getApplicationToFirstServiceMap().put(application, clientModuleName);
                     
                     List<String> secondMicroservices = new ArrayList<>();
                     secondMicroservices.add(appId + "_Service1");
-                    FogBroker.getApplicationToSecondMicroservicesMap().put(application, secondMicroservices);
+                    FogBroker.getApplicationToSecondServicesMap().put(application, secondMicroservices);
                 }
             } 
             // Legacy approach with one application per user type
@@ -586,11 +584,11 @@ public class SPPExperiment {
     
                     // NOTE:Hardcoded
                     String clientModuleName = userType + "_clientModule"; // todo NOTE hardcoded.
-                    FogBroker.getApplicationToFirstMicroserviceMap().put(application, clientModuleName);
+                    FogBroker.getApplicationToFirstServiceMap().put(application, clientModuleName);
     
                     List<String> secondMicroservices = new ArrayList<>();
                     secondMicroservices.add(userType + "_Service1");
-                    FogBroker.getApplicationToSecondMicroservicesMap().put(application, secondMicroservices);
+                    FogBroker.getApplicationToSecondServicesMap().put(application, secondMicroservices);
                 }
                 
                 // Create fog devices with user types
@@ -683,7 +681,7 @@ public class SPPExperiment {
             Log.printLine(String.format("Placement Logic: %d", placementLogicType));
 
             // Schedule the opera accident event
-            double operaExplosionTime = 7200.0; // Or read from config
+            double operaExplosionTime = 3600.0;
             CloudSim.send(microservicesController.getId(), microservicesController.getId(), operaExplosionTime, 
                           FogEvents.OPERA_ACCIDENT_EVENT, null);
 
@@ -934,14 +932,13 @@ public class SPPExperiment {
         application.addAppEdge("SENSOR", clientModuleName, 14, 50, "SENSOR", Tuple.UP, AppEdge.SENSOR);
 
         String firstServiceName = appId + "_Service1";
-        application.addAppEdge(clientModuleName, firstServiceName, 10, 5, // TODO change back to 10000 and 500
+        application.addAppEdge(clientModuleName, firstServiceName, 5, 500, // TODO change back to 10000 and 500
                 appId + "_RAW_DATA", Tuple.UP, AppEdge.MODULE);
         for (int i = 1; i < numServices; i++) {
             String sourceModule = appId + "_Service" + i;
             String destModule = appId + "_Service" + (i+1);
             String tupleType = appId + "_FILTERED_DATA" + i;
-
-            application.addAppEdge(sourceModule, destModule, 10, 5, tupleType, Tuple.UP, AppEdge.MODULE); // TODO change back to 10000 and 500
+            application.addAppEdge(sourceModule, destModule, 5, 500, tupleType, Tuple.UP, AppEdge.MODULE); // TODO change back to 10000 and 500
         }
 
         String lastServiceName = appId + "_Service" + numServices;
@@ -949,7 +946,7 @@ public class SPPExperiment {
                 appId + "_RESULT", Tuple.DOWN, AppEdge.MODULE);
 
         // Connect to actuator
-        application.addAppEdge(clientModuleName, "DISPLAY", 4, 50,
+        application.addAppEdge(clientModuleName, "DISPLAY", 4, 500,
                 appId + "_RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
 
         /*
@@ -1004,6 +1001,15 @@ public class SPPExperiment {
         double cloudEnergyConsumption = 0.0;
         List<Double> edgeEnergyConsumptions = new ArrayList<>();
         
+        // For user-type specific energy tracking
+        Map<String, List<Double>> userTypeEnergyConsumptions = new HashMap<>();
+        
+        // Initialize maps for all known user types
+        userTypeEnergyConsumptions.put(SPPFogDevice.GENERIC_USER, new ArrayList<>());
+        userTypeEnergyConsumptions.put(SPPFogDevice.AMBULANCE_USER, new ArrayList<>());
+        userTypeEnergyConsumptions.put(SPPFogDevice.OPERA_USER, new ArrayList<>());
+        userTypeEnergyConsumptions.put(SPPFogDevice.IMMOBILE_USER, new ArrayList<>());
+        
         for (FogDevice device : fogDevices) {
             SPPFogDevice sppDevice = (SPPFogDevice) device;
             double energyConsumption = device.getEnergyConsumption();
@@ -1012,6 +1018,10 @@ public class SPPExperiment {
                 cloudEnergyConsumption = energyConsumption;
             } else if (sppDevice.getDeviceType().equals(SPPFogDevice.FCN)) {
                 edgeEnergyConsumptions.add(energyConsumption);
+            } else if (sppDevice.isUserDevice()) {
+                // Add to the appropriate user type list
+                String userType = sppDevice.getDeviceType();
+                userTypeEnergyConsumptions.get(userType).add(energyConsumption);
             }
         }
         
@@ -1033,6 +1043,30 @@ public class SPPExperiment {
             variance /= edgeEnergyConsumptions.size();
             
             stdDevEdgeEnergy = Math.sqrt(variance);
+        }
+        
+        // Calculate user-type-specific energy metrics
+        for (String userType : userTypeEnergyConsumptions.keySet()) {
+            List<Double> values = userTypeEnergyConsumptions.get(userType);
+            if (!values.isEmpty()) {
+                double sum = 0;
+                for (Double value : values) {
+                    sum += value;
+                }
+                double avg = sum / values.size();
+                
+                double variance = 0;
+                for (Double value : values) {
+                    variance += Math.pow(value - avg, 2);
+                }
+                variance /= values.size();
+                double stdDev = Math.sqrt(variance);
+                
+                // Store in MetricUtils
+                MetricUtils.setUserTypeEnergyConsumption(userType, avg, stdDev);
+                
+                System.out.println(userType + " Energy Consumption: " + avg + " Watt-seconds (StdDev: " + stdDev + ")");
+            }
         }
         
         powerMetrics.put("cloudEnergyConsumption", cloudEnergyConsumption);

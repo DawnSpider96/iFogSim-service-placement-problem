@@ -665,8 +665,8 @@ public class PlacementSimulationController extends SimEntity {
                     DeviceMobilityState mobilityState = new OperaUserMobilityState(
                         userLocations.get(csvIndex), 
                         operaPathingStrategy,
-                        0.5 + random.nextDouble() * 1.5, // m/s
-                        3600.0 // 1 hour
+                        3.5 + random.nextDouble() * 1.5, // m/s
+                        600.0 // 10 minutes
                     );
                     registerDeviceMobilityState(fogDevice.getId(), mobilityState);
                 }
@@ -1330,7 +1330,7 @@ public class PlacementSimulationController extends SimEntity {
         // todo Change if one user device has more than one sensor
         PassiveSensor firstSensor = deviceSensors.get(0);
         Map<String, Integer> placedMicroservicesMap = new LinkedHashMap<>();
-        String clientModuleName = FogBroker.getApplicationToFirstMicroserviceMap().get(randomApp);
+        String clientModuleName = FogBroker.getApplicationToFirstServiceMap().get(randomApp);
         placedMicroservicesMap.put(clientModuleName, deviceId);
         
         int sequenceNumber = getNextSequenceNumber(firstSensor.getId());

@@ -125,7 +125,7 @@ public class MobilityPOC {
 //                }
 //            }
 
-            double operaExplosionTime = 7200.0; // Or read from config
+            double operaExplosionTime = 3600.0; // Or read from config
             CloudSim.send(controller.getId(), controller.getId(), operaExplosionTime,
                     FogEvents.OPERA_ACCIDENT_EVENT, null);
             CloudSim.startSimulation();

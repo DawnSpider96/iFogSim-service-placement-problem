@@ -125,10 +125,10 @@ public class LocationHandler {
 		double latency;
 		if (getDataObject().resourceAndUserToLevel.get(getDataIdByInstanceID(entity1)) == getDataObject().levelID.get("User") ||
 				getDataObject().resourceAndUserToLevel.get(getDataIdByInstanceID(entity2)) == getDataObject().levelID.get("User")) {
-			latency = Config.baseWifiLatency + (calculateDistance(entity1, entity2) * Config.latencyPerKilometer);
+			latency = Config.baseWifiLatency + (calculateDistance(entity1, entity2) * Config.wifiLatencyPerKilometer);
 		}
 		else {
-			latency = Config.baseServerLatency + (calculateDistance(entity1, entity2) * Config.latencyPerKilometer);
+			latency = Config.baseServerLatency + (calculateDistance(entity1, entity2) * Config.serverLatencyPerKilometer);
 		}
 		System.out.println(entity1 + " " + entity2 + " " + latency);
 		return latency;

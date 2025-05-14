@@ -1,0 +1,209 @@
+\chapter{Performance Metrics Collection Implementation}
+\label{appendix:metrics-collection}
+
+I implemented a comprehensive metrics collection system that captures energy consumption and other performance data from all devices in the simulation:
+
+\begin{verbatim}
+private static Map<String, Double> collectPowerMetrics() {
+    Map<String, Double> powerMetrics = new HashMap<>();
+    
+    double cloudEnergyConsumption = 0.0;
+    List<Double> edgeEnergyConsumptions = new ArrayList<>();
+    
+    for (FogDevice device : fogDevices) {
+        SPPFogDevice sppDevice = (SPPFogDevice) device;
+        double energyConsumption = device.getEnergyConsumption();
+        
+        if (sppDevice.getDeviceType().equals(SPPFogDevice.CLOUD)) {
+            cloudEnergyConsumption = energyConsumption;
+        } else if (sppDevice.getDeviceType().equals(SPPFogDevice.FCN)) {
+            edgeEnergyConsumptions.add(energyConsumption);
+        }
+    }
+    
+    // Calculate average and standard deviation for edge servers
+    double avgEdgeEnergy = 0.0;
+    double stdDevEdgeEnergy = 0.0;
+    
+    if (!edgeEnergyConsumptions.isEmpty()) {
+        double sum = 0;
+        for (Double value : edgeEnergyConsumptions) {
+            sum += value;
+        }
+        avgEdgeEnergy = sum / edgeEnergyConsumptions.size();
+        
+        double variance = 0;
+        for (Double value : edgeEnergyConsumptions) {
+            variance += Math.pow(value - avgEdgeEnergy, 2);
+        }
+        variance /= edgeEnergyConsumptions.size();
+        
+        stdDevEdgeEnergy = Math.sqrt(variance);
+    }
+    
+    powerMetrics.put("cloudEnergyConsumption", cloudEnergyConsumption);
+    powerMetrics.put("avgEdgeEnergyConsumption", avgEdgeEnergy);
+    powerMetrics.put("stdDevEdgeEnergyConsumption", stdDevEdgeEnergy);
+    
+    return powerMetrics;
+}
+
+public static void main(String[] args) {
+    // ...existing code...
+    
+    List<SimulationConfig> configs = loadConfigurationsFromYaml();
+    List<PerformanceMetrics> performanceMetrics = new ArrayList<>();
+    
+    // Clear power metrics at START of experiment
+    MetricUtils.clearPowerMetrics();
+    
+    for (SimulationConfig config : configs) {
+        // Create metrics object for this simulation
+        PerformanceMetrics metrics = new PerformanceMetrics(config);
+        
+        // Force garbage collection before starting to get baseline memory
+        System.gc();
+        System.runFinalization();
+        try {
+            Thread.sleep(1000); // Allow GC to complete
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        
+        // Measure baseline memory
+        long baselineMemoryBytes = getCurrentMemoryUsage();
+        metrics.setBaselineMemoryBytes(baselineMemoryBytes);
+        System.out.println("Baseline memory before simulation: " + (baselineMemoryBytes/1024/1024) + " MB");
+        
+        // Setup memory monitoring
+        AtomicLong peakMemoryBytes = new AtomicLong(0);
+        long pid = ProcessHandle.current().pid();
+        
+        Thread memoryMonitor = new Thread(() -> {
+            try {
+                boolean running = true;
+                while (running) {
+                    try {
+                        Path statusPath = Paths.get("/proc", Long.toString(pid), "status");
+                        List<String> lines = Files.readAllLines(statusPath);
+                        for (String line : lines) {
+                            if (line.startsWith("VmRSS:")) {
+                                String[] parts = line.trim().split("\\s+");
+                                long memoryKb = Long.parseLong(parts[1]);
+                                long memoryBytes = memoryKb * 1024;
+                                peakMemoryBytes.updateAndGet(prev -> Math.max(prev, memoryBytes));
+                                break;
+                            }
+                        }
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        running = false;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        running = false;
+                    }
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+        
+        // Start monitoring and timing
+        memoryMonitor.start();
+        long startTime = System.currentTimeMillis();
+        
+        // Run the simulation
+        run(config);
+        
+        // Record metrics
+        long endTime = System.currentTimeMillis();
+        metrics.setExecutionTimeMs(endTime - startTime);
+        memoryMonitor.interrupt();
+        
+        try {
+            memoryMonitor.join(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        
+        metrics.setPeakMemoryBytes(peakMemoryBytes.get());
+        
+        // Force garbage collection and measure post-GC memory
+        System.gc();
+        System.runFinalization();
+        try {
+            Thread.sleep(1000); // Allow GC to complete
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        
+        // Measure post-GC memory
+        long postGCMemoryBytes = getCurrentMemoryUsage();
+        metrics.setPostGCMemoryBytes(postGCMemoryBytes);
+        
+        // Add metrics to the list
+        performanceMetrics.add(metrics);
+        
+        System.out.println("Simulation completed in " + metrics.getExecutionTimeMs() + 
+                          " ms with peak memory usage of " + (metrics.getPeakMemoryBytes()/1024/1024) + " MB");
+        System.out.println("Memory after GC: " + (postGCMemoryBytes/1024/1024) + " MB");
+    }
+    
+    try {
+        // Combined metric collection approach
+        List<List<Double>> resourceData =
+                mm.getAllUtilizations().stream()
+                        .map(MetricUtils::handleSimulationResource)
+                        .collect(Collectors.toList());
+        List<List<Double>> latencyData =
+                mm.getAllLatencies().stream()
+                        .map(MetricUtils::handleSimulationLatency)
+                        .collect(Collectors.toList());
+
+        List<Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>>> list1 = mm.getAllFailedPRs();
+        List<Map<Double, Integer>> list2 = mm.getAllTotalPRs();
+        List<Map<String, Object>> failedPRData = IntStream.range(0, Math.min(list1.size(), list2.size()))
+                .mapToObj(i -> {
+                    Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>> map1 = list1.get(i);
+                    Map<Double, Integer> map2 = list2.get(i);
+                    return MetricUtils.handleSimulationFailedPRs(map1, map2);
+                })
+                .collect(Collectors.toList());
+
+        // Write all metrics to a single CSV file (now including performance metrics)
+        MetricUtils.writeAllMetricsToCSV(
+            resourceData, 
+            latencyData, 
+            failedPRData, 
+            mm.getAllUtilizations(), 
+            mm.getAllLatencies(), 
+            list1, 
+            list2, 
+            configs, 
+            outputFile,
+            performanceMetrics  // Add performance metrics to output
+        );
+        
+        System.out.println("All metrics have been written to a single CSV file: " + outputFile);
+    } catch (IOException e) {
+        System.err.println("An error occurred while writing to the CSV file.");
+        e.printStackTrace();
+    }
+}
+\end{verbatim}
+
+This metrics collection system captures multiple types of data:
+
+1. **Power Consumption**: Tracks energy usage for both cloud and edge devices, calculating averages and standard deviations for edge servers.
+
+2. **Memory Usage**: Monitors memory consumption throughout the simulation, tracking baseline, peak, and post-GC memory to evaluate memory efficiency.
+
+3. **Execution Time**: Measures the total execution time for each simulation configuration.
+
+4. **Resource Utilization**: Collects CPU and RAM utilization statistics across all devices.
+
+5. **Application Latency**: Measures end-to-end latency for application execution.
+
+6. **Placement Request Success/Failure**: Tracks the success and failure rates of placement requests, including failure reasons.
+
+The collected metrics are written to a CSV file for further analysis and visualization. This comprehensive metrics collection system enables detailed performance evaluation across different placement algorithms and configuration parameters. 

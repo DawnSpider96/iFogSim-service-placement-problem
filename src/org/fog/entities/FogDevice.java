@@ -909,7 +909,14 @@ public class FogDevice extends PowerDatacenter {
     protected void updateSouthTupleQueue() {
         if (!getSouthTupleQueue().isEmpty()) {
             Pair<Tuple, Integer> pair = getSouthTupleQueue().poll();
-            sendDownFreeLink(pair.getFirst(), pair.getSecond());
+            Integer childId = pair.getSecond();
+            if (getChildToLatencyMap().containsKey(childId)) {
+                sendDownFreeLink(pair.getFirst(), childId);
+            } else {
+                System.out.println("Warning: Tuple for device " + childId + 
+                         " discarded as device is no longer a child of " + getName());
+                updateSouthTupleQueue();
+            }
         } else {
             setSouthLinkBusy(false);
         }

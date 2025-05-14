@@ -36,8 +36,8 @@ public class FogBroker extends PowerDatacenterBroker{
 	private static int cycleNumber = 1;
 
 	private static final Map<String, Application> applicationInfo = new HashMap<>();
-	private static final Map<Application, String> applicationToFirstMicroserviceMap = new HashMap<>();
-	private static final Map<Application, List<String>> applicationToSecondMicroservicesMap = new HashMap<>();
+	private static final Map<Application, String> applicationToFirstServiceMap = new HashMap<>();
+	private static final Map<Application, List<String>> applicationToSecondServicesMap = new HashMap<>();
 
 	public FogBroker(String name) throws Exception {
 		super(name);
@@ -46,8 +46,8 @@ public class FogBroker extends PowerDatacenterBroker{
 	// Simon (130325) says clear FogBroker for Experiment purposes
 	public static void clear(){
 		applicationInfo.clear();
-		applicationToFirstMicroserviceMap.clear();
-		applicationToSecondMicroservicesMap.clear();
+		applicationToFirstServiceMap.clear();
+		applicationToSecondServicesMap.clear();
 		setCycleNumber(1);
 		checklist.clear();
 		toSend.clear();
@@ -157,8 +157,8 @@ public class FogBroker extends PowerDatacenterBroker{
 	}
 
 	public void transmit(int targetId, Application app, ContextPlacementRequest pr){
-		String firstMicroservice = applicationToFirstMicroserviceMap.get(app);
-//		String firstMicroservice = applicationToSecondMicroservicesMap.get(app);
+		String firstMicroservice = applicationToFirstServiceMap.get(app);
+//		String firstMicroservice = applicationToSecondServicesMap.get(app);
 		AppEdge _edge = null;
 		for(AppEdge edge : app.getEdges()){
 			if(edge.getSource().equals(firstMicroservice)) {
@@ -306,12 +306,12 @@ public class FogBroker extends PowerDatacenterBroker{
 		return applicationInfo;
 	}
 
-	public static Map<Application, String> getApplicationToFirstMicroserviceMap() {
-		return applicationToFirstMicroserviceMap;
+	public static Map<Application, String> getApplicationToFirstServiceMap() {
+		return applicationToFirstServiceMap;
 	}
 
-	public static Map<Application, List<String>> getApplicationToSecondMicroservicesMap() {
-		return applicationToSecondMicroservicesMap;
+	public static Map<Application, List<String>> getApplicationToSecondServicesMap() {
+		return applicationToSecondServicesMap;
 	}
 
 	public static Map<Integer, Map<PlacementRequest, Integer>> getToSend() {
