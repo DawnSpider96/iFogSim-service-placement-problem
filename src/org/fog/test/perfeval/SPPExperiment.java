@@ -24,6 +24,7 @@ import org.fog.utils.distribution.DeterministicDistribution;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -55,10 +56,10 @@ import java.util.stream.IntStream;
  * DYNAMIC_CLUSTERING -> true (for clustered) and false (for not clustered) * (also compatible with static clustering)
  */
 public class SPPExperiment {
-//    private static final String outputFile = "./output/PerfEval/ACO_X_X_200.csv";
-//    private static final String CONFIG_FILE = "./dataset/PerformanceEvalConfigsEdges.yaml";
-    private static final String outputFile = "./output/MiH_MultiOpt_4_100.csv";
-    private static final String CONFIG_FILE = "./dataset/multiOptInvestigation_1000.yaml";
+    private static final String outputFile = "./output/PerfEval/ACO_100_X_X_FINAL.csv";
+    private static final String CONFIG_FILE = "./dataset/PerformanceEvalConfigsUsers.yaml";
+//    private static final String outputFile = "./output/MiH_4_0_COPY.csv";
+//    private static final String CONFIG_FILE = "./dataset/SPPExperimentConfigs.yaml";
     // Path to location configuration file
     private static final String LOCATION_CONFIG_FILE = "./dataset/location_config_simon.json";
 
@@ -159,12 +160,23 @@ public class SPPExperiment {
         SPPExperiment.setOutputDirectory("./dataset/simon");
         
         List<SimulationConfig> configs = loadConfigurationsFromYaml();
-        List<PerformanceMetrics> performanceMetrics = new ArrayList<>();
+        
+        // Initialize the CSV file with headers once at the beginning
+        try (FileWriter fileWriter = new FileWriter(outputFile)) {
+            fileWriter.append("Simulation,edges,users,UserType,services,Placement Logic,Avg Resource,Resource stddev,Avg Latency," + 
+                              "Latency stddev,Failure ratio,ExecutionTime_ms,PeakMemory_MB,BaselineMemory_MB,PostGCMemory_MB," + 
+                              "MemoryGrowth_MB,MemoryRetention_MB,CloudEnergy_Ws,DeviceEnergy_Ws,DeviceEnergyStdDev_Ws\n");
+        } catch (IOException e) {
+            System.err.println("Error creating output file: " + e.getMessage());
+            e.printStackTrace();
+        }
         
         // Clear power metrics at START of experiment
         MetricUtils.clearPowerMetrics();
         
-        for (SimulationConfig config : configs) {
+        for (int simIndex = 0; simIndex < configs.size(); simIndex++) {
+            SimulationConfig config = configs.get(simIndex);
+            
             // Create metrics object for this simulation
             PerformanceMetrics metrics = new PerformanceMetrics(config);
             
@@ -172,7 +184,7 @@ public class SPPExperiment {
             System.gc();
             System.runFinalization();
             try {
-                Thread.sleep(1000); // Allow GC to complete
+                Thread.sleep(5000); // Allow GC to complete
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -215,6 +227,9 @@ public class SPPExperiment {
                 }
             });
             
+            // Initialize SPPMonitor for this simulation
+            SPPMonitor.getInstance().initializeSimulation(simIndex);
+            
             // Start monitoring and timing
             memoryMonitor.start();
             long startTime = System.currentTimeMillis();
@@ -235,25 +250,32 @@ public class SPPExperiment {
             
             metrics.setPeakMemoryBytes(peakMemoryBytes.get());
             
-            // Force garbage collection and measure post-GC memory
-            System.gc();
-            System.runFinalization();
-            try {
-                Thread.sleep(1000); // Allow GC to complete
-            } catch (InterruptedException e) {
+            // Process metrics from temporary CSV files
+            processTempMetricsFiles(simIndex, metrics);
+            
+            // Immediately write this simulation's results to the CSV
+            try (FileWriter fileWriter = new FileWriter(outputFile, true)) { // append mode
+                // Write aggregate metrics
+                writeSimulationResultRow(fileWriter, simIndex, config, metrics, "Aggregate");
+                
+                // Write edge server specific row
+                writeSimulationResultRow(fileWriter, simIndex, config, metrics, "EDGE_SERVERS");
+                
+                // Write user type specific rows
+                for (String userType : metrics.getUserTypeAvgUtilization().keySet()) {
+                    writeSimulationResultRow(fileWriter, simIndex, config, metrics, userType);
+                }
+            } catch (IOException e) {
+                System.err.println("Error writing to output file: " + e.getMessage());
                 e.printStackTrace();
             }
             
-            // Measure post-GC memory
-            long postGCMemoryBytes = getCurrentMemoryUsage();
-            metrics.setPostGCMemoryBytes(postGCMemoryBytes);
-            
-            // Add metrics to the list
-            performanceMetrics.add(metrics);
+            // Optional: Delete temporary files
+            deleteTempFiles(simIndex);
             
             System.out.println("Simulation completed in " + metrics.getExecutionTimeMs() + 
                               " ms with peak memory usage of " + (metrics.getPeakMemoryBytes()/1024/1024) + " MB");
-            System.out.println("Memory after GC: " + (postGCMemoryBytes/1024/1024) + " MB");
+            System.out.println("Memory after GC: " + (metrics.getPostGCMemoryBytes()/1024/1024) + " MB");
             System.out.println("Memory growth during simulation: " + (metrics.getMemoryGrowthBytes()/1024/1024) + " MB");
             System.out.println("Memory retained after GC: " + (metrics.getMemoryRetentionBytes()/1024/1024) + " MB");
         }
@@ -264,48 +286,132 @@ public class SPPExperiment {
         System.out.println("Final TUPLE_ID: " + FogUtils.getCurrentTupleId());
         System.out.println("Final ACTUAL_TUPLE_ID: " + FogUtils.getCurrentActualTupleId());
         System.out.println("=================================\n");
+    }
 
-        // (170225) For ease of debugging only
-        SPPMonitor mm = SPPMonitor.getInstance();
-
+    /**
+     * Processes temporary metrics files for a simulation and updates the metrics object
+     * 
+     * @param simIndex The index of the simulation
+     * @param metrics The metrics object to update
+     */
+    private static void processTempMetricsFiles(int simIndex, PerformanceMetrics metrics) {
+        SPPMonitor monitor = SPPMonitor.getInstance();
+        String metricsFile = monitor.getTempMetricsFile();
+        String failedPRsFile = monitor.getTempFailedPRsFile();
+        
+        if (metricsFile == null || failedPRsFile == null) {
+            System.err.println("Error: Temporary metrics files not initialized for simulation " + simIndex);
+            return;
+        }
+        
         try {
-            // Combined metric collection approach
-            List<List<Double>> resourceData =
-                    mm.getAllUtilizations().stream()
-                            .map(MetricUtils::handleSimulationResource)
-                            .collect(Collectors.toList());
-            List<List<Double>> latencyData =
-                    mm.getAllLatencies().stream()
-                            .map(MetricUtils::handleSimulationLatency)
-                            .collect(Collectors.toList());
-
-            List<Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>>> list1 = mm.getAllFailedPRs();
-            List<Map<Double, Integer>> list2 = mm.getAllTotalPRs();
-            List<Map<String, Object>> failedPRData = IntStream.range(0, Math.min(list1.size(), list2.size()))
-                    .mapToObj(i -> {
-                        Map<Double, Map<PlacementRequest, MicroservicePlacementConfig.FAILURE_REASON>> map1 = list1.get(i);
-                        Map<Double, Integer> map2 = list2.get(i);
-                        return MetricUtils.handleSimulationFailedPRs(map1, map2);
-                    })
-                    .collect(Collectors.toList());
-
-            // Write all metrics to a single CSV file (now including performance metrics)
-            MetricUtils.writeAllMetricsToCSV(
-                resourceData, 
-                latencyData, 
-                failedPRData, 
-                mm.getAllUtilizations(), 
-                mm.getAllLatencies(), 
-                list1, 
-                list2, 
-                configs, 
-                outputFile,
-                performanceMetrics  // Add this parameter
-            );
+            // Process metrics CSV file
+            List<Double> utilizationValues = new ArrayList<>();
+            List<Double> latencyValues = new ArrayList<>();
+            Map<String, List<Double>> utilizationByUserType = new HashMap<>();
+            Map<String, List<Double>> latencyByUserType = new HashMap<>();
             
-            System.out.println("All metrics have been written to a single CSV file: " + outputFile);
+            Path metricsPath = Paths.get(metricsFile);
+            if (Files.exists(metricsPath)) {
+                List<String> lines = Files.readAllLines(metricsPath);
+                // Skip header line
+                for (int i = 1; i < lines.size(); i++) {
+                    String line = lines.get(i);
+                    String[] parts = line.split(",");
+                    if (parts.length >= 6) {
+                        double utilization = Double.parseDouble(parts[4]);
+                        double latency = Double.parseDouble(parts[5]);
+                        String userType = parts[3];
+                        
+                        utilizationValues.add(utilization);
+                        latencyValues.add(latency);
+                        
+                        // Collect by user type
+                        if (!utilizationByUserType.containsKey(userType)) {
+                            utilizationByUserType.put(userType, new ArrayList<>());
+                            latencyByUserType.put(userType, new ArrayList<>());
+                        }
+                        utilizationByUserType.get(userType).add(utilization);
+                        latencyByUserType.get(userType).add(latency);
+                    }
+                }
+            }
+            
+            // Process failed PRs CSV file
+            int totalFailures = 0;
+            int totalPRs = 0;
+            Map<String, Integer> failuresByUserType = new HashMap<>();
+            Map<String, Integer> totalPRsByUserType = new HashMap<>();
+            
+            Path failedPath = Paths.get(failedPRsFile);
+            if (Files.exists(failedPath)) {
+                List<String> lines = Files.readAllLines(failedPath);
+                // Skip header line
+                for (int i = 1; i < lines.size(); i++) {
+                    String line = lines.get(i);
+                    String[] parts = line.split(",");
+                    if (parts.length >= 6) {
+                        String userType = parts[3];
+                        int prTotal = Integer.parseInt(parts[5]);
+                        
+                        totalFailures++;
+                        totalPRs = Math.max(totalPRs, prTotal); // Use the highest count as total
+                        
+                        // Collect by user type
+                        if (!failuresByUserType.containsKey(userType)) {
+                            failuresByUserType.put(userType, 0);
+                            totalPRsByUserType.put(userType, 0);
+                        }
+                        failuresByUserType.put(userType, failuresByUserType.get(userType) + 1);
+                        totalPRsByUserType.put(userType, Math.max(totalPRsByUserType.get(userType), prTotal));
+                    }
+                }
+            }
+            
+            // Calculate statistics
+            if (!utilizationValues.isEmpty()) {
+                double[] utilizationStats = MetricUtils.calculateStatistics(utilizationValues);
+                double[] latencyStats = MetricUtils.calculateStatistics(latencyValues);
+                
+                metrics.setAvgUtilization(utilizationStats[0]);
+                metrics.setStdDevUtilization(utilizationStats[1]);
+                metrics.setAvgLatency(latencyStats[0]);
+                metrics.setStdDevLatency(latencyStats[1]);
+            }
+            
+            // Set failure ratio
+            if (totalPRs > 0) {
+                metrics.setFailureRatio((double) totalFailures / totalPRs);
+            }
+            
+            // Set user type specific metrics
+            for (String userType : utilizationByUserType.keySet()) {
+                List<Double> userUtilization = utilizationByUserType.get(userType);
+                List<Double> userLatency = latencyByUserType.get(userType);
+                
+                if (!userUtilization.isEmpty()) {
+                    double[] userUtilStats = MetricUtils.calculateStatistics(userUtilization);
+                    double[] userLatencyStats = MetricUtils.calculateStatistics(userLatency);
+                    
+                    metrics.setUserTypeUtilization(userType, userUtilStats[0], userUtilStats[1]);
+                    metrics.setUserTypeLatency(userType, userLatencyStats[0], userLatencyStats[1]);
+                }
+                
+                // Set user type failure ratio
+                int userFailures = failuresByUserType.getOrDefault(userType, 0);
+                int userTotalPRs = totalPRsByUserType.getOrDefault(userType, 0);
+                if (userTotalPRs > 0) {
+                    metrics.setUserTypeFailureRatio(userType, (double) userFailures / userTotalPRs);
+                }
+            }
+            
+            // Collect power metrics (these are already being tracked in MetricUtils)
+            metrics.setCloudEnergyConsumption(MetricUtils.getCloudEnergyConsumption());
+            metrics.setAvgEdgeEnergyConsumption(MetricUtils.getAvgEdgeEnergyConsumption());
+            metrics.setStdDevEdgeEnergyConsumption(MetricUtils.getStdDevEdgeEnergyConsumption());
+            
         } catch (IOException e) {
-            System.err.println("An error occurred while writing to the CSV file.");
+            System.err.println("Error processing temporary metrics files: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -1074,6 +1180,100 @@ public class SPPExperiment {
         powerMetrics.put("stdDevEdgeEnergyConsumption", stdDevEdgeEnergy);
         
         return powerMetrics;
+    }
+
+    // Helper method to write a single row to the CSV
+    private static void writeSimulationResultRow(FileWriter writer, int simIndex, SimulationConfig config, 
+                                                PerformanceMetrics metrics, String userType) throws IOException {
+        // Get the service count based on config format
+        String serviceCount = config.getNumberOfApplications() > 0 
+                             ? String.valueOf(config.getAppLoopLength()) 
+                             : "Legacy";
+        
+        // Get memory metrics
+        long peakMemoryMB = metrics.getPeakMemoryBytes() / (1024 * 1024);
+        long baselineMemoryMB = metrics.getBaselineMemoryBytes() / (1024 * 1024);
+        long postGCMemoryMB = metrics.getPostGCMemoryBytes() / (1024 * 1024);
+        long memoryGrowthMB = metrics.getMemoryGrowthBytes() / (1024 * 1024);
+        long memoryRetentionMB = metrics.getMemoryRetentionBytes() / (1024 * 1024);
+        
+        // Get proper user type specific metrics
+        double utilizationAvg, utilizationStdDev, latencyAvg, latencyStdDev, failureRatio;
+        int usersOfThisType = 0;
+        
+        if (userType.equals("Aggregate")) {
+            utilizationAvg = metrics.getAvgUtilization();
+            utilizationStdDev = metrics.getStdDevUtilization();
+            latencyAvg = metrics.getAvgLatency();
+            latencyStdDev = metrics.getStdDevLatency();
+            failureRatio = metrics.getFailureRatio();
+            usersOfThisType = config.getNumberOfUser();
+        } 
+        else if (userType.equals("EDGE_SERVERS")) {
+            utilizationAvg = 0.0;
+            utilizationStdDev = 0.0;
+            latencyAvg = 0.0;
+            latencyStdDev = 0.0;
+            failureRatio = 0.0;
+            usersOfThisType = 0;
+        }
+        else {
+            utilizationAvg = metrics.getUserTypeAvgUtilization().getOrDefault(userType, 0.0);
+            utilizationStdDev = metrics.getUserTypeStdDevUtilization().getOrDefault(userType, 0.0);
+            latencyAvg = metrics.getUserTypeAvgLatency().getOrDefault(userType, 0.0);
+            latencyStdDev = metrics.getUserTypeStdDevLatency().getOrDefault(userType, 0.0);
+            failureRatio = metrics.getUserTypeFailureRatio().getOrDefault(userType, 0.0);
+            usersOfThisType = config.getUsersPerType().getOrDefault(userType, 0);
+        }
+        
+        // Write the row
+        writer.append(String.format(
+            "%d,%d,%d,%s,%s,%s,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%f,%f,%f\n",
+            simIndex,
+            config.getNumberOfEdge(),
+            usersOfThisType,
+            userType,
+            serviceCount,
+            MetricUtils.getHeuristicName(config.getPlacementLogic()),
+            utilizationAvg,
+            utilizationStdDev,
+            latencyAvg,
+            latencyStdDev,
+            failureRatio,
+            metrics.getExecutionTimeMs(),
+            peakMemoryMB,
+            baselineMemoryMB,
+            postGCMemoryMB,
+            memoryGrowthMB,
+            memoryRetentionMB,
+            metrics.getCloudEnergyConsumption(),
+            metrics.getAvgEdgeEnergyConsumption(),
+            metrics.getStdDevEdgeEnergyConsumption()
+        ));
+    }
+
+    // Optional method to delete temp files after processing
+    private static void deleteTempFiles(int simIndex) {
+        String metricsFile = SPPMonitor.getInstance().getTempMetricsFile();
+        String failedPRsFile = SPPMonitor.getInstance().getTempFailedPRsFile();
+        
+        if (metricsFile != null) {
+            try {
+                Files.deleteIfExists(Paths.get(metricsFile));
+                System.out.println("Deleted temporary metrics file: " + metricsFile);
+            } catch (IOException e) {
+                System.err.println("Could not delete temporary metrics file: " + e.getMessage());
+            }
+        }
+        
+        if (failedPRsFile != null) {
+            try {
+                Files.deleteIfExists(Paths.get(failedPRsFile));
+                System.out.println("Deleted temporary failed PRs file: " + failedPRsFile);
+            } catch (IOException e) {
+                System.err.println("Could not delete temporary failed PRs file: " + e.getMessage());
+            }
+        }
     }
 }
 

@@ -32,7 +32,7 @@ public class SPPACO extends SPPHeuristic implements MicroservicePlacementLogic {
 //    private double tau0 = 1.0; TODO change back
     private double tau0 = 4.0;
 //    private int antsNumber = 10; TODO 1000 for performance evaluation
-    private int antsNumber = 200;
+    private int antsNumber = 1000;
     private List<DeviceState> DeviceStates = new ArrayList<>();
 
     @Override

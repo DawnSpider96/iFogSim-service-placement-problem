@@ -423,7 +423,8 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
 
         double utilization = MetricUtils.computeResourceUtilisation(currentDeviceStates);
 
-        SPPMonitor.getInstance().recordUtilizationForPR(pr, timestamp, utilization);
+        // Store utilization temporarily instead of recording immediately
+        SPPMonitor.getInstance().storeUtilizationForPR(pr, utilization);
     }
 
     /**
@@ -464,8 +465,7 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
         */
         MicroservicePlacementConfig.FAILURE_REASON failureReason = MicroservicePlacementConfig.FAILURE_REASON.PLACEMENT_FAILED;
         Map<PlacementRequestKey, Map<String, Integer>> placement = new LinkedHashMap<>();
-        Map<PlacementRequest, Double> latencies = new LinkedHashMap<>();
-
+        
         // Collect Total PRs metric. Failed PRs metric collected below.
         SPPMonitor.getInstance().recordTotalPRs(placementRequests.size(), CloudSim.clock());
 
@@ -499,7 +499,10 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
                 Map.Entry<String, Integer> clientModuleEntry = placementRequest.getPlacedServices().entrySet().iterator().next();
                 placementRequest.getPlacedServices().remove(clientModuleEntry.getKey());
                 placementRequest.getPlacedServices().put(clientModuleEntry.getKey(), clientModuleEntry.getValue());
-                latencies.put(placementRequest, determineLatencyOfDecision(placementRequest));
+                
+                // Calculate latency and record both metrics together
+                double latency = determineLatencyOfDecision(placementRequest);
+                SPPMonitor.getInstance().recordMetricsForPR(placementRequest, CloudSim.clock(), latency);
 
                 // Update output - now keyed by PlacementRequestKey rather than just sensorId
                 placement.put(prKey, mappedMicroservices.get(prKey));
@@ -512,7 +515,6 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
                 SPPMonitor.getInstance().recordFailedPR(pr, failureReason);
             }
         }
-        SPPMonitor.getInstance().getLatencies().put(CloudSim.clock(), latencies);
         return placement;
     }
 
@@ -984,7 +986,7 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
 //    }
 
     /**
-     * Lightweight representation of a fog‑node’s resources.
+     * Lightweight representation of a fog‑node's resources.
      * Copying is cheap → safe to duplicate in inner optimisation loops.
      */
     public static class DeviceState implements Comparable<DeviceState> {
