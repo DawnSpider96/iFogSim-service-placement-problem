@@ -67,7 +67,7 @@ public class ILPHeuristic extends SPPHeuristic implements MicroservicePlacementL
             // -1 if success, cloudId if failure
             // Cloud will resend to itself
             // Type int for flexibility: In more complex simulations there may be more FON heads, not just the cloud.
-            int status = tryPlacingOnePr(microservices, app, placementRequest);
+            int status = processOnePr(microservices, app, placementRequest);
             prStatus.put(placementRequest, status);
         }
         return prStatus;

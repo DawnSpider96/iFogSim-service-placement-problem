@@ -430,7 +430,7 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
      * Template method for placing a PR and capturing metrics
      * Child classes implement doTryPlacingOnePr with their placement logic
      */
-    protected final int tryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
+    protected final int processOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
         int result = doTryPlacingOnePr(microservices, app, placementRequest);
         if (result == -1) {
             List<DeviceState> currentStates = getCurrentDeviceStates();
