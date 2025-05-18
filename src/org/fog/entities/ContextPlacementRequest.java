@@ -4,8 +4,8 @@ import java.util.Map;
 
 public class ContextPlacementRequest extends PlacementRequest{
 
-    // Simon (010425) says handling for generation of new PR with unique ID
-    //  is handled in MyMicroservicesController
+    // Handling for generation of new PR with unique ID
+    //  is handled in PlacementSimulationController
 
     private int prIndex; //
     private String userType; // Added userType field to classify placement requests

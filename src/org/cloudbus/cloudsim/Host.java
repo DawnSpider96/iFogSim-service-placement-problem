@@ -220,8 +220,6 @@ public class Host {
 			return false;
 		}
 
-		// Simon (310325) says I am confused by difference between currentRequestedMips and mips
-		//  Added Logging to ensure that they are always the same for my use-case
 		if (vm.getCurrentRequestedMips().size() != 1){
 			Logger.error("Simon-cloudsim incompatibility error",
 					String.format("Current requested mips of VM has length %d instead of 1", vm.getCurrentRequestedMips().size()));

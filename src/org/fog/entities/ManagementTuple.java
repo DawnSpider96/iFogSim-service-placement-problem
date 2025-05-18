@@ -31,7 +31,7 @@ public class ManagementTuple extends Tuple {
     protected Pair<Integer, Map<String, Double>> resourceData;
     protected Tuple startingTuple;
 
-    // TODO Note (sensorID, prIndex) fields serve different purposes in managementTuples and Tuples.
+    // Note (sensorID, prIndex) fields serve different purposes in managementTuples and Tuples.
     //  Tuples use them to PASS information to other FogDevices for service discovery.
     //  In ManagementTuples they are the PAYLOADS to update service discovery entries with.
 

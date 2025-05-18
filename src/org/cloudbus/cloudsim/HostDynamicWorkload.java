@@ -68,9 +68,7 @@ public class HostDynamicWorkload extends Host {
 		setUtilizationMips(0);
 		double hostTotalRequestedMips = 0;
 
-		// todo Simon (250125) says this code checks cloudlet exec lists and reallocates mips accordingly
-		//  But we don't even need to do this because checkCloudletCompletion will reallocate mips
-		// 	depending on the
+		// Checks cloudlet exec lists and reallocates mips accordingly
 //		for (Vm vm : getVmList()) {
 //			getVmScheduler().deallocatePesForVm(vm);
 //		}

@@ -13,7 +13,7 @@ public class MicroservicePlacementConfig {
 
     // For periodic placement
     public static final double PLACEMENT_PROCESS_INTERVAL = 300;
-    // Simon says we don't use this for service placement problem anymore.
+    // Not used for service placement model anymore
     public static final double PLACEMENT_GENERATE_INTERVAL = 300;
 //    public static final double PLACEMENT_PROCESS_INTERVAL = 10;
 //    public static final double PLACEMENT_GENERATE_INTERVAL = 70;
@@ -23,10 +23,10 @@ public class MicroservicePlacementConfig {
     public static double MODULE_DEPLOYMENT_TIME = 0.0;
     public static double EXECUTION_TIMEOUT_TIME = 30.0;
 
-    // Certain Placement Logic will behave differently according to the Topology of the network
-    // TODO Simon says this is not the proper way to configure. This configuration needs to sync with the actual topology as defined in the simulation file
     public static final String CENTRALISED = "centralised";
+    // Unimplemented
     public static final String FEDERATED = "federated";
+    // Unimplemented
     public static final String DECENTRALISED = "decentralised";
     public static String NETWORK_TOPOLOGY = CENTRALISED;
 

@@ -177,7 +177,7 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
             if (!currentModuleLoadMap.get(deviceId).containsKey(microservice))
                 currentModuleLoadMap.get(deviceId).put(microservice, getModule(microservice, app).getMips());
             else
-                currentModuleLoadMap.get(deviceId).put(microservice, getModule(microservice, app).getMips() + currentModuleLoadMap.get(deviceId).get(microservice)); // todo Simon says isn't this already vertical scaling? But is on PR side not FogDevice side
+                currentModuleLoadMap.get(deviceId).put(microservice, getModule(microservice, app).getMips() + currentModuleLoadMap.get(deviceId).get(microservice));
 
             //currentModuleInstance
             if (!currentModuleInstanceNum.get(deviceId).containsKey(microservice))
@@ -273,7 +273,7 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
     }
 
     // Returns the ENTIRE list of Modules to place for ONE placement request
-    // TODO Simon says output is one list, which is a bit awkward
+    // Output is one list, which is a bit awkward
     //  if the AppLoop belonging to the PR has non-linear structure
     protected List<String> getAllModulesToPlace(Set<String> placedModules, Application app) {
         List<String> modulesToPlace = new ArrayList<>();
@@ -315,7 +315,7 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
             }
         }
         edgeFogDevices = new ArrayList<>();
-        // Simon (020425) says there is already filtering for ALL FCNs in MyMicroservicesController.getResourceInfo.
+        // There is already filtering for ALL FCNs in MyMicroservicesController.getResourceInfo.
         // TODO consider making additional functionality here to query AVAILABLE FCNs,
         //  instead of all FCNs.
         //  I believe these can be safely stored into edgeFogDevices because it is used in
@@ -494,7 +494,7 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
                 for (String microservice : toRemove)
                     mappedMicroservices.get(prKey).remove(microservice);
 
-                // Simon (170225) says update PR to shift first module (always clientModule) to last place
+                // Update PR to shift first module (always clientModule) to last place
                 // For metric collecting purposes
                 Map.Entry<String, Integer> clientModuleEntry = placementRequest.getPlacedServices().entrySet().iterator().next();
                 placementRequest.getPlacedServices().remove(clientModuleEntry.getKey());
@@ -660,7 +660,7 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
             }
             
             Application app = applicationInfo.get(pr.getApplicationId());
-            // Simon says we want one target per second microservice in the PR's application
+            // We want one target per second microservice in the PR's application
             // If there are no second microservices, targeted is true
             boolean targeted = true;
             for (String secondMicroservice : FogBroker.getApplicationToSecondServicesMap().get(app)) {
@@ -808,17 +808,16 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
 
     // INCLUDES FINAL JOURNEY back to user
     private double determineLatencyOfDecision(ContextPlacementRequest pr) {
-        // Simon (170225) says we are currently NOT considering execution time
+        // We are currently NOT considering execution time
         // Hence only placement targets are considered
-        // placedMicroservices are ordered
+        // placedMicroservices are ordered.
         double latency = 0;
         List<Integer> edges = new ArrayList<>(pr.getPlacedServices().values());
 
 
         // Check if there are at least two devices to calculate latency
         if (edges.size() > 1) {
-            // Add latency between cloud and first edge
-            // TODO Simon says for 1 service scenario, variance in latency comes from 3 places:
+            // For 1 service scenario, variance in latency comes from 3 places:
             //  - Latency between cloud->firstEdge
             //  - Latency of final journey:
             //      - firstEdge->cloud (return for routing to gateway)
@@ -826,7 +825,7 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
             //      - gateway->user (most variance I assume)
             latency += pr.getRequestLatency();
 //            latency += determineLatency(cloudId, edges.get(0));
-            for (int i = 0; i < edges.size() - 2; i++) { // Simon says we DONT count the last journey
+            for (int i = 0; i < edges.size() - 2; i++) { // We DONT count the last journey
                 int sourceDevice = edges.get(i);
                 int destDevice = edges.get(i + 1);
                 latency += determineLatency(sourceDevice, destDevice);
@@ -1114,9 +1113,6 @@ public abstract class SPPHeuristic implements MicroservicePlacementLogic {
             this.closestEdgeNode = closestEdgeNode;
             this.globalLatencies = globalLatencies;
 
-            // Simon says this is just our FogDevices state
-            // TODO All references to this will use the state instead
-//            this.allEdgeServers = allEdgeServers;
 
             // if the same node
             if (fogDevice == closestEdgeNode) {

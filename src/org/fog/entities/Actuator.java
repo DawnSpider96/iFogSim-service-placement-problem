@@ -62,6 +62,8 @@ public class Actuator extends SimEntity{
 				tuple.getDestModuleName(),
 				tuple.getSensorId(),
 				tuple.getPrIndex(),
+				// TODO Make traversedMicroservices an ordered map.
+				//  Currently the printed values are ordered weirdly.
 				tuple.getTraversed().values().stream()
 						.map(CloudSim::getEntityName)
 						.collect(Collectors.joining(" -> "))

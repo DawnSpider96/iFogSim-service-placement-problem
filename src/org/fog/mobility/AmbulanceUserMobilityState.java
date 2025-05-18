@@ -20,10 +20,6 @@ public class AmbulanceUserMobilityState extends DeviceMobilityState {
     int patientIndex = 0;
     
     public AmbulanceUserMobilityState(Location location, PathingStrategy strategy, double speed) {
-//        super(Location.getPointOfInterest("HOSPITAL1"), strategy, speed);
-
-        // Start at location read from csv instead of hospital.
-        // (model how ambulances are already parked around the city)
         super(location, strategy, speed);
         this.status = AmbulanceUserStatus.WAITING_FOR_EMERGENCY;
     }
@@ -54,8 +50,6 @@ public class AmbulanceUserMobilityState extends DeviceMobilityState {
                 60,
                 pts
             );
-
-//            patientIndex++;
         }
         else if (status == AmbulanceUserStatus.TRAVELLING_TO_HOSPITAL) {
             Location hospital = Location.getPointOfInterest("HOSPITAL1");
@@ -72,7 +66,7 @@ public class AmbulanceUserMobilityState extends DeviceMobilityState {
 
     @Override
     public void reachedDestination() {
-        // Simon (080425) says Possible integration with actual applications/services
+        // todo Possible integration with actual applications/services?
         if (this.status == AmbulanceUserStatus.TRAVELLING_TO_HOSPITAL) {
             this.status = AmbulanceUserStatus.PAUSED_AT_HOSPITAL;
         }

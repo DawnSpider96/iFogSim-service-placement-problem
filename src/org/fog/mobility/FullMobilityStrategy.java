@@ -54,8 +54,8 @@ public class FullMobilityStrategy implements MobilityStrategy {
         }
         Location loc = nextWaypoint.getLocation();
         dms.setCurrentLocation(loc);
-        // TODO Simon (100425) says maybe remove the journey state if it gets too heavy,
-        //  it's primarily for debugging.
+        // TODO Remove the journey state if it gets too heavy,
+        //  it's primarily for debugging anyway.
         dms.getJourney().put(currentTime, loc);
 //        System.out.println("Device " + deviceId + " moved to location: " + nextWaypoint.getLocation());
         
@@ -63,7 +63,8 @@ public class FullMobilityStrategy implements MobilityStrategy {
         FogDevice prevParent = getDeviceById(parentReferences.get(deviceId));
         
         // Use LocationManager to determine new parent based on proximity
-        // IRL a device wouldn't have full knowledge of the other devices (fogDevices state)
+        // TODO Maybe needs better design.
+        //  IRL a device wouldn't have full knowledge of the other devices (fogDevices state)
         //  but we don't have a good representation of physically connecting to the nearest edge server.
         int newParentId = locationManager.determineParentByProximity(deviceId, fogDevices);
         FogDevice newParent = getDeviceById(newParentId);
@@ -183,7 +184,6 @@ public class FullMobilityStrategy implements MobilityStrategy {
 
                 ((SPPFogDevice) fogDevice).updateRoutingTable(f.getId(), fogDevice.getParentId());
 
-                //For othe((MyFogDevice) f).getRoutingTable()r, update route to mobile based on route to parent
                 int nextId = ((SPPFogDevice) f).getRoutingTable().get(fogDevice.getParentId());
                 if (f.getId() != nextId)
                     ((SPPFogDevice) f).updateRoutingTable(fogDevice.getId(), nextId);

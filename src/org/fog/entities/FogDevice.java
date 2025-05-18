@@ -90,6 +90,7 @@ public class FogDevice extends PowerDatacenter {
     protected double clusterLinkBandwidth;
 
 
+    // UplinkLatency must be in seconds. We convert to milliseconds in this constructor.
     public FogDevice(
             String name,
             FogDeviceCharacteristics characteristics,
@@ -427,8 +428,6 @@ public class FogDevice extends PowerDatacenter {
         double timeDiff = currentTime - getLastProcessTime();
         double timeFrameDatacenterEnergy = 0.0;
 
-        // TODO uncomment
-        //  Simon (180225) says for brevity of console log
         for (PowerHost host : this.<PowerHost>getHostList()) {
             Log.printLine();
 
@@ -482,7 +481,7 @@ public class FogDevice extends PowerDatacenter {
 
         setPower(getPower() + timeFrameDatacenterEnergy);
 
-        checkCloudletCompletion(); // Simon (250125) says this function call is where mips are dynamically reallocated from finished Modules
+        checkCloudletCompletion(); // This function call is where mips are dynamically reallocated from finished Modules
 
         /** Remove completed VMs **/
         /**
@@ -506,7 +505,7 @@ public class FogDevice extends PowerDatacenter {
     protected void checkCloudletCompletion() {
         boolean cloudletCompleted = false;
         List<? extends Host> list = getVmAllocationPolicy().getHostList();
-        // todo Simon says that for OnlinePOC, every policy (AppModuleAllocationPolicy) should only be supervising ONE PowerHost
+
         for (int i = 0; i < list.size(); i++) {
             Host host = list.get(i);
             for (Vm vm : host.getVmList()) {
@@ -573,7 +572,7 @@ public class FogDevice extends PowerDatacenter {
         return -1;
     }
 
-    // Simon (310325) says this only works WITH OVERBOOKING
+    // This only works WITH OVERBOOKING
     //  I will override this. It is used in:
     //  - executeTuple
     //  - checkCloudletCompletion
@@ -810,7 +809,7 @@ public class FogDevice extends PowerDatacenter {
         send(ev.getSource(), CloudSim.getMinTimeBetweenEvents(), FogEvents.TUPLE_ACK);
     }
 
-    // Simon (310325) says this calls updateAllocatedMips which only works WITH OVERBOOKING
+    // This calls updateAllocatedMips which only works WITH OVERBOOKING
     //  I will overwrite this.
     protected void executeTuple(SimEvent ev, String moduleName) {
         Logger.debug(getName(), "Executing tuple on module " + moduleName);
@@ -828,7 +827,7 @@ public class FogDevice extends PowerDatacenter {
             int instances = -1;
             for (String _moduleName : module.getDownInstanceIdsMaps().keySet()) {
                 instances = Math.max(module.getDownInstanceIdsMaps().get(_moduleName).size(), instances);
-            } // TODO Simon says might need to change logic. We want the number of instances for module itself?
+            }
             module.setNumInstances(instances);
         }
 
@@ -1216,7 +1215,6 @@ public class FogDevice extends PowerDatacenter {
         return clusterTupleQueue;
     }
 
-    // Simon (280125) this is useless lol
     @Override
     public void shutdownEntity(){
         this.setState(FINISHED);

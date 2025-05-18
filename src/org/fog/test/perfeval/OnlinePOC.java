@@ -4,7 +4,7 @@ import org.cloudbus.cloudsim.sdn.example.policies.VmSchedulerTimeSharedEnergy;
 import org.fog.application.MyApplication;
 import org.fog.mobilitydata.*;
 import org.fog.placement.PlacementSimulationController;
-import org.fog.utils.Logger;
+import org.fog.utils.*;
 
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
@@ -23,9 +23,6 @@ import org.fog.entities.*;
 import org.fog.entities.PlacementRequest;
 import org.fog.placement.PlacementLogicFactory;
 import org.fog.policy.AppModuleAllocationPolicy;
-import org.fog.utils.FogLinearPowerModel;
-import org.fog.utils.FogUtils;
-import org.fog.utils.TimeKeeper;
 import org.fog.utils.distribution.DeterministicDistribution;
 
 import java.io.IOException;
@@ -77,20 +74,13 @@ public class OnlinePOC {
 
             CloudSim.init(num_user, calendar, trace_flag);
 
-            String appId = "SimonApp"; // identifier of the application
+            String appId = "immobileUserApp_0"; // identifier of the application
 
             FogBroker broker = new FogBroker("broker");
             CloudSim.setFogBrokerId(broker.getId());
 
             MyApplication application = createApplication(appId, broker.getId());
             application.setUserId(broker.getId());
-            // Simon (140125) says tuples will be sent to FogDevices and executed under mService1
-            // because source module is clientModule but dest module is mService1
-            // todo Change accordingly if the AppLoop ever changes (or there are more Apploops)
-            FogBroker.getApplicationToFirstServiceMap().put(application, "clientModule");
-            List<String> simonAppSecondMicroservices = new ArrayList<>();
-            simonAppSecondMicroservices.add("mService1");
-            FogBroker.getApplicationToSecondServicesMap().put(application, simonAppSecondMicroservices);
 
             // Create fog devices (including user devices)
             createFogDevices(broker.getId(), application);
@@ -102,14 +92,31 @@ public class OnlinePOC {
             appList.add(application);
 
             int placementAlgo = PlacementLogicFactory.BEST_FIT;
+            Map<String, Integer> intervalValues = new HashMap<>();
+            intervalValues.put("immobileUser", 300);
             PlacementSimulationController microservicesController = new PlacementSimulationController(
                     "controller",
                     fogDevices,
                     sensors,
                     actuators,
                     appList,
-                    placementAlgo
+                    placementAlgo,
+                    intervalValues,
+                    100,
+                    200,
+                    30
             );
+
+            FogBroker.getApplicationInfo().put(application.getAppId(), application);
+
+            String clientModuleName = appId + "_clientModule";
+            FogBroker.getApplicationToFirstServiceMap().put(application, clientModuleName);
+
+            List<String> secondMicroservices = new ArrayList<>();
+            secondMicroservices.add(appId + "_mService1");
+            FogBroker.getApplicationToSecondServicesMap().put(application, secondMicroservices);
+
+            SPPMonitor.getInstance().initializeSimulation(0);
 
             try {
                 System.out.println("Initializing location data from CSV files...");
@@ -145,7 +152,6 @@ public class OnlinePOC {
                 placementRequests.add(prototypePR);
             }
 
-            // TODO Simon says now we need to give them time intervals to send periodically across the Simulation
             microservicesController.submitPlacementRequests(placementRequests, 1);
 
             TimeKeeper.getInstance().setSimulationStartTime(Calendar.getInstance().getTimeInMillis());
@@ -182,7 +188,7 @@ public class OnlinePOC {
         }
 
         for (int i = 0; i < numberOfUser; i++) {
-            FogDevice mobile = addImmobile("immobile_" + i, userId, app, References.NOT_SET);
+            FogDevice mobile = addImmobile("immobileUser_" + i, userId, app, References.NOT_SET);
             // Don't set uplink latency, it will be set by LocationManager based on distance
             mobile.setUplinkLatency(-1);
             mobile.setLevel(2);
@@ -257,7 +263,7 @@ public class OnlinePOC {
     }
 
     private static FogDevice addImmobile(String name, int userId, Application app, int parentId) {
-        SPPFogDevice mobile = createFogDevice(name, 200, 2048, 10000, 270, 0, 87.53, 82.44, SPPFogDevice.GENERIC_USER);
+        SPPFogDevice mobile = createFogDevice(name, 200, 2048, 10000, 270, 0, 87.53, 82.44, SPPFogDevice.IMMOBILE_USER);
         mobile.setParentId(parentId);
         
         Sensor mobileSensor = new PassiveSensor("s-" + name, "SENSOR", userId, app.getAppId(), new DeterministicDistribution(SENSOR_TRANSMISSION_TIME)); // inter-transmission time of EEG sensor follows a deterministic distribution
@@ -285,42 +291,42 @@ public class OnlinePOC {
         /*
          * Adding modules (vertices) to the application model (directed graph)
          */
-        application.addAppModule("clientModule", 4, 4, 100);
-        application.addAppModule("mService1", 128, 250, 200);
-        application.addAppModule("mService2", 128, 350, 500);
-        application.addAppModule("mService3", 128, 450, 1000);
+        application.addAppModule(application.getAppId()+"_clientModule", 4, 4, 100);
+        application.addAppModule(application.getAppId()+"_mService1", 128, 250, 200);
+        application.addAppModule(application.getAppId()+"_mService2", 128, 350, 500);
+        application.addAppModule(application.getAppId()+"_mService3", 128, 450, 1000);
 
         /*
          * Connecting the application modules (vertices) in the application model (directed graph) with edges
          */
 
         application.addAppEdge("SENSOR", "clientModule", 1000, 500, "SENSOR", Tuple.UP, AppEdge.SENSOR);
-        application.addAppEdge("clientModule", "mService1", 2000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService1", "mService2", 2500, 500, "FILTERED_DATA1", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mService2", "mService3", 4000, 500, "FILTERED_DATA2", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge(application.getAppId()+"_clientModule", application.getAppId()+"_mService1", 2000, 500, "RAW_DATA", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge(application.getAppId()+"_mService1", application.getAppId()+"_mService2", 2500, 500, "FILTERED_DATA1", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge(application.getAppId()+"_mService2", application.getAppId()+"_mService3", 4000, 500, "FILTERED_DATA2", Tuple.UP, AppEdge.MODULE);
 
 //        application.addAppEdge("mService2", "clientModule", 14, 500, "RESULT1", Tuple.DOWN, AppEdge.MODULE);
-        application.addAppEdge("mService3", "clientModule", 28, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
-        application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
+        application.addAppEdge(application.getAppId()+"_mService3", application.getAppId()+"_clientModule", 28, 500, "RESULT", Tuple.DOWN, AppEdge.MODULE);
+        application.addAppEdge(application.getAppId()+"_clientModule", "DISPLAY", 14, 500, "RESULT_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
 //        application.addAppEdge("clientModule", "DISPLAY", 14, 500, "RESULT2_DISPLAY", Tuple.DOWN, AppEdge.ACTUATOR);
 
 
         /*
          * Defining the input-output relationships (represented by selectivity) of the application modules.
          */
-        application.addTupleMapping("clientModule", "SENSOR", "RAW_DATA", new FractionalSelectivity(1.0));
-        application.addTupleMapping("mService1", "RAW_DATA", "FILTERED_DATA1", new FractionalSelectivity(1.0));
-        application.addTupleMapping("mService2", "FILTERED_DATA1", "FILTERED_DATA2", new FractionalSelectivity(1.0));
-        application.addTupleMapping("mService3", "FILTERED_DATA2", "RESULT", new FractionalSelectivity(1.0));
-        application.addTupleMapping("clientModule", "RESULT", "RESULT_DISPLAY", new FractionalSelectivity(1.0));
+        application.addTupleMapping(application.getAppId()+"_clientModule", "SENSOR", "RAW_DATA", new FractionalSelectivity(1.0));
+        application.addTupleMapping(application.getAppId()+"_mService1", "RAW_DATA", "FILTERED_DATA1", new FractionalSelectivity(1.0));
+        application.addTupleMapping(application.getAppId()+"_mService2", "FILTERED_DATA1", "FILTERED_DATA2", new FractionalSelectivity(1.0));
+        application.addTupleMapping(application.getAppId()+"_mService3", "FILTERED_DATA2", "RESULT", new FractionalSelectivity(1.0));
+        application.addTupleMapping(application.getAppId()+"_clientModule", "RESULT", "RESULT_DISPLAY", new FractionalSelectivity(1.0));
 
         final AppLoop loop3 = new AppLoop(new ArrayList<String>() {{
             add("SENSOR");
-            add("clientModule");
-            add("mService1");
-            add("mService2");
-            add("mService3");
-            add("clientModule");
+            add(application.getAppId()+"_clientModule");
+            add(application.getAppId()+"_mService1");
+            add(application.getAppId()+"_mService2");
+            add(application.getAppId()+"_mService3");
+            add(application.getAppId()+"_clientModule");
             add("DISPLAY");
         }});
 

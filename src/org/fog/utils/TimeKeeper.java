@@ -40,7 +40,7 @@ public class TimeKeeper {
 		return instance;
 	}
 
-	// Simon 030225 says this is part of the state that should be reset between simulations
+	// This is part of the state that should be reset between simulations
 	public static void deleteInstance() {
 		instance = null;
 	}

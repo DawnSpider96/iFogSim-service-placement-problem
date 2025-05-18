@@ -100,8 +100,6 @@ public class BestFitHeuristic extends SPPHeuristic implements MicroservicePlacem
 
             if (placed[j] < 0) {
                 ContextPlacementRequest mpr = (ContextPlacementRequest) placementRequest;
-                // todo Simon says what do we do when failure?
-                //  (160125) Nothing. Because (aggregated) failure will be determined outside the for loop
                 System.out.printf("Failed to place module %s on PR %d, cycle %d%n",
                         s,
                         mpr.getSensorId(),

@@ -32,7 +32,8 @@ public class PassiveSensor extends Sensor {
         // todo This is a hardcoded check. Edit based on your user types.
         if (!(Objects.equals(userType, SPPFogDevice.GENERIC_USER) ||
                 Objects.equals(userType, SPPFogDevice.AMBULANCE_USER) ||
-                Objects.equals(userType, SPPFogDevice.OPERA_USER))) {
+                Objects.equals(userType, SPPFogDevice.OPERA_USER) ||
+                Objects.equals(userType, SPPFogDevice.IMMOBILE_USER))) {
             throw new NullPointerException("Invalid Type");
         }
 
@@ -65,7 +66,7 @@ public class PassiveSensor extends Sensor {
         return userType;
     }
 
-    // Simon says we will use FogBroker as a central control entity that creates tuples.
+    // We use FogBroker as a central control entity that creates tuples.
     // Hence, sensors will be useless for now (140125)
     @Override
     public void transmit(){

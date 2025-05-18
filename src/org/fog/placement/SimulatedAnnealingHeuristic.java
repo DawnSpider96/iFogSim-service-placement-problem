@@ -49,7 +49,7 @@ public class SimulatedAnnealingHeuristic extends SPPHeuristic implements Microse
             placementCompleteCount = fillToPlace(placementCompleteCount, toPlace, placementRequests);
         }
 
-        // Simon says in the algorithm itself, copies of these DeviceStates will be made.
+        // In the algorithm itself, copies of these DeviceStates will be made.
         //  This initialisation occurs only once, capturing the state of resourceAvailability (and fogDevices) at this point in time
         // However, everytime a placement is made (for one PR), DeviceStates will be updated.
         deviceStateMap = new TreeMap<>();
@@ -341,7 +341,7 @@ public class SimulatedAnnealingHeuristic extends SPPHeuristic implements Microse
                 if (!currentModuleLoadMap.get(deviceId).containsKey(s))
                     currentModuleLoadMap.get(deviceId).put(s, service.getMips());
                 else
-                    currentModuleLoadMap.get(deviceId).put(s, service.getMips() + currentModuleLoadMap.get(deviceId).get(s)); // todo Simon says isn't this already vertical scaling? But is on PR side not FogDevice side
+                    currentModuleLoadMap.get(deviceId).put(s, service.getMips() + currentModuleLoadMap.get(deviceId).get(s));
 
                 //currentModuleInstance
                 if (!currentModuleInstanceNum.get(deviceId).containsKey(s))
@@ -351,7 +351,7 @@ public class SimulatedAnnealingHeuristic extends SPPHeuristic implements Microse
             }
         }
         else {
-            // Simon says Simulated Annealing is an "All or nothing" placement strategy.
+            // Simulated Annealing is an "All or nothing" placement strategy.
             //  If one service fails to place, all cannot be placed, hence state is unchanged.
             Logger.debug("Simulated Annealing Placement Failure", "But temporary state not affected");
         }

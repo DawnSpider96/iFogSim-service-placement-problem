@@ -504,7 +504,7 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 	 */
 	@Override
 	public List<Double> getCurrentRequestedMips() {
-		// Simon (250125) says this is a pretty useless function but is necessary for the installation of modules.
+		// Necessary for overbooking in the installation of modules.
 		// Allocates Pes for a VM, we pass in this argument which ensures that the allocation always happens.
 		// Actual allocation of Pes (+ updating of VMScheduler.mipsMap) will happen upon Tuple execution
 		List<Double> mipsShare = new ArrayList<Double>();

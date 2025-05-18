@@ -12,8 +12,6 @@ import java.util.Map;
 
 public class SPPMonitor {
 
-    // TODO Simon says we want the CPU and RAM usage of EVERY FogDevice after EVERY Placement-execution cycle
-
     private int simulationRoundNumber = 0;
     
     // Temporary storage for current simulation metrics

@@ -23,7 +23,7 @@ public class OfflineDataParser extends DataParser {
 
     @Override
     public void parseUserData(Map<Integer, Integer> userMobilityPattern, String fileName) throws IOException {
-        // TODO Simon says all users are IMMOBILE. The file to parse is very much like the resources file
+        // All users are IMMOBILE. The file to parse is very much like the resources file
 
         BufferedReader csvReader = new BufferedReader(new FileReader(fileName));
         System.out.println("The positions of immobile users is extracted from: " + fileName);

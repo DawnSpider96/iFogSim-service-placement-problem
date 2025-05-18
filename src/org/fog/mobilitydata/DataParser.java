@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 
-
+// This is deprecated for OfflinePoC, OnlinePoC, SPPExperiment, MobilityPoC
 public class DataParser {
     public Map<String, Location> resourceLocationData = new HashMap<String, Location>();
     public Map<String, Integer> levelID = new HashMap<String, Integer>();
@@ -40,14 +40,13 @@ public class DataParser {
     }
 
     private double nextMobilisationEvent(double eventTime, int mobilityPattern) {
-        // TODO Simon says maybe we can configure different users with this. This will ultimately be called in main function
         Random ran = new Random();
         int seed;
         double newEventTime = -1;
         switch (mobilityPattern) {
             case References.DIRECTIONAL_MOBILITY:
                 seed = 20;
-                newEventTime = 1.00 + (double) ran.nextInt(seed) + eventTime; // TODO Simon says why 1.00? Min time between events is 0.1
+                newEventTime = 1.00 + (double) ran.nextInt(seed) + eventTime;
                 break;
             case References.RANDOM_MOBILITY:
                 seed = 2000;

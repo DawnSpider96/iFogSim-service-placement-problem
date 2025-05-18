@@ -65,7 +65,6 @@ public class CloudSim {
 	/** The minimal time between events. Events within shorter periods after the last event are discarded. */
 	private static double minTimeBetweenEvents = 0.1;
 
-	// Simon (140125)
 	private static int FogBrokerId;
 
 	public static int getFogBrokerId(){
@@ -233,7 +232,7 @@ public class CloudSim {
 		}
 	}
 
-	// Simon says we only empty the queues, CloudSim will reset its (static) state
+	// We only empty the queues, CloudSim will reset its (static) state
 	// init should be called again later (in main sim file)
 	public static void clearQueues() {
 		CloudSim.future = new FutureQueue();

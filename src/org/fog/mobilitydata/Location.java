@@ -128,8 +128,6 @@ public class Location {
 				* Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
 		double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-//		distance = Math.pow(distance, 2);
-//		Simon says they used to square distance and then return the sqrt, not sure why.
 
 		return R * c;
 	}

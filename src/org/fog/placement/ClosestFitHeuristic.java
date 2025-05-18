@@ -83,7 +83,7 @@ public class ClosestFitHeuristic extends SPPHeuristic implements MicroservicePla
     @Override
     protected int doTryPlacingOnePr(List<String> microservices, Application app, PlacementRequest placementRequest) {
 
-        // Simon says the closest node changes with every PR
+        // The closest node changes with every PR
         // Hence `nodes` needs to be remade repeatedly
         List<RelativeLatencyDeviceState> nodes = new ArrayList<>();
         FogDevice closestFogDevice = getDevice(closestNodes.get(placementRequest));
@@ -180,7 +180,7 @@ public class ClosestFitHeuristic extends SPPHeuristic implements MicroservicePla
                 if (!currentModuleLoadMap.get(deviceId).containsKey(s))
                     currentModuleLoadMap.get(deviceId).put(s, service.getMips());
                 else
-                    currentModuleLoadMap.get(deviceId).put(s, service.getMips() + currentModuleLoadMap.get(deviceId).get(s)); // todo Simon says isn't this already vertical scaling? But is on PR side not FogDevice side
+                    currentModuleLoadMap.get(deviceId).put(s, service.getMips() + currentModuleLoadMap.get(deviceId).get(s));
 
                 //currentModuleInstance
                 if (!currentModuleInstanceNum.get(deviceId).containsKey(s))

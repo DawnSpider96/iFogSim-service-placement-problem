@@ -15,18 +15,16 @@ public class ExperimentDataParser extends DataParser {
     public ExperimentDataParser() {
         levelID.put("LevelsNum", 3);
         levelID.put("Cloud", 0);
-        // Todo Simon says no Proxy servers
+        // TODO Uncomment if there are Proxy servers
 //        levelID.put("Proxy", Integer.parseInt(props.getProperty("Proxy")));
         levelID.put("Gateway", 1);
         levelID.put("User", 2);
     }
 
     public void parseUserData(Map<Integer, Integer> userMobilityPattern, String fileName, int numberOfUser) throws IOException {
-        // Simon (160225) says we are parsing STARTING locations of users.
+        // Parses STARTING locations of users.
         // The file to parse is very much like the resources file
 
-        // Simon (160225) says userMobilityPattern is a feature of statically determined mobility
-        //  and hence we will NOT use it.
         int MAX_NUMBER_OF_USERS = 196;
         // Math.floor is implicit
         int stepsize = MAX_NUMBER_OF_USERS / numberOfUser;
@@ -74,8 +72,7 @@ public class ExperimentDataParser extends DataParser {
         BufferedReader csvReader = new BufferedReader(new FileReader(filename));
         String row;
 
-        // Simon says we
-        // read the first numberOfEdge entries from the file (that have level==levelID.get("Gateway"))
+        // We read the first numberOfEdge entries from the file (that have level==levelID.get("Gateway"))
         // Ensures that we only have numberOfEdge edge servers (gateway is edge server)
         int edgesPut = 0;
         while ((row = csvReader.readLine()) != null && edgesPut < numberOfEdge) {

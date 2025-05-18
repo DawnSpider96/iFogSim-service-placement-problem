@@ -56,12 +56,12 @@ import java.util.stream.IntStream;
  * DYNAMIC_CLUSTERING -> true (for clustered) and false (for not clustered) * (also compatible with static clustering)
  */
 public class SPPExperiment {
-    private static final String outputFile = "./output/PerfEval/ACO_100_X_X_FINAL.csv";
-    private static final String CONFIG_FILE = "./dataset/PerformanceEvalConfigsUsers.yaml";
-//    private static final String outputFile = "./output/MiH_4_0_COPY.csv";
-//    private static final String CONFIG_FILE = "./dataset/SPPExperimentConfigs.yaml";
+//    private static final String outputFile = "./output/PerfEval/ACO_100_X_X_FINAL.csv";
+//    private static final String CONFIG_FILE = "./dataset/PerformanceEvalConfigsUsers.yaml";
+    private static final String outputFile = "./output/MiH_4_0_Melbourne.csv";
+    private static final String CONFIG_FILE = "./dataset/SPPExperimentConfigs.yaml";
     // Path to location configuration file
-    private static final String LOCATION_CONFIG_FILE = "./dataset/location_config_simon.json";
+    private static final String LOCATION_CONFIG_FILE = "./dataset/location_config.json";
 
     static List<FogDevice> fogDevices = new ArrayList<FogDevice>();
     static List<Sensor> sensors = new ArrayList<Sensor>();
@@ -156,9 +156,7 @@ public class SPPExperiment {
     }
 
     public static void main(String[] args) {
-        SPPExperiment.setUseDynamicLocations(true);
-        SPPExperiment.setOutputDirectory("./dataset/simon");
-        
+        SPPExperiment.setUseDynamicLocations(false);
         List<SimulationConfig> configs = loadConfigurationsFromYaml();
         
         // Initialize the CSV file with headers once at the beginning
@@ -592,7 +590,6 @@ public class SPPExperiment {
                            ", TUPLE_ID: " + FogUtils.getCurrentTupleId());
 
         // Reset THIS class's temporary state
-        // Simon (040225) says MyMonitor is NOT reset
         fogDevices.clear();
         sensors.clear();
         actuators.clear();
@@ -779,7 +776,6 @@ public class SPPExperiment {
                 }
             }
 
-            // TODO Simon says now we need to give them time intervals to send periodically across the Simulation
             microservicesController.submitPlacementRequests(placementRequests, 1);
 
             TimeKeeper.getInstance().setSimulationStartTime(Calendar.getInstance().getTimeInMillis());

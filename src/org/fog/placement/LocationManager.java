@@ -96,8 +96,7 @@ public class LocationManager {
     public int determineParentByProximity(int deviceId, List<FogDevice> fogDevices) {
         Location deviceLocation = getDeviceLocation(deviceId);
         if (deviceLocation == null) {
-            System.out.println("WARNING: No location found for device " + deviceId);
-            return -1;
+            throw new NullPointerException("No location found for device");
         }
         
         // Determine the device's level

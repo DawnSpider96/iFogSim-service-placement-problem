@@ -142,7 +142,7 @@ public class ControllerComponent {
         updateResourceInfo(deviceId, resourceDeltas);
     }
 
-    // Simon (02045) says deprecated.
+    // Deprecated.
     /**
      * @deprecated This method uses the standard service discovery mechanism without PR awareness.
      * Use addServiceDiscoveryInfo(String microserviceName, Integer deviceID, Integer sensorId, Integer prIndex) instead.
@@ -188,7 +188,7 @@ public class ControllerComponent {
         resourceAvailability.put(deviceId, new HashMap<>(initialResources));
     }
 
-    // Simon (010425) says we will use incremental amounts and do the arithmetic here at ControllerComponent
+    // NOTE: We use incremental amounts and do the arithmetic here at ControllerComponent
     // to prevent race conditions
     public void updateResourceInfo(int deviceId, Map<String, Double> resourceDeltas) {
         if (!resourceAvailability.containsKey(deviceId)) {
@@ -270,7 +270,6 @@ class ServiceDiscovery {
     }
 }
 
-// Simon (020425) says this supports identifying placement decision-specific Service Discovery entries
 class PRAwareServiceDiscovery extends ServiceDiscovery {
     // List of all service discovery entries
     protected List<SPPHeuristic.PRContextAwareEntry> entries;
@@ -316,7 +315,6 @@ class PRAwareServiceDiscovery extends ServiceDiscovery {
                     
                     // Remove from the index
                     iterator.remove();
-                    
                     // Remove from the main list
                     entries.remove(entry);
                     

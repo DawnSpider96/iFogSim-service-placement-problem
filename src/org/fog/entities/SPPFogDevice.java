@@ -90,13 +90,10 @@ public class SPPFogDevice extends FogDevice {
 				JSONObject object = (JSONObject) ev.getData();
 				PlacementRequest pr = (PlacementRequest) object.get("PR");
 				Application application = (Application) object.get("app");
-				// todo Simon (310325) says MyMicroserviceController handles periodic generation now 
-				// PlacementRequest prNew = new PlacementRequest(pr.getApplicationId(), pr.getPlacementRequestId(), pr.getRequester(), new LinkedHashMap<>(pr.getPlacedMicroservices()));
-				// Map<String, Object> newObject = new HashMap<>();
-				// newObject.put("PR", prNew);
-				// newObject.put("app", application);
-				// JSONObject jsonObject = new JSONObject(newObject);
-				// send(getId(), MicroservicePlacementConfig.PLACEMENT_GENERATE_INTERVAL, FogEvents.TRANSMIT_PR, jsonObject);
+				// PlacementSimulationController handles periodic generation now
+				//  otherwise this device would autonomously send.
+				//  This means rescheduling the TRANSMIT_PR,
+				//  according local to poisson distribution.
 
 				installStartingModule(pr, application);
 				transmitPR(pr);
@@ -111,13 +108,13 @@ public class SPPFogDevice extends FogDevice {
 				moduleUninstall(ev);
 				break;
 			case FogEvents.NODE_EXECUTION_FINISHED:
+				Logger.debug("Deprecation warning", "finishNodeExecution is deprecated");
 				finishNodeExecution(ev);
 				break;
 			case FogEvents.EXECUTION_START_REQUEST:
 				startExecution(ev);
 				break;
 //			case FogEvents.START_DYNAMIC_CLUSTERING:
-//				//This message is received by the devices to start their clustering
 //				processClustering(this.getParentId(), this.getId(), ev);
 //				updateClusterConsInRoutingTable();
 //				break;
@@ -160,23 +157,6 @@ public class SPPFogDevice extends FogDevice {
 			sendNow(getId(), FogEvents.PROCESS_PRS);
 	}
 
-//	private void sendThroughFreeClusterLink(Tuple tuple, Integer clusterNodeID) {
-//		double networkDelay = tuple.getCloudletFileSize() / getClusterLinkBandwidth();
-//		setClusterLinkBusy(true);
-//		double latency = (getClusterMembersToLatencyMap()).get(clusterNodeID);
-//		send(getId(), networkDelay, FogEvents.UPDATE_CLUSTER_TUPLE_QUEUE);
-//
-//		if (tuple instanceof ManagementTuple) {
-//			send(clusterNodeID, networkDelay + latency + ((ManagementTuple) tuple).processingDelay, FogEvents.MANAGEMENT_TUPLE_ARRIVAL, tuple);
-//			//todo
-////            if (Config.ENABLE_NETWORK_USAGE_AT_PLACEMENT)
-////                NetworkUsageMonitor.sendingManagementTuple(latency, tuple.getCloudletFileSize());
-//		} else {
-//			send(clusterNodeID, networkDelay + latency, FogEvents.TUPLE_ARRIVAL, tuple);
-//			NetworkUsageMonitor.sendingTuple(latency, tuple.getCloudletFileSize());
-//		}
-//	}
-
 	protected void setDeviceType(String deviceType) {
 		// First temporarily set the deviceType for isUserDevice() to work
 		this.deviceType = deviceType;
@@ -211,9 +191,6 @@ public class SPPFogDevice extends FogDevice {
 				CloudSim.getEntityName(ev.getSource()) + " | Dest : " + CloudSim.getEntityName(ev.getDestination()) +
 				" | sensorId : " + tuple.getSensorId() + " | prIndex : " + tuple.getPrIndex());
 
-		// Simon (030425) says the cloud traffic might be worth capturing as metric
-		//  Especially since our network is flower-shaped.
-		//  However, currently there is no support.
 		if (deviceType.equals(SPPFogDevice.CLOUD)) {
 			updateCloudTraffic();
 		}
@@ -230,27 +207,6 @@ public class SPPFogDevice extends FogDevice {
 			return;
 		}
 
-//		if (getHost().getVmList().size() > 0) {
-//			AppModule operator = null;
-//			for (Vm vm : getHost().getVmList()){
-//				AppModule a = (AppModule) vm;
-//				if (Objects.equals(a.getName(), tuple.getDestModuleName())){
-//					operator = a;
-//					break;
-//				}
-//			}
-//			assert operator != null;
-//			if (CloudSim.clock() > 0) {
-//				getHost().getVmScheduler().deallocatePesForVm(operator);
-//				getHost().getVmScheduler().allocatePesForVm(operator, new ArrayList<Double>() {
-//					protected static final long serialVersionUID = 1L;
-//
-//					{
-//						add((double) getHost().getTotalMips());
-//					}
-//				});
-//			}
-//		}
 
 		if (deviceType.equals(SPPFogDevice.CLOUD) && tuple.getDestModuleName() == null) {
 			sendNow(getControllerId(), FogEvents.TUPLE_FINISHED, null);
@@ -324,30 +280,15 @@ public class SPPFogDevice extends FogDevice {
             assert operator != null;
             int vmId = operator.getId();
 
-//			if (CloudSim.clock() > 0) {
-//				getHost().getVmScheduler().deallocatePesForVm(operator);
-//				getHost().getVmScheduler().allocatePesForVm(operator, new ArrayList<Double>() {
-//					private static final long serialVersionUID = 1L;
-//					{
-//						add((double) getHost().getTotalMips());
-//					}
-//				});
-				// todo Simon (310325) says since we now use VmSchedulerTimeShared (no overbooking),
-				//  we must change the way we allocate/deallocate Pes to the VM
-				//  Previously we visited the VmScheduler TWICE: Once during installation and once during execution (here),
-				//  because of overbooking. Now we shouldn't,
-				//  because allocatePesForVm mutates the `availableMips` state of VmScheduler (for a wrongful second time here).
+			/*
+			 We now use VmSchedulerTimeShared (no overbooking),
+			  we must change the way we allocate/deallocate Pes to the VM
+			  Previously we visited the VmScheduler TWICE: Once during installation and once during execution (here),
+			  because of overbooking. Now we shouldn't,
+			  because allocatePesForVm mutates the `availableMips` state of VmScheduler (for a wrongful second time here).
+			*/
 
-//				List<Double> mipsShare = new ArrayList<>();
-//				mipsShare.add(operator.getMips());
-//				boolean result = getHost().getVmScheduler().allocatePesForVm(operator, mipsShare);
-//				if (!result) {
-//					VmSchedulerTimeShared vmsch = (VmSchedulerTimeShared) getHost().getVmScheduler(); // For debugging
-//					Logger.error("AllocatePesForVm error", "Failure to allocate Pes. Check VmScheduler's state, see it aligns with VmList.");
-//				}
-//			}
-
-			// Simon (170125) says VmId will always have a value under OnlinePOC
+			// VmId will always have a value under OnlinePOC
 			// because operator cannot be null
 			if(tuple.getModuleCopyMap().containsKey(tuple.getDestModuleName()) &&
 					tuple.getModuleCopyMap().get(tuple.getDestModuleName()) != vmId) {
@@ -453,15 +394,16 @@ public class SPPFogDevice extends FogDevice {
 
 	@Override
 	protected void updateAllocatedMips(String incomingOperator) {
-		// Simon (310325) says since no overbooking, skip all the deallocation/reallocation logic
-		// and just update the energy consumption and VM processing states
+		// TODO If VMScheduler does overbooking,
+		//   deallocation/reallocation logic goes here.
 		updateEnergyConsumption();
 	}
 
 
-	// todo Simon says we call the uninstallation of modules here
-	//  It checks ALL the VMs on the PowerHost belonging to this FogDevice (datacenter) to see if their Cloudlet's execution is complete
-	//  Since OnlinePOC services one Cloudlet per VM, we will uninstall after verifying that Cloudlet execution is complete
+	/** Uninstallation of modules is called here
+	  It checks ALL the VMs on the PowerHost belonging to this FogDevice (datacenter) to see if their Cloudlet's execution is complete
+	  Since OnlinePOC services one Cloudlet per VM, we will uninstall after verifying that Cloudlet execution is complete
+	 **/
 	@Override
 	protected void checkCloudletCompletion() {
 		boolean cloudletCompleted = false;
@@ -472,7 +414,7 @@ public class SPPFogDevice extends FogDevice {
 				while (vm.getCloudletScheduler().isFinishedCloudlets()) {
 
 					Cloudlet cl = vm.getCloudletScheduler().getNextFinishedCloudlet();
-					// todo Simon says that for OnlinePOC, every policy (AppModuleAllocationPolicy) should only be supervising ONE PowerHost
+					// Every policy (AppModuleAllocationPolicy) should only be supervising ONE PowerHost
 					Cloudlet cl2 = vm.getCloudletScheduler().getNextFinishedCloudlet();
 					if (cl2 != null) {
 						Logger.error("Cloudlet Finished List size error","Expected exactly one finished cloudlet in the CloudletFinishedList for VM ID " + vm.getId() + ", but found more.");
@@ -491,8 +433,7 @@ public class SPPFogDevice extends FogDevice {
 							resTuple.setModuleCopyMap(new HashMap<String, Integer>(tuple.getModuleCopyMap()));
 							resTuple.getModuleCopyMap().put(((AppModule) vm).getName(), vm.getId());
 
-							// Simon (020425) says this is necessary for service discovery identification
-							// Sanity check: Same sensorId and prIndex because the 2 services are from the same PR
+							// For service discovery identification
 							resTuple.setSensorId(tuple.getSensorId());
 							resTuple.setPrIndex(tuple.getPrIndex());
 
@@ -505,24 +446,6 @@ public class SPPFogDevice extends FogDevice {
 						obj.put("module", vm);
 						obj.put("tuple", tuple);
 						sendNow(getId(), FogEvents.MODULE_UNINSTALL, obj);
-
-						// We're now sending resource updates via ManagementTuple with network delay, 
-						// so we don't need to notify the cloud immediately with NODE_EXECUTION_FINISHED events
-						/*
-						JSONObject objj = new JSONObject();
-						objj.put("module", vm);
-						objj.put("id", getId());
-						if (deviceType.equals(FCN)) {
-                            // TODO (010425) Should we use management tuple for this?
-                            //  In real life the edge node will communicate with cloud that it is done
-                            sendNow(getFonId(), FogEvents.NODE_EXECUTION_FINISHED, objj);
-                        }
-						else if (isUserDevice() && microservicesControllerId != -1) {
-							objj.put("isDecrease", false);
-							sendNow(microservicesControllerId, FogEvents.USER_RESOURCE_UPDATE, objj);
-						}
-						else Logger.error("Control Flow error", "Invalid fog device type! Must be user or edge server.");
-						*/
 						
 						if (isUserDevice() && microservicesControllerId != -1) {
 							JSONObject objj = new JSONObject();
@@ -539,8 +462,9 @@ public class SPPFogDevice extends FogDevice {
 			updateAllocatedMips(null); // Dynamically reallocated mips from finished Modules
 	}
 
+	@Deprecated
 	public void finishNodeExecution(SimEvent ev) {
-		// Simon says this method is now deprecated as we're sending resource updates via ManagementTuple instead
+		// We send resource updates via ManagementTuple instead
 		// The cloud controller will update resources when it receives the ManagementTuple with resource information
 		
 		JSONObject objj = (JSONObject) ev.getData();
@@ -550,7 +474,8 @@ public class SPPFogDevice extends FogDevice {
 	}
 
 	/**
-	 * Both cloud and FON participates in placement process. But Simon says there are no FON devices.
+	 * Both cloud and FON participates in placement process.
+	 *  Currently I use no FON devices.
 	 */
 	public void initializeController(LoadBalancer loadBalancer, MicroservicePlacementLogic mPlacement, Map<Integer, Map<String, Double>> resourceAvailability, Map<String, Application> applications, List<FogDevice> fogDevices) {
 		if (getDeviceType() == SPPFogDevice.FON || getDeviceType() == SPPFogDevice.CLOUD) {
@@ -619,7 +544,7 @@ public class SPPFogDevice extends FogDevice {
 		Map<Integer, List<SPPHeuristic.PRContextAwareEntry>> serviceDiscovery = placementLogicOutput.getServiceDiscoveryInfoV2();
 		Map<PlacementRequest, Integer> placementRequestStatus = placementLogicOutput.getPrStatus();
 		Map<PlacementRequest, Integer> targets = placementLogicOutput.getTargets();
-		int fogDeviceCount = 0; // todo Simon says I still don't know what this variable does. Currently unused (050125).
+		int fogDeviceCount = 0; // todo I still don't know what this variable does. Currently unused (050125).
 		StringBuilder placementString = new StringBuilder();
 
 		// Send perDevice and all updated PRs to FogBroker
@@ -660,20 +585,9 @@ public class SPPFogDevice extends FogDevice {
 		}
 
 		FogBroker.setCycleNumber(FogBroker.getCycleNumber() + 1);
-		System.out.println(placementString.toString());
+		System.out.println(placementString);
 
-		// Simon (230425) says we do NOT resend failed Placement Requests
-//		for (PlacementRequest pr : placementRequestStatus.keySet()) {
-//			if (placementRequestStatus.get(pr) != -1) {
-//				if (Objects.equals(MicroservicePlacementConfig.SIMULATION_MODE, "DYNAMIC"))
-//					transmitPR(pr, placementRequestStatus.get(pr));
-//
-//				else if (Objects.equals(MicroservicePlacementConfig.SIMULATION_MODE, "STATIC"))
-////					sendNow(placementRequestStatus.get(pr), FogEvents.RECEIVE_PR, pr);
-//					Logger.error("Simulation static mode error", "Simulation should not be static.");
-//
-//			}
-//		}
+		// TODO Recycle failed placement requests here if applicable.
 
 		if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC) {
 			// Use the local placementProcessInterval field
@@ -734,11 +648,9 @@ public class SPPFogDevice extends FogDevice {
 				if (module.isBeingInstantiated()) {
 					module.setBeingInstantiated(false);
 				}
-				// Simon says no periodic tuples because the apps have no periodic edges.
-				//  Commented out just in case
-//				initializePeriodicTuples(module);
+				// TODO uncomment when apps have periodic edges.
+				// initializePeriodicTuples(module);
 				// getAllocatedMipsforVm checks the mipmap of the VMScheduler of the Host
-				//
 				module.updateVmProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(module).getVmScheduler()
 						.getAllocatedMipsForVm(module));
 
@@ -750,8 +662,8 @@ public class SPPFogDevice extends FogDevice {
 				System.out.println("Module " + module.getName() + " placement on " + getName() + " failed");
 			}
 		} else {
-			// todo Simon says this should be where the vertical scaling occurs.
-			//  Temporarily we allow the installation of a second module
+			// todo possibly implement vertical scaling.
+			//  Currently we allow the installation of multiple modules
 			System.out.println("Module " + module.getName() + " already deployed on " + getName());
 			boolean result = getVmAllocationPolicy().allocateHostForVm(module);
 			if (result) {
@@ -958,21 +870,12 @@ public class SPPFogDevice extends FogDevice {
 		sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, moduleTuple);
 	}
 
-//	private void transmitModulesToDeploy(int deviceID, Map<Application, List<ModuleLaunchConfig>> applicationListMap, PlacementRequest pr) {
-//		// Simon says this is sent only to gateway devices
-//		ManagementTuple moduleTuple = new ManagementTuple(FogUtils.generateTupleId(), ManagementTuple.NONE, ManagementTuple.DEPLOYMENT_REQUEST);
-//		moduleTuple.setDeployementSet(applicationListMap);
-//		moduleTuple.setDestinationDeviceId(deviceID);
-//		moduleTuple.setPlacementRequest(pr);
-//		sendNow(getId(), FogEvents.MANAGEMENT_TUPLE_ARRIVAL, moduleTuple);
-//	}
-
 	private void processManagementTuple(SimEvent ev) {
 		ManagementTuple tuple = (ManagementTuple) ev.getData();
 		if (tuple.getDestinationDeviceId() == getId()) {
 			switch (tuple.managementTupleType) {
 				case ManagementTuple.PLACEMENT_REQUEST:
-					// Simon says this travelled through network from USER (requester) to CLOUD.
+					// This tuple travelled through network from USER (requester) to CLOUD.
 					sendNow(getId(), FogEvents.RECEIVE_PR, tuple.getPlacementRequest());
 					break;
 
@@ -1067,17 +970,13 @@ public class SPPFogDevice extends FogDevice {
 			send(CloudSim.getFogBrokerId(), MicroservicePlacementConfig.MODULE_DEPLOYMENT_TIME + CloudSim.getMinTimeBetweenEvents(), FogEvents.RECEIVE_INSTALL_NOTIF, cycleNumber);
 		}
 
-		// Simon says (140125) that we are shelving this functionality for a while
-		// Instead, fog broker will send the tuples
-		// Simon says if self is a target, send EXECUTION_START_REQUEST to self's child (user device)
-//		if (pr != null) {
-//			int childId = pr.getGatewayDeviceId();
-//			send(childId, MicroservicePlacementConfig.MODULE_DEPLOYMENT_TIME, FogEvents.EXECUTION_START_REQUEST);
-//		}
+		// FogBroker triggers execution, creating data tuples directly.
+		//  Otherwise, user devices needs to determine if self is a target (first tuple executor)
+		//  and tell its sensor to send the data tuple.
 	}
 
+	@Deprecated
 	private void startExecution(SimEvent ev) {
-		// Simon says (140125) we will be shelving this functionality for now
 		Logger.error("Unintended event error", "Mobile users should not be notified to executing!");
 	}
 
@@ -1103,10 +1002,8 @@ public class SPPFogDevice extends FogDevice {
 			moduleInstanceCount.get(appId).put(moduleName, count);
 		}
 
-		// todo Simon says this block should apply to all devices since there are no FON heads and cloud resource availability doesn't exist
-		//  However, the cloud's knowledge of FCNs' resource availability is updated by NODE_EXECUTION_FINISHED event
-		//  This function is triggered by RELEASE_MODULE, hence updates the FCN's resource availability. But is it necessary??
-		// in FONs resource availability is updated by placement algorithm
+		//  This function is triggered by RELEASE_MODULE, hence updates the FCN's LOCAL resource availability.
+		//  The cloud's knowledge of FCNs' resource availability is updated by NODE_EXECUTION_FINISHED event
 		if (getDeviceType() != FON) {
 			Map<String, Double> resourceDeltas = new HashMap<>();
 			resourceDeltas.put(ControllerComponent.CPU, (double) -(appModule.getMips() * instanceCount));

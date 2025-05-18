@@ -9,9 +9,7 @@
   appLoopLength: 1  # Uniform loop length for all applications
   placementProcessInterval: 4.0  # Customize the interval for placement processing (default is 300.0)
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   # Interval values in seconds for PR generation per user type
   # These will be converted to lambda values (lambda = 1/interval)
   intervalValues:
@@ -24,7 +22,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "BEST_FIT"  # Previously 7
@@ -32,9 +30,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   # Interval values in seconds for PR generation per user type
   intervalValues:
     genericUser: 300
@@ -46,7 +42,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "CLOSEST_FIT"  # Previously 8
@@ -54,9 +50,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   # Interval values in seconds for PR generation per user type
   intervalValues:
     genericUser: 300
@@ -68,7 +62,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "ILP"  # Previously 14
@@ -76,9 +70,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   # Interval values in seconds for PR generation per user type
   intervalValues:
     genericUser: 300
@@ -90,7 +82,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "MAX_FIT"  # Previously 9
@@ -98,9 +90,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   # Interval values in seconds for PR generation per user type
   intervalValues:
     genericUser: 300
@@ -112,7 +102,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "MULTI_OPT"  # Previously 11
@@ -120,9 +110,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   # Interval values in seconds for PR generation per user type
   intervalValues:
     genericUser: 300
@@ -134,7 +122,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
@@ -142,9 +130,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   # Interval values in seconds for PR generation per user type
   intervalValues:
     genericUser: 300
@@ -156,7 +142,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "ACO"  # Previously 13
@@ -164,9 +150,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -177,7 +161,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "BEST_FIT"  # Previously 7
@@ -185,9 +169,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -198,7 +180,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "CLOSEST_FIT"  # Previously 8
@@ -206,9 +188,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -219,7 +199,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "ILP"  # Previously 14
@@ -227,9 +207,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -240,7 +218,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "MAX_FIT"  # Previously 9
@@ -248,9 +226,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -261,7 +237,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "MULTI_OPT"  # Previously 11
@@ -269,9 +245,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -282,7 +256,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
@@ -290,9 +264,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -303,7 +275,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "ACO"  # Previously 13
@@ -311,9 +283,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -324,7 +294,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "BEST_FIT"  # Previously 7
@@ -332,9 +302,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -345,7 +313,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "CLOSEST_FIT"  # Previously 8
@@ -353,9 +321,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -366,7 +332,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "ILP"  # Previously 14
@@ -374,9 +340,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -387,7 +351,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "MAX_FIT"  # Previously 9
@@ -395,9 +359,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -408,7 +370,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "MULTI_OPT"  # Previously 11
@@ -416,9 +378,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -429,7 +389,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
@@ -437,9 +397,7 @@
   appLoopLength: 1
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -450,7 +408,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 # ----------------------------------------------------------------------------------------------------------------
 # Configuration set with appLoopLength = 3 and numberOfApplications = 1300
@@ -460,9 +418,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -473,7 +429,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "BEST_FIT"  # Previously 7
@@ -481,9 +437,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -494,7 +448,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "CLOSEST_FIT"  # Previously 8
@@ -502,9 +456,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -515,7 +467,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "ILP"  # Previously 14
@@ -523,9 +475,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -536,7 +486,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "MAX_FIT"  # Previously 9
@@ -544,9 +494,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -557,7 +505,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "MULTI_OPT"  # Previously 11
@@ -565,9 +513,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -578,7 +524,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
@@ -586,9 +532,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -599,7 +543,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "ACO"  # Previously 13
@@ -607,9 +551,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -620,7 +562,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "BEST_FIT"  # Previously 7
@@ -628,9 +570,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -641,7 +581,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "CLOSEST_FIT"  # Previously 8
@@ -649,9 +589,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -662,7 +600,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "ILP"  # Previously 14
@@ -670,9 +608,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -683,7 +619,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "MAX_FIT"  # Previously 9
@@ -691,9 +627,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -704,7 +638,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "MULTI_OPT"  # Previously 11
@@ -712,9 +646,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -725,7 +657,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
@@ -733,9 +665,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -746,7 +676,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "ACO"  # Previously 13
@@ -754,9 +684,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -767,7 +695,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "BEST_FIT"  # Previously 7
@@ -775,9 +703,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -788,7 +714,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "CLOSEST_FIT"  # Previously 8
@@ -796,9 +722,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -809,7 +733,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "ILP"  # Previously 14
@@ -817,9 +741,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -830,7 +752,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "MAX_FIT"  # Previously 9
@@ -838,9 +760,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -851,7 +771,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "MULTI_OPT"  # Previously 11
@@ -859,9 +779,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -872,7 +790,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
@@ -880,9 +798,7 @@
   appLoopLength: 3
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -893,7 +809,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 # ----------------------------------------------------------------------------------------------------------------
 # Configuration set with appLoopLength = 5 and numberOfApplications = 1300
@@ -903,9 +819,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -916,7 +830,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "BEST_FIT"  # Previously 7
@@ -924,9 +838,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -937,7 +849,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "CLOSEST_FIT"  # Previously 8
@@ -945,9 +857,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -958,7 +868,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "ILP"  # Previously 14
@@ -966,9 +876,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -979,7 +887,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "MAX_FIT"  # Previously 9
@@ -987,9 +895,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1000,7 +906,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "MULTI_OPT"  # Previously 11
@@ -1008,9 +914,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1021,7 +925,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 100
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
@@ -1029,9 +933,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1042,7 +944,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "ACO"  # Previously 13
@@ -1050,9 +952,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1063,7 +963,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "BEST_FIT"  # Previously 7
@@ -1071,9 +971,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1084,7 +982,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "CLOSEST_FIT"  # Previously 8
@@ -1092,9 +990,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1105,7 +1001,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "ILP"  # Previously 14
@@ -1113,9 +1009,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1126,7 +1020,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "MAX_FIT"  # Previously 9
@@ -1134,9 +1028,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1147,7 +1039,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "MULTI_OPT"  # Previously 11
@@ -1155,9 +1047,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1168,7 +1058,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 200
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
@@ -1176,9 +1066,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1189,7 +1077,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "ACO"  # Previously 13
@@ -1197,9 +1085,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1210,7 +1096,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "BEST_FIT"  # Previously 7
@@ -1218,9 +1104,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1231,7 +1115,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "CLOSEST_FIT"  # Previously 8
@@ -1239,9 +1123,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1252,7 +1134,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "ILP"  # Previously 14
@@ -1260,9 +1142,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1273,7 +1153,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "MAX_FIT"  # Previously 9
@@ -1281,9 +1161,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1294,7 +1172,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "MULTI_OPT"  # Previously 11
@@ -1302,9 +1180,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1315,7 +1191,7 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"
 
 - numberOfEdge: 300
   placementLogic: "SIMULATED_ANNEALING"  # Previously 12
@@ -1323,9 +1199,7 @@
   appLoopLength: 5
   placementProcessInterval: 4.0
   usersPerType:
-    genericUser: 100
-    operaUser: 80
-    ambulanceUser: 20
+    immobileUser: 200
   intervalValues:
     genericUser: 300
     ambulanceUser: 180
@@ -1336,4 +1210,4 @@
     locationSeed: 42
     mobilityStrategySeed: 123
     heuristicSeed: 456
-  areaName: "melbourne"
+  areaName: "dublin"

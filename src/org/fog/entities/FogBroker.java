@@ -18,9 +18,6 @@ import java.util.*;
 
 public class FogBroker extends PowerDatacenterBroker{
 
-	// Simon says we'll just keep a record of every single PD for now, might be useful for metrics
-	// todo Simon (130325) says we will scrap the idea, because metrics are taken straight from Cloud and stored in MyMonitor
-	//  Instead we will clear FogBroker's state every time simulation start
 	// batch number -> perDevice, which is Device -> (Application -> List <ModuleLaunchConfig which contains unique module object and instance count>)
 	private static final Map<Integer, Map<Integer, Boolean>> checklist = new HashMap<>();
 	private static final Map<Integer, Map<PlacementRequest, Integer>> toSend = new HashMap<>();
@@ -43,7 +40,7 @@ public class FogBroker extends PowerDatacenterBroker{
 		super(name);
 	}
 
-	// Simon (130325) says clear FogBroker for Experiment purposes
+	// Clear FogBroker for Experiment purposes
 	public static void clear(){
 		applicationInfo.clear();
 		applicationToFirstServiceMap.clear();
@@ -56,8 +53,7 @@ public class FogBroker extends PowerDatacenterBroker{
 		System.out.println("FogBroker state cleared, vmCounter reset to 0");
 	}
 
-	// Simon (170125) says DatacenterBroker class has
-	// some weird CloudSim functionality that we don't want
+
 	@Override
 	public void processEvent(SimEvent ev) {processOtherEvent(ev);};
 
@@ -91,9 +87,7 @@ public class FogBroker extends PowerDatacenterBroker{
 	private void processPlacementDecision(SimEvent ev) {
 		JSONObject object = (JSONObject) ev.getData();
 		Integer cycleNumber = (Integer) object.get("cycleNumber");
-//		if (cycleNumber != this.cycleNumber) {
-//			Logger.error("Batch Number Error", "Batch numbers don't match.");
-//		}
+
 
 		Map<PlacementRequest, Integer> targets = (Map<PlacementRequest, Integer>) object.get("targets");
 		Map<Integer, Map<Application, List<ModuleLaunchConfig>>> perDevice =
@@ -102,7 +96,6 @@ public class FogBroker extends PowerDatacenterBroker{
 		setToSend(targets, cycleNumber);
 		send(getId(), MicroservicePlacementConfig.EXECUTION_TIMEOUT_TIME, FogEvents.EXECUTION_TIMEOUT, cycleNumber);
 		Logger.debug("Notification", "FogBroker sent out execution Timeout");
-//		setBatchNumber(getBatchNumber() + 1);
 	}
 
 	// perDevice: deviceId -> (Application -> List (Module, instanceCount))
@@ -122,7 +115,6 @@ public class FogBroker extends PowerDatacenterBroker{
 		if (checklist.get(cycleNumber).containsKey(deviceId)) {
 			checklist.get(cycleNumber).put(deviceId, true); // Mark as acknowledged
 			if (allAcknowledged(cycleNumber)) {
-//				cancelTimeout(); // Cancel the execution timeout
 				triggerExecution(cycleNumber); // Start tuple execution
 			}
 		}
@@ -158,7 +150,6 @@ public class FogBroker extends PowerDatacenterBroker{
 
 	public void transmit(int targetId, Application app, ContextPlacementRequest pr){
 		String firstMicroservice = applicationToFirstServiceMap.get(app);
-//		String firstMicroservice = applicationToSecondServicesMap.get(app);
 		AppEdge _edge = null;
 		for(AppEdge edge : app.getEdges()){
 			if(edge.getSource().equals(firstMicroservice)) {
@@ -175,7 +166,6 @@ public class FogBroker extends PowerDatacenterBroker{
 		tuple.setUserId(getId());
 		tuple.setTupleType(tupleType);
 
-		// Simon (020245) says this necessary for Service Discovery identification
 		tuple.setSensorId(pr.getSensorId());
 		tuple.setPrIndex(pr.getPrIndex());
 
@@ -188,9 +178,7 @@ public class FogBroker extends PowerDatacenterBroker{
 		//  tuple will END on.
 		AppModule firstMicroserviceModule = getTargetVM(pr, firstMicroservice);
 
-		// Simon (180125) says this is a bit hacky
-		// We are pretending the Tuple passed through clientModule though it didn't
-		// Edit 4 fields of the Tuple. Imitate the state of tuple in OnlinePOC at the point it is processed in MyFogDevice.processTupleArrival
+		// Pretend the tuple passed through user device
 		Map<String, Integer> moduleCopyMap = new HashMap<>();
 		moduleCopyMap.put(firstMicroservice, firstMicroserviceModule.getId());
 		tuple.setModuleCopyMap(moduleCopyMap);
@@ -238,7 +226,6 @@ public class FogBroker extends PowerDatacenterBroker{
 		}
 
 		AppModule firstMicroserviceModule = null;
-		// Simon (130325) says the activatedVms state in FogBroker keeps track of what VMs have already been assigned to
 		for (Vm vm : device.getVmList()) {
 			AppModule am = (AppModule) vm;
 			// Find the first VM in the edge device's VMList that has not been already transmitted to,

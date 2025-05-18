@@ -38,7 +38,7 @@ public class GraphHopperPathingStrategy extends AbstractPathingStrategy {
     private double probabilityForAlternativeRoute = 0.0;
 
     // Constants
-    private static final double MIN_WAYPOINT_DISTANCE = 20.0;  // meters
+    private static final double MIN_WAYPOINT_DISTANCE = 5.0;  // meters, reduced from 20.0 for more detailed paths
     private static final double MAX_DISTANCE_THRESHOLD = 1200.0;  // kilometers threshold
 
     public GraphHopperPathingStrategy() {
@@ -144,9 +144,8 @@ public class GraphHopperPathingStrategy extends AbstractPathingStrategy {
             new GraphHopperConfig().
                     putObject("datareader.file", osmFileLocation).
                     putObject("graph.location", graphFolderFiles).
-                    putObject("prepare.min_network_size", 200). // skip this unless you know what you are doing, 200 is the default anyway
+                    putObject("prepare.min_network_size", 200).
                     putObject("import.osm.ignored_highways", ""). // if you are only using car you can ignore paths, tracks etc. here, take a look at the documentation in `config-example.yml`
-//                    putObject("graph.vehicles", "car").
                     // todo Removed, not compatible with v8.0. These give more precise points (following road structure)
 //                    putObject("graph.encoded_values", "road_class, road_class_link,road_environment,max_speed,surface").
                     putObject("graph.encoded_values", "").
@@ -196,7 +195,7 @@ public class GraphHopperPathingStrategy extends AbstractPathingStrategy {
             // todo If we want GraphHopper to NOT remove points from output, uncomment.
             //  eg If we use a visual interface, we don't want to see ambulances driving through buildings.
             //  But for our current arrival time estimation purposes, simplification is fine.
-            // req.getHints().put("simplify_response", false);
+            req.getHints().put("simplify_response", "false");
 
             // Simon says put is deprecated because PMAP should be immutable ("final" config),
             //  But this code probably won't run.
@@ -309,7 +308,4 @@ public class GraphHopperPathingStrategy extends AbstractPathingStrategy {
         path.addWayPoint(new WayPoint(destination, CloudSim.clock() + time));
         return path;
     }
-
-    // Getters and setters omitted for brevity
-    // close() remains unchanged
 }

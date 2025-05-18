@@ -23,7 +23,7 @@ public class Tuple extends Cloudlet{
 	private int sourceDeviceId;
 	private int sourceModuleId;
 
-	// Simon (020425) says for unique service discovery entry
+	// For unique service discovery entry
 	private Integer prIndex;
 	private Integer sensorId;
 	/**

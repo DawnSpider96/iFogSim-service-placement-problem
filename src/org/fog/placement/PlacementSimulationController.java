@@ -400,8 +400,6 @@ public class PlacementSimulationController extends SimEntity {
                 printNetworkUsageDetails();
                 printQoSDetails();
                 endSimulation();
-                // TODO Simon says don't System.exit
-//                System.exit(0);
                 break;
             // Handle mobility events
             case FogEvents.SCHEDULER_NEXT_MOVEMENT_UPDATE:
@@ -638,7 +636,6 @@ public class PlacementSimulationController extends SimEntity {
             int csvIndex = i + 1; // CSV indices start at 1
             
             // Register the device
-            // Simon (100425) says we do NOT register in main Sim file anymore.
             registerUserDevice(fogDevice);
             fogDevice.setMicroservicesControllerId(getId());
             
@@ -646,18 +643,28 @@ public class PlacementSimulationController extends SimEntity {
                 System.out.println("Mapped user CSV index " + csvIndex + " to device ID " + fogDevice.getId());
                 
                 if (fogDevice.getDeviceType().equals(SPPFogDevice.GENERIC_USER)) {
+//                    DeviceMobilityState mobilityState = new GenericUserMobilityState(
+//                            userLocations.get(csvIndex),
+//                            genericPathingStrategy,
+//                            1 + random.nextDouble() * 1.5 // m/s
+//                    );
                     DeviceMobilityState mobilityState = new GenericUserMobilityState(
                             userLocations.get(csvIndex),
                             genericPathingStrategy,
-                            1 + random.nextDouble() * 1.5 // m/s
+                            1.38 // m/s
                     );
                     registerDeviceMobilityState(fogDevice.getId(), mobilityState);
                 }
                 else if (fogDevice.getDeviceType().equals(SPPFogDevice.AMBULANCE_USER)) {
+//                    DeviceMobilityState mobilityState = new AmbulanceUserMobilityState(
+//                            userLocations.get(csvIndex), // We don't use this, instead spawn user at hospital.
+//                            ambulancePathingStrategy,
+//                            random.nextDouble() * 20 + 10 // 10 to 30 m/s
+//                    );
                     DeviceMobilityState mobilityState = new AmbulanceUserMobilityState(
                             userLocations.get(csvIndex), // We don't use this, instead spawn user at hospital.
                             ambulancePathingStrategy,
-                            random.nextDouble() * 20 + 10 // 10 to 30 m/s
+                            8.3
                     );
                     registerDeviceMobilityState(fogDevice.getId(), mobilityState);
                 }
@@ -670,8 +677,14 @@ public class PlacementSimulationController extends SimEntity {
                     );
                     registerDeviceMobilityState(fogDevice.getId(), mobilityState);
                 }
+                else if (fogDevice.getDeviceType().equals(SPPFogDevice.IMMOBILE_USER)) {
+                    DeviceMobilityState mobilityState = new ImmobileUserMobilityState(
+                            userLocations.get(csvIndex)
+                    );
+                    registerDeviceMobilityState(fogDevice.getId(), mobilityState);
+                }
                 else {
-                    Logger.error("Invalid deviceType Error", "DeviceType is not Generic/Ambulance/Opera");
+                    throw new NullPointerException("Invalid deviceType Error");
                 }
             }
         }
@@ -720,8 +733,8 @@ public class PlacementSimulationController extends SimEntity {
         initializeUserResources();
         send(getId(), prGenerationInterval, FogEvents.GENERATE_PERIODIC_PR);
 
-        // todo Simon says Placement Decisions will be made dynamically, but only by the Cloud!
-        // todo Hence no need for an initialisation
+        // Placement Decisions will be made dynamically, but only by the Cloud!
+        // Hence no need for an initialisation
         if (MicroservicePlacementConfig.SIMULATION_MODE == "STATIC")
             Logger.error("Simulation not Dynamic error", "Simulation mode should be dynamic");
         if (MicroservicePlacementConfig.SIMULATION_MODE == "DYNAMIC")
@@ -891,8 +904,7 @@ public class PlacementSimulationController extends SimEntity {
     protected void initiatePlacementRequestProcessingDynamic() {
         if (MicroservicePlacementConfig.PR_PROCESSING_MODE == MicroservicePlacementConfig.PERIODIC) {
             for (FogDevice f : fogDevices) {
-                // todo Simon says for the Offline POC there are no proxy servers, so the cloud processes all PRs
-                //  The second OR condition was added for Offline POC, whether it stays tbc
+
                 if (((SPPFogDevice) f).getDeviceType() == SPPFogDevice.FON || ((SPPFogDevice) f).getDeviceType() == SPPFogDevice.CLOUD) {
                     sendNow(f.getId(), FogEvents.PROCESS_PRS);
                 }
@@ -949,7 +961,6 @@ public class PlacementSimulationController extends SimEntity {
     }
 
     protected void manageResources() {
-        // todo Simon says this does nothing, doesnt it???
         send(getId(), Config.CONTROLLER_RESOURCE_MANAGE_INTERVAL, FogEvents.CONTROLLER_RESOURCE_MANAGE);
     }
 

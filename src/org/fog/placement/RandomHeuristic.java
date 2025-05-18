@@ -90,7 +90,7 @@ public class RandomHeuristic extends SPPHeuristic implements MicroservicePlaceme
         // Shallow Copy
         List<FogDevice> nodes = new ArrayList<>(edgeFogDevices);
 
-        // Simon says if fails to fit, the entire PR should fail
+        // If fails to fit, the entire PR should fail
         for (int j = 0 ; j < microservices.size() ; j++) {
             int nodeIndex = getRandom().nextInt(nodes.size());
             int deviceId = nodes.get(nodeIndex).getId();
@@ -104,8 +104,7 @@ public class RandomHeuristic extends SPPHeuristic implements MicroservicePlaceme
             }
 
             if (placed[j] < 0) {
-                // todo Simon says what do we do when failure?
-                //  (160125) Nothing. Because (aggregated) failure will be determined outside the for loop
+
                 System.out.println("Failed to place module " + s + " on PR " + placementRequest.getSensorId());
                 System.out.println("Failed placement " + placementRequest.getSensorId());
 
@@ -166,7 +165,7 @@ public class RandomHeuristic extends SPPHeuristic implements MicroservicePlaceme
                 if (!currentModuleLoadMap.get(deviceId).containsKey(s))
                     currentModuleLoadMap.get(deviceId).put(s, service.getMips());
                 else
-                    currentModuleLoadMap.get(deviceId).put(s, service.getMips() + currentModuleLoadMap.get(deviceId).get(s)); // todo Simon says isn't this already vertical scaling? But is on PR side not FogDevice side
+                    currentModuleLoadMap.get(deviceId).put(s, service.getMips() + currentModuleLoadMap.get(deviceId).get(s));
 
                 //currentModuleInstance
                 if (!currentModuleInstanceNum.get(deviceId).containsKey(s))

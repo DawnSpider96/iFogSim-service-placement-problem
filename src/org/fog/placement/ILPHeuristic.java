@@ -145,7 +145,7 @@ public class ILPHeuristic extends SPPHeuristic implements MicroservicePlacementL
                     System.out.println("Failed placement " + placementRequest.getSensorId());
 
                     // Undo every "placement" recorded in placed. Only deviceStates was changed, so we change it back
-                    // Simon (310125) says this part should never be reached because btrplace already deals with each PR as a whole
+                    // This part should never be reached because btrplace already deals with each PR as a whole
                     // Meaning if there is one module that cannot be placed, the whole PR is not placed.
                     Logger.error("Control Flow Error", "This code should never be reached.");
                     for (int j = 0 ; j < placed.length ; j++) {
@@ -213,7 +213,7 @@ public class ILPHeuristic extends SPPHeuristic implements MicroservicePlacementL
                 if (!currentModuleLoadMap.get(deviceId).containsKey(s))
                     currentModuleLoadMap.get(deviceId).put(s, service.getMips());
                 else
-                    currentModuleLoadMap.get(deviceId).put(s, service.getMips() + currentModuleLoadMap.get(deviceId).get(s)); // todo Simon says isn't this already vertical scaling? But is on PR side not FogDevice side
+                    currentModuleLoadMap.get(deviceId).put(s, service.getMips() + currentModuleLoadMap.get(deviceId).get(s));
 
                 //currentModuleInstance
                 if (!currentModuleInstanceNum.get(deviceId).containsKey(s))
